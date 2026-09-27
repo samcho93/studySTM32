@@ -80,7 +80,7 @@
     EXTI0_IRQn: 6, EXTI1_IRQn: 7, EXTI2_IRQn: 8, EXTI3_IRQn: 9, EXTI4_IRQn: 10, ADC_IRQn: 18, ADC1_2_IRQn: 18,
     EXTI9_5_IRQn: 23, TIM1_UP_TIM10_IRQn: 25, TIM1_UP_IRQn: 25, TIM2_IRQn: 28, TIM3_IRQn: 29, TIM4_IRQn: 30,
     I2C1_EV_IRQn: 31, I2C2_EV_IRQn: 33, SPI1_IRQn: 35, SPI2_IRQn: 36, USART1_IRQn: 37, USART2_IRQn: 38, USART3_IRQn: 39,
-    EXTI15_10_IRQn: 40, TIM5_IRQn: 50, USART6_IRQn: 71, SysTick_IRQn: -1,
+    EXTI15_10_IRQn: 40, TIM5_IRQn: 50, DMA2_Stream0_IRQn: 56, DMA1_Channel1_IRQn: 11, USART6_IRQn: 71, SysTick_IRQn: -1,
     EOF: -1, RAND_MAX: 2147483647
   };
   for (var i = 0; i < 16; i++) K['GPIO_PIN_' + i] = 1 << i;
@@ -98,7 +98,7 @@
     HAL_RCC_GetPCLK1Freq: 'uint32_t', HAL_RCC_GetPCLK2Freq: 'uint32_t',
     __HAL_RCC_PWR_CLK_ENABLE: 'void', __HAL_PWR_VOLTAGESCALING_CONFIG: 'void', __HAL_RCC_AFIO_CLK_ENABLE: 'void',
     __HAL_RCC_GPIOA_CLK_ENABLE: 'void', __HAL_RCC_GPIOB_CLK_ENABLE: 'void', __HAL_RCC_GPIOC_CLK_ENABLE: 'void',
-    __HAL_RCC_GPIOD_CLK_ENABLE: 'void', __HAL_RCC_GPIOH_CLK_ENABLE: 'void', __HAL_AFIO_REMAP_SWJ_NOJTAG: 'void',
+    __HAL_RCC_GPIOD_CLK_ENABLE: 'void', __HAL_RCC_GPIOH_CLK_ENABLE: 'void', __HAL_RCC_DMA1_CLK_ENABLE: 'void', __HAL_RCC_DMA2_CLK_ENABLE: 'void', __HAL_AFIO_REMAP_SWJ_NOJTAG: 'void',
     __disable_irq: 'void', __enable_irq: 'void', __NOP: 'void', __WFI: 'void', NVIC_SystemReset: 'void',
     HAL_GPIO_Init: 'void', HAL_GPIO_DeInit: 'void', HAL_GPIO_WritePin: 'void', HAL_GPIO_ReadPin: 'int', HAL_GPIO_TogglePin: 'void',
     HAL_UART_Init: 'int', HAL_UART_Transmit: 'g:int', HAL_UART_Receive: 'g:int', HAL_UART_Transmit_IT: 'int', HAL_UART_Receive_IT: 'int',

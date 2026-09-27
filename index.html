@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>studySTM32 · STM32 HAL 인터랙티브 강좌</title>
+<meta name="description" content="CubeMX 핀 설정, HAL 코드, 브라우저 시뮬레이터, 실물 보드까지 — STM32를 한국어로 배우는 인터랙티브 강좌.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
+<link rel="stylesheet" href="assets/css/main.css">
+<link rel="stylesheet" href="assets/css/stm32.css">
+<link rel="stylesheet" href="assets/css/ml-theme.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
+<script src="assets/js/theme.js"></script>
+</head>
+<body class="home">
+<button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
+<aside class="sidebar" id="sidebar">
+<nav class="sidebar-nav">
+<div class="brand-row"><a class="brand" href="index.html"><span class="brand-mark">32</span><span class="brand-text">studySTM32<small>STM32 HAL 인터랙티브 강좌</small></span></a></div>
+<div class="side-tools"><a class="side-tool" href="sim/index.html">시뮬레이터</a><a class="side-tool" href="lessons/hal-reference.html">HAL 레퍼런스</a></div>
+<div class="nav-track" data-track="basics">
+<div class="nav-track-title track-basics"><span class="nav-part-no">PART 1</span>시작하기</div>
+<ul>
+<li><a href="lessons/l01.html" data-slug="l01"><span class="nav-no">L01</span>STM32 시리즈와 개발 환경</a></li>
+<li><a href="lessons/l02.html" data-slug="l02"><span class="nav-no">L02</span>시뮬레이터 둘러보기와 첫 프로젝트</a></li>
+<li><a href="lessons/l03.html" data-slug="l03"><span class="nav-no">L03</span>GPIO 출력 — LED</a></li>
+<li><a href="lessons/l04.html" data-slug="l04"><span class="nav-no">L04</span>GPIO 입력 — 스위치</a></li>
+<li><a href="lessons/l05.html" data-slug="l05"><span class="nav-no">L05</span>외부 인터럽트 EXTI</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="comm">
+<div class="nav-track-title track-comm"><span class="nav-part-no">PART 2</span>통신·타이머·아날로그</div>
+<ul>
+<li><a href="lessons/l06.html" data-slug="l06"><span class="nav-no">L06</span>UART와 printf</a></li>
+<li><a href="lessons/l07.html" data-slug="l07"><span class="nav-no">L07</span>타이머 인터럽트</a></li>
+<li><a href="lessons/l08.html" data-slug="l08"><span class="nav-no">L08</span>PWM — LED 밝기와 서보</a></li>
+<li><a href="lessons/l09.html" data-slug="l09"><span class="nav-no">L09</span>ADC — 가변저항·조도센서</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="periph">
+<div class="nav-track-title track-periph"><span class="nav-part-no">PART 3</span>주변기기</div>
+<ul>
+<li><a href="lessons/l10.html" data-slug="l10"><span class="nav-no">L10</span>I2C와 LCD1602</a></li>
+<li><a href="lessons/l11.html" data-slug="l11"><span class="nav-no">L11</span>SPI 기초</a></li>
+<li><a href="lessons/l12.html" data-slug="l12"><span class="nav-no">L12</span>7세그먼트 FND</a></li>
+<li><a href="lessons/l13.html" data-slug="l13"><span class="nav-no">L13</span>DC 모터 드라이버</a></li>
+<li><a href="lessons/l14.html" data-slug="l14"><span class="nav-no">L14</span>스텝모터</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="project">
+<div class="nav-track-title track-project"><span class="nav-part-no">PART 4</span>프로젝트</div>
+<ul>
+<li><a href="lessons/l15.html" data-slug="l15"><span class="nav-no">L15</span>미니 프로젝트: 스마트 선풍기</a></li>
+<li><a href="lessons/l16.html" data-slug="l16"><span class="nav-no">L16</span>실물 보드로 옮기기</a></li>
+</ul>
+</div>
+</nav>
+</aside>
+<div class="sidebar-scrim" id="scrim"></div>
+<main class="main">
+<header class="topbar"><a class="topbar-brand" href="index.html"><span class="brand-mark">32</span>studySTM32</a><nav class="topnav" aria-label="사이트 메뉴"><a href="index.html" class="active" aria-current="page">강의 홈</a><a href="sim/index.html">시뮬레이터</a><a href="lessons/hal-reference.html">HAL 레퍼런스</a></nav><button class="theme-icon" type="button" data-theme-toggle data-theme-icon aria-label="테마 전환"></button></header>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="hero-tag">STM32 &middot; HAL &middot; CubeMX &middot; CubeIDE &middot; 브라우저 시뮬레이터</div>
+    <h1>STM32 HAL<br>인터랙티브 강좌</h1>
+    <p class="hero-lede">
+      <b>CubeMX로 핀을 설정</b>하고, 생성된 코드의 <code>USER CODE</code> 구역에 <b>HAL 코드</b>를 쓰고,
+      브라우저 <b>시뮬레이터</b>에서 LED·버튼·LCD·모터 회로로 바로 실행해 봅니다.
+      같은 코드를 STM32CubeIDE에 붙여 넣으면 <b>실물 Nucleo 보드</b>에서도 그대로 동작합니다.
+      GPIO부터 UART·타이머·PWM·ADC·I2C·SPI, 모터 제어와 미니 프로젝트까지 총 16개 레슨.
+    </p>
+    <div class="hero-cta">
+      <a class="btn primary" href="lessons/l01.html">L01부터 시작</a>
+      <a class="btn" href="sim/index.html">시뮬레이터 열기</a>
+      <a class="btn" href="lessons/hal-reference.html">HAL 레퍼런스</a>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progFill"></div></div>
+      <div class="progress-text"><span id="progText">0 / 16 레슨 완료</span>
+      <button class="link-btn" id="resetProg" type="button">진행률 초기화</button></div>
+    </div>
+  </div>
+  <div class="hero-art">
+    <div class="hero-flow" aria-label="학습 흐름">
+      <div class="flow-step"><b>1</b><span>CubeMX 핀 설정<small>핀아웃 · 클럭 · 주변장치 · NVIC</small></span></div>
+      <div class="flow-arrow">&darr;</div>
+      <div class="flow-step"><b>2</b><span>HAL 코드<small>USER CODE 구역 · 콜백 · printf</small></span></div>
+      <div class="flow-arrow">&darr;</div>
+      <div class="flow-step"><b>3</b><span>시뮬레이터<small>회로 노드 · 실습 결과 · 로직 분석기</small></span></div>
+      <div class="flow-arrow">&darr;</div>
+      <div class="flow-step hot"><b>4</b><span>실물 보드<small>CubeIDE · ST-Link 플래시 · 디버그</small></span></div>
+    </div>
+    <div class="hero-art-cap">같은 .ioc 설정, 같은 HAL 코드 — 시뮬레이터에서 실물 보드로</div>
+  </div>
+</header>
+
+<section class="facts">
+  <div class="fact"><div class="fact-n">16</div><div class="fact-l">레슨 (PART 1~4)</div></div>
+  <div class="fact"><div class="fact-n">3</div><div class="fact-l">지원 보드 (Nucleo F411RE · F103RB · BluePill)</div></div>
+  <div class="fact"><div class="fact-n">15</div><div class="fact-l">종 주변기기 노드 (LED · LCD · 모터 …)</div></div>
+  <div class="fact"><div class="fact-n">47</div><div class="fact-l">개 HAL API 에뮬레이션</div></div>
+</section>
+
+<section class="entry-grid">
+  <a class="entry-card entry-sim" href="sim/index.html">
+    <div class="entry-k">SIMULATOR</div>
+    <h3>STM32 시뮬레이터</h3>
+    <p>CubeMX식 핀아웃·주변장치 설정, CubeIDE식 코드 편집기, 회로 노드 편집기와 실습 결과 화면을 한곳에 모았습니다.
+    설치 없이 브라우저에서 HAL 코드를 빌드하고 실행합니다. 레슨마다 준비된 예제 프로젝트로 바로 열 수 있습니다.</p>
+    <span class="entry-go">시뮬레이터 열기 &rarr;</span>
+  </a>
+  <a class="entry-card entry-ref" href="lessons/hal-reference.html">
+    <div class="entry-k">REFERENCE</div>
+    <h3>HAL API 레퍼런스</h3>
+    <p>GPIO · EXTI · UART · TIM/PWM · ADC · I2C · SPI 모듈별 함수 원형, 인자 표, 반환값, 짧은 예제와
+    레지스터 직접 접근 비교. 코드를 쓰다 막히면 여기서 찾아보세요.</p>
+    <span class="entry-go">레퍼런스 보기 &rarr;</span>
+  </a>
+</section>
+
+<section class="curriculum">
+  <h2>커리큘럼</h2>
+  <section class="part track-block" data-track="basics"><header class="part-head"><div class="part-no track-basics">PART 1</div><div><h3>시작하기</h3><p>STM32 시리즈와 개발 도구를 알아보고, 시뮬레이터에서 첫 프로젝트를 만든 뒤 GPIO 출력·입력과 외부 인터럽트를 익힙니다.</p></div></header><div class="part-list"><a class="lesson-card" href="lessons/l01.html" data-slug="l01"><div class="lc-no">L01</div><div class="lc-main"><div class="lc-title">STM32 시리즈와 개발 환경</div><div class="lc-sum">Cortex-M 코어와 F0·F1·F4·L4·H7 제품군, CubeIDE·CubeMX, HAL·LL·레지스터의 차이, Nucleo와 BluePill 보드를 정리합니다.</div><div class="lc-meta"><span class="lc-min">40분 · 입문</span><span class="tag">HAL 레퍼런스</span></div></div><div class="lc-check" aria-hidden="true"></div></a><a class="lesson-card" href="lessons/l02.html" data-slug="l02"><div class="lc-no">L02</div><div class="lc-main"><div class="lc-title">시뮬레이터 둘러보기와 첫 프로젝트</div><div class="lc-sum">CubeMX 핀아웃 → Generate Code → USER CODE 구역 → Build → Run 흐름을 시뮬레이터에서 처음부터 끝까지 따라 합니다.</div><div class="lc-meta"><span class="lc-min">50분 · 입문</span><span class="tag">시뮬레이터</span></div></div><div class="lc-check" aria-hidden="true"></div></a><a class="lesson-card" href="lessons/l03.html" data-slug="l03"><div class="lc-no">L03</div><div class="lc-main"><div class="lc-title">GPIO 출력 — LED</div><div class="lc-sum">GPIO 출력 모드, HAL_GPIO_WritePin·TogglePin, 핀 라벨과 main.h 매크로, BSRR 레지스터 직접 쓰기까지 LED로 익힙니다.</div><div class="lc-meta"><span class="lc-min">60분 · 입문</span><span class="tag">시뮬레이터</span><span class="tag">HAL 레퍼런스</span></div></div><div class="lc-check" aria-hidden="true"></div></a><a class="lesson-card" href="lessons/l04.html" data-slug="l04"><div class="lc-no">L04</div><div class="lc-main"><div class="lc-title">GPIO 입력 — 스위치</div><div class="lc-sum">풀업·풀다운과 active-low 버튼, 폴링으로 읽기, 에지 검출과 디바운스를 다룹니다.</div><div class="lc-meta"><span class="lc-min">60분 · 입문</span><span class="tag">시뮬레이터</span><span class="tag">HAL 레퍼런스</span></div></div><div class="lc-check" aria-hidden="true"></div></a><a class="lesson-card" href="lessons/l05.html" data-slug="l05"><div class="lc-no">L05</div><div class="lc-main"><div class="lc-title">외부 인터럽트 EXTI</div><div class="lc-sum">폴링과 인터럽트의 차이, EXTI 라인과 NVIC, HAL_GPIO_EXTI_Callback과 volatile, 인터럽트 안 디바운스를 익힙니다.</div><div class="lc-meta"><span class="lc-min">60분 · 초급</span><span class="tag">시뮬레이터</span><span class="tag">HAL 레퍼런스</span></div></div><div class="lc-check" aria-hidden="true"></div></a></div></section><section class="part track-block" data-track="comm"><header class="part-head"><div class="part-no track-comm">PART 2</div><div><h3>통신·타이머·아날로그</h3><p>UART와 printf로 보드와 대화하고, 타이머 인터럽트와 PWM으로 시간을 다루며, ADC로 아날로그 값을 읽습니다.</p></div></header><div class="part-list"><a class="lesson-card" href="lessons/l06.html" data-slug="l06"><div class="lc-no">L06</div><div class="lc-main"><div class="lc-title">UART와 printf</div><div class="lc-sum">USART2(ST-Link VCP)로 문자를 주고받고, __io_putchar 리타깃으로 printf를 쓰며, 수신 인터럽트로 명령어를 처리합니다.</div><div class="lc-meta"><span class="lc-min">70분 · 초급</span><span class="tag">시뮬레이터</span><span class="tag">HAL 레퍼런스</span></div></div><div class="lc-check" aria-hidden="true"></div></a><a class="lesson-card" href="lessons/l07.html" data-slug="l07"><div class="lc-no">L07</div><div class="lc-main"><div class="lc-title">타이머 인터럽트</div><div class="lc-sum">타이머 클럭·PSC·ARR 계산 공식을 84 MHz·72 MHz 예로 익히고, HAL_TIM_PeriodElapsedCallback으로 정확한 주기 작업을 만듭니다.</div><div class="lc-meta"><span class="lc-min">60분 · 초급</span><span class="tag">시뮬레이터</span><span class="tag">HAL 레퍼런스</span></div></div><div class="lc-check" aria-hidden="true"></div></a><a class="lesson-card" href="lessons/l08.html" data-slug="l08"><div class="lc-no">L08</div><div class="lc-main"><div class="lc-title">PWM — LED 밝기와 서보</div><div class="lc-sum">PWM 주파수·듀티를 PSC·ARR·CCR로 정하고, LED 페이드와 50 Hz 서보 각도 제어를 구현합니다.</div><div class="lc-meta"><span class="lc-min">70분 · 초급</span><span class="tag">시뮬레이터</span><span class="tag">HAL 레퍼런스</span></div></div><div class="lc-check" aria-hidden="true"></div></a><a class="lesson-card" href="lessons/l09.html" data-slug="l09"><div class="lc-no">L09</div><div class="lc-main"><div class="lc-title">ADC — 가변저항·조도센서</div><div class="lc-sum">12비트 ADC 폴링 변환으로 가변저항을 읽고, 여러 채널을 스캔 + DMA로 계속 받아 오는 방법을 익힙니다.</div><div class="lc-meta"><span class="lc-min">70분 · 중급</span><span class="tag">시뮬레이터</span><span class="tag">HAL 레퍼런스</span></div></div><div class="lc-check" aria-hidden="true"></div></a></div></section><section class="part track-block" data-track="periph"><header class="part-head"><div class="part-no track-periph">PART 3</div><div><h3>주변기기</h3><p>I2C LCD, SPI 장치, 7세그먼트, DC 모터 드라이버, 스텝모터를 HAL로 직접 구동합니다.</p></div></header><div class="part-list"><a class="lesson-card" href="lessons/l10.html" data-slug="l10"><div class="lc-no">L10</div><div class="lc-main"><div class="lc-title">I2C와 LCD1602</div><div class="lc-sum">I2C 주소와 HAL의 8비트 주소 규칙, PCF8574 4비트 LCD 프로토콜, 완성 드라이버와 I2C 스캐너를 만듭니다.</div><div class="lc-meta"><span class="lc-min">90분 · 중급</span><span class="tag">시뮬레이터</span><span class="tag">HAL 레퍼런스</span></div></div><div class="lc-check" aria-hidden="true"></div></a><a class="lesson-card" href="lessons/l11.html" data-slug="l11"><div class="lc-no">L11</div><div class="lc-main"><div class="lc-title">SPI 기초</div><div class="lc-sum">SCK·MOSI·MISO·CS 네 선과 모드, CS를 GPIO로 제어하는 법, HAL_SPI_TransmitReceive로 장치 ID를 읽습니다.</div><div class="lc-meta"><span class="lc-min">60분 · 중급</span><span class="tag">시뮬레이터</span><span class="tag">HAL 레퍼런스</span></div></div><div class="lc-check" aria-hidden="true"></div></a><a class="lesson-card" href="lessons/l12.html" data-slug="l12"><div class="lc-no">L12</div><div class="lc-main"><div class="lc-title">7세그먼트 FND</div><div class="lc-sum">공통 캐소드·애노드와 세그먼트 패턴 표를 만들고, HAL과 BSRR 레지스터 두 방식으로 숫자를 표시합니다.</div><div class="lc-meta"><span class="lc-min">50분 · 초급</span><span class="tag">시뮬레이터</span></div></div><div class="lc-check" aria-hidden="true"></div></a><a class="lesson-card" href="lessons/l13.html" data-slug="l13"><div class="lc-no">L13</div><div class="lc-main"><div class="lc-title">DC 모터 드라이버</div><div class="lc-sum">L298N의 IN1·IN2·ENA로 방향과 PWM 속도를 제어하고, 가변저항·버튼으로 속도와 방향을 바꿉니다.</div><div class="lc-meta"><span class="lc-min">70분 · 중급</span><span class="tag">시뮬레이터</span></div></div><div class="lc-check" aria-hidden="true"></div></a><a class="lesson-card" href="lessons/l14.html" data-slug="l14"><div class="lc-no">L14</div><div class="lc-main"><div class="lc-title">스텝모터</div><div class="lc-sum">28BYJ-48과 ULN2003으로 풀스텝·하프스텝 시퀀스를 구동하고, 스텝 수로 각도를 제어합니다.</div><div class="lc-meta"><span class="lc-min">60분 · 중급</span><span class="tag">시뮬레이터</span></div></div><div class="lc-check" aria-hidden="true"></div></a></div></section><section class="part track-block" data-track="project"><header class="part-head"><div class="part-no track-project">PART 4</div><div><h3>프로젝트</h3><p>배운 것을 모아 스마트 선풍기를 만들고, 같은 코드를 STM32CubeIDE와 실물 보드로 옮깁니다.</p></div></header><div class="part-list"><a class="lesson-card" href="lessons/l15.html" data-slug="l15"><div class="lc-no">L15</div><div class="lc-main"><div class="lc-title">미니 프로젝트: 스마트 선풍기</div><div class="lc-sum">가변저항 → PWM 모터 속도, 버튼 모드 전환, LCD 표시, UART 로그를 하나의 프로그램으로 묶습니다.</div><div class="lc-meta"><span class="lc-min">120분 · 중급</span><span class="tag">시뮬레이터</span><span class="tag">HAL 레퍼런스</span></div></div><div class="lc-check" aria-hidden="true"></div></a><a class="lesson-card" href="lessons/l16.html" data-slug="l16"><div class="lc-no">L16</div><div class="lc-main"><div class="lc-title">실물 보드로 옮기기</div><div class="lc-sum">STM32CubeIDE 설치, .ioc 설정, 빌드와 ST-Link 플래시·디버그, 시뮬레이터와 실물의 차이와 안전한 배선을 정리합니다.</div><div class="lc-meta"><span class="lc-min">90분 · 중급</span><span class="tag">시뮬레이터</span><span class="tag">HAL 레퍼런스</span></div></div><div class="lc-check" aria-hidden="true"></div></a></div></section>
+</section>
+
+<footer class="site-foot">
+  <p>STM32, STM32CubeMX, STM32CubeIDE, Nucleo 는 STMicroelectronics 의 상표입니다. 이 사이트는 교육용 비공식 자료이며,
+  시뮬레이터는 실제 MCU 의 동작을 단순화해 흉내 냅니다. 실물 보드 배선·전원은 L16 의 안전 수칙을 꼭 지키세요.</p>
+  <p class="foot-links">
+    <a href="https://github.com/samcho93/studySTM32" target="_blank" rel="noopener">이 사이트 저장소</a>
+    <a href="https://www.st.com/en/development-tools/stm32cubeide.html" target="_blank" rel="noopener">STM32CubeIDE</a>
+    <a href="https://www.st.com/en/evaluation-tools/nucleo-f411re.html" target="_blank" rel="noopener">NUCLEO-F411RE</a>
+  </p>
+</footer>
+
+</main>
+<script src="assets/js/site.js"></script>
+</body>
+</html>

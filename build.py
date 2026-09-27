@@ -941,6 +941,10 @@ def check_links(pages: list) -> tuple:
                 continue
             target = (page.parent / path).resolve()
             if target.exists():
+                frag = unquote(url.split("#", 1)[1]) if "#" in url else ""
+                if frag and target.suffix == ".html" and \
+                        ('id="%s"' % frag) not in target.read_text(encoding="utf-8"):
+                    broken.append("%s -> %s (앵커 없음)" % (page.relative_to(ROOT).as_posix(), url))
                 continue
             rel = target.relative_to(ROOT).as_posix() if ROOT in target.parents else str(target)
             if rel.startswith("sim/"):

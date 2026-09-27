@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L06. UART와 printf · studySTM32</title>
+<meta name="description" content="USART2(ST-Link VCP)로 문자를 주고받고, __io_putchar 리타깃으로 printf를 쓰며, 수신 인터럽트로 명령어를 처리합니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
+<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="../assets/css/stm32.css">
+<link rel="stylesheet" href="../assets/css/ml-theme.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
+<script src="../assets/js/theme.js"></script>
+</head>
+<body class="lesson-page track-page-comm">
+<button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
+<aside class="sidebar" id="sidebar">
+<nav class="sidebar-nav">
+<div class="brand-row"><a class="brand" href="../index.html"><span class="brand-mark">32</span><span class="brand-text">studySTM32<small>STM32 HAL 인터랙티브 강좌</small></span></a></div>
+<div class="side-tools"><a class="side-tool" href="../sim/index.html">시뮬레이터</a><a class="side-tool" href="../lessons/hal-reference.html">HAL 레퍼런스</a></div>
+<div class="nav-track" data-track="basics">
+<div class="nav-track-title track-basics"><span class="nav-part-no">PART 1</span>시작하기</div>
+<ul>
+<li><a href="../lessons/l01.html" data-slug="l01"><span class="nav-no">L01</span>STM32 시리즈와 개발 환경</a></li>
+<li><a href="../lessons/l02.html" data-slug="l02"><span class="nav-no">L02</span>시뮬레이터 둘러보기와 첫 프로젝트</a></li>
+<li><a href="../lessons/l03.html" data-slug="l03"><span class="nav-no">L03</span>GPIO 출력 — LED</a></li>
+<li><a href="../lessons/l04.html" data-slug="l04"><span class="nav-no">L04</span>GPIO 입력 — 스위치</a></li>
+<li><a href="../lessons/l05.html" data-slug="l05"><span class="nav-no">L05</span>외부 인터럽트 EXTI</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="comm">
+<div class="nav-track-title track-comm"><span class="nav-part-no">PART 2</span>통신·타이머·아날로그</div>
+<ul>
+<li><a href="../lessons/l06.html" class="active" data-slug="l06"><span class="nav-no">L06</span>UART와 printf</a></li>
+<li><a href="../lessons/l07.html" data-slug="l07"><span class="nav-no">L07</span>타이머 인터럽트</a></li>
+<li><a href="../lessons/l08.html" data-slug="l08"><span class="nav-no">L08</span>PWM — LED 밝기와 서보</a></li>
+<li><a href="../lessons/l09.html" data-slug="l09"><span class="nav-no">L09</span>ADC — 가변저항·조도센서</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="periph">
+<div class="nav-track-title track-periph"><span class="nav-part-no">PART 3</span>주변기기</div>
+<ul>
+<li><a href="../lessons/l10.html" data-slug="l10"><span class="nav-no">L10</span>I2C와 LCD1602</a></li>
+<li><a href="../lessons/l11.html" data-slug="l11"><span class="nav-no">L11</span>SPI 기초</a></li>
+<li><a href="../lessons/l12.html" data-slug="l12"><span class="nav-no">L12</span>7세그먼트 FND</a></li>
+<li><a href="../lessons/l13.html" data-slug="l13"><span class="nav-no">L13</span>DC 모터 드라이버</a></li>
+<li><a href="../lessons/l14.html" data-slug="l14"><span class="nav-no">L14</span>스텝모터</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="project">
+<div class="nav-track-title track-project"><span class="nav-part-no">PART 4</span>프로젝트</div>
+<ul>
+<li><a href="../lessons/l15.html" data-slug="l15"><span class="nav-no">L15</span>미니 프로젝트: 스마트 선풍기</a></li>
+<li><a href="../lessons/l16.html" data-slug="l16"><span class="nav-no">L16</span>실물 보드로 옮기기</a></li>
+</ul>
+</div>
+</nav>
+</aside>
+<div class="sidebar-scrim" id="scrim"></div>
+<main class="main">
+<header class="topbar"><a class="topbar-brand" href="../index.html"><span class="brand-mark">32</span>studySTM32</a><nav class="topnav" aria-label="사이트 메뉴"><a href="../index.html">강의 홈</a><a href="../sim/index.html">시뮬레이터</a><a href="../lessons/hal-reference.html">HAL 레퍼런스</a></nav><button class="theme-icon" type="button" data-theme-toggle data-theme-icon aria-label="테마 전환"></button></header>
+
+<article class="lesson" data-slug="l06" data-track="comm">
+  <div class="lesson-head">
+    <div class="crumbs"><span class="track-pill track-comm">PART 2</span> 통신·타이머·아날로그 &middot; 약 70분 &middot; 초급</div>
+    <h1><span class="lesson-no">L06</span>UART와 printf</h1>
+    <p class="lede">USART2(ST-Link VCP)로 문자를 주고받고, __io_putchar 리타깃으로 printf를 쓰며, 수신 인터럽트로 명령어를 처리합니다.</p>
+    <div class="requires">선수 레슨: <a href="l05.html">L05</a></div>
+    <div class="lesson-actions">
+      <label class="done-toggle"><input type="checkbox" id="doneCheck"><span>학습 완료로 표시</span></label>
+      <a class="ghost-btn tool-sim" href="../sim/index.html?ex=l06-printf" data-sim-src="../sim/index.html?ex=l06-printf&amp;embed=1">시뮬레이터에서 실습</a><a class="ghost-btn" href="hal-reference.html">HAL 레퍼런스</a>
+    </div>
+  </div>
+  <div class="lesson-grid">
+    <div class="lesson-body">
+<h2 id="학습-목표">학습 목표<a class="anchor" href="#학습-목표">#</a></h2>
+<ul><li>비동기 직렬 통신(UART)의 프레임(시작 비트, 8N1)과 보레이트를 이해하고, TX ↔ RX 교차 배선을 합니다.</li><li>Nucleo 의 <strong>ST-Link 가상 COM 포트(USART2)</strong> 로 PC 터미널과 문자를 주고받습니다.</li><li><code>__io_putchar</code> <strong>리타깃</strong>으로 <code>printf</code> 를 UART 로 보내고, <strong>줄 버퍼</strong>와 <code>%f</code> 설정 문제를 해결합니다.</li><li><code>HAL_UART_Receive_IT</code> 와 <code>HAL_UART_RxCpltCallback</code> 으로 수신을 인터럽트로 처리하고, 한 줄 명령어를 해석합니다.</li></ul>
+<h2 id="uart-기초">UART 기초<a class="anchor" href="#uart-기초">#</a></h2>
+<p>UART 는 클럭 선 없이 <strong>송신(TX)</strong> 과 <strong>수신(RX)</strong> 두 선으로 데이터를 주고받습니다. 양쪽이 같은 속도(보레이트)를 미리 약속해 두고, 한 글자(바이트)마다 다음 모양의 프레임을 보냅니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">text</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-text"> 대기(HIGH) ─┐  시작  D0 D1 D2 D3 D4 D5 D6 D7  정지 ┌─ 대기
+             └─ 0 ──[   데이터 8비트, LSB 먼저   ]── 1 ┘
+          8N1 = 데이터 8비트, 패리티 없음(None), 정지 비트 1</code></pre></div>
+<p>115200 bps 에서 한 비트는 약 8.7 µs, 한 글자(10비트)는 약 87 µs 입니다. 연결은 <strong>내 TX → 상대 RX, 내 RX ← 상대 TX</strong> 로 교차하고, <strong>GND 를 공통</strong>으로 묶습니다.</p>
+<h3 id="nucleo-의-가상-com-포트">Nucleo 의 가상 COM 포트<a class="anchor" href="#nucleo-의-가상-com-포트">#</a></h3>
+<p>NUCLEO-F411RE 의 <code>USART2</code>(<code>PA2</code> = TX, <code>PA3</code> = RX)는 보드 위 ST-Link 에 연결되어 있고, ST-Link 가 이를 USB 가상 COM 포트(VCP)로 PC 에 보여 줍니다. 그래서 <strong>USB 케이블 하나로</strong> PC 터미널(Tera Term, PuTTY, CubeIDE 콘솔)과 통신할 수 있습니다. 시뮬레이터에서는 보드 내장 <code>vcp</code> 노드가 이 터미널입니다.</p>
+<div class="table-wrap pinmap"><table><thead><tr><th>핀</th><th>신호</th><th>연결</th></tr></thead><tbody><tr><td><code>PA2</code></td><td><code>USART2_TX</code></td><td>ST-Link VCP 의 RX (PC 로 가는 방향)</td></tr><tr><td><code>PA3</code></td><td><code>USART2_RX</code></td><td>ST-Link VCP 의 TX (PC 에서 오는 방향)</td></tr></tbody></table></div>
+<p>CubeMX 설정: <strong>Connectivity → USART2 → Mode: Asynchronous</strong>, Baud Rate <code>115200</code>, Word Length 8 Bits, Parity None, Stop Bits 1. 수신 인터럽트를 쓰려면 <strong>NVIC Settings → USART2 global interrupt</strong> 를 켭니다.</p>
+<h2 id="hal-송수신-함수">HAL 송수신 함수<a class="anchor" href="#hal-송수신-함수">#</a></h2>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_UART_Transmit</span>(<span class="tk-t">UART_HandleTypeDef</span> *huart, <span class="tk-k">const</span> <span class="tk-t">uint8_t</span> *pData, <span class="tk-t">uint16_t</span> Size, <span class="tk-t">uint32_t</span> Timeout);
+<span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_UART_Receive</span>(<span class="tk-t">UART_HandleTypeDef</span> *huart, <span class="tk-t">uint8_t</span> *pData, <span class="tk-t">uint16_t</span> Size, <span class="tk-t">uint32_t</span> Timeout);
+<span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_UART_Receive_IT</span>(<span class="tk-t">UART_HandleTypeDef</span> *huart, <span class="tk-t">uint8_t</span> *pData, <span class="tk-t">uint16_t</span> Size);</code></pre></div>
+<ul><li><code>huart</code> — CubeMX 가 만든 핸들 <code>&amp;huart2</code></li><li><code>Transmit</code> / <code>Receive</code> 는 <strong>다 보내거나 받을 때까지(또는 Timeout ms 까지) 기다리는</strong> 블로킹 함수입니다. <code>HAL_MAX_DELAY</code> 는 무한 대기.</li><li><code>Receive_IT</code> 는 수신을 <strong>예약만 하고 바로 돌아옵니다.</strong> <code>Size</code> 바이트가 다 들어오면 <code>HAL_UART_RxCpltCallback</code> 이 불립니다.</li></ul>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-t">char</span> msg[] = <span class="tk-s">"Hello\r\n"</span>;
+<span class="tk-h">HAL_UART_Transmit</span>(&amp;huart2, (<span class="tk-t">uint8_t</span> *)msg, <span class="tk-f">strlen</span>(msg), <span class="tk-n">100</span>);</code></pre></div>
+<h2 id="printf-리타깃">printf 리타깃<a class="anchor" href="#printf-리타깃">#</a></h2>
+<p><code>printf</code> 는 표준 라이브러리 함수라서 "글자를 어디로 보낼지" 모릅니다. STM32CubeIDE 프로젝트의 <code>syscalls.c</code> 에는 다음과 같은 <code>_write()</code> 가 들어 있고, 글자마다 <code>__io_putchar()</code> 를 부릅니다. 이 함수를 <strong>여러분이 정의해 UART 로 보내면</strong> printf 가 UART 로 나갑니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/syscalls.c (CubeIDE 생성, 요약)</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-k">extern</span> <span class="tk-t">int</span> <span class="tk-f">__io_putchar</span>(<span class="tk-t">int</span> ch) <span class="tk-f">__attribute__</span>((weak));
+
+<span class="tk-t">int</span> <span class="tk-f">_write</span>(<span class="tk-t">int</span> file, <span class="tk-t">char</span> *ptr, <span class="tk-t">int</span> len)
+{
+  <span class="tk-k">for</span> (<span class="tk-t">int</span> i = <span class="tk-n">0</span>; i &lt; len; i++) {
+    <span class="tk-f">__io_putchar</span>(*ptr++);
+  }
+  <span class="tk-k">return</span> len;
+}</code></pre></div>
+<p>리타깃 코드는 이렇게 씁니다. <code>(uint8_t *)&amp;ch</code> 는 <code>int ch</code> 의 첫 바이트(리틀 엔디언이므로 하위 바이트 = 글자)를 가리킵니다.</p>
+<div class="code-block code-example" data-example="l06-printf"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN Includes */</span>
+<span class="tk-p">#include &lt;stdio.h&gt;</span>
+<span class="tk-c">/* USER CODE END Includes */</span>
+
+<span class="tk-c">/* USER CODE BEGIN PFP */</span>
+<span class="tk-t">int</span> <span class="tk-f">__io_putchar</span>(<span class="tk-t">int</span> ch);
+<span class="tk-c">/* USER CODE END PFP */</span>
+
+<span class="tk-c">/* USER CODE BEGIN 4 */</span>
+<span class="tk-c">/* printf 리타깃: syscalls.c 의 _write() 가 글자마다 이 함수를 부릅니다. */</span>
+<span class="tk-t">int</span> <span class="tk-f">__io_putchar</span>(<span class="tk-t">int</span> ch)
+{
+  <span class="tk-h">HAL_UART_Transmit</span>(&amp;huart2, (<span class="tk-t">uint8_t</span> *)&amp;ch, <span class="tk-n">1</span>, <span class="tk-m">HAL_MAX_DELAY</span>);
+  <span class="tk-k">return</span> ch;
+}
+
+<span class="tk-c">/* 요청한 바이트 수를 다 받으면 호출됩니다. */</span>
+<span class="tk-t">void</span> <span class="tk-h">HAL_UART_RxCpltCallback</span>(<span class="tk-t">UART_HandleTypeDef</span> *huart)
+{
+  <span class="tk-k">if</span> (huart-&gt;Instance == <span class="tk-m">USART2</span>) {
+    rx_flag = <span class="tk-n">1</span>;
+    <span class="tk-h">HAL_UART_Receive_IT</span>(&amp;huart2, &amp;rx_byte, <span class="tk-n">1</span>);  <span class="tk-c">// 다음 바이트를 받도록 다시 켜기</span>
+  }
+}
+<span class="tk-c">/* USER CODE END 4 */</span></code></pre></div>
+<div class="callout callout-warn"><div class="callout-title">printf 가 안 나오는 대표 원인 세 가지</div><div class="callout-body"><ol><li><strong>리타깃 함수가 없음</strong> — 실물과 똑같이 시뮬레이터도 <code>__io_putchar</code> (또는 <code>_write</code>) 를 정의해야 출력됩니다.</li><li><strong>줄 버퍼</strong> — stdout 은 <code>\n</code> 이 나올 때 한꺼번에 내보냅니다. <code>printf(&quot;&gt; &quot;)</code> 처럼 줄바꿈이 없으면 쌓여만 있다가 나중에 나옵니다. 바로 보내려면 <code>fflush(stdout);</code> 을 부르세요.</li><li>**<code>%f</code> 가 빈칸** — 용량을 줄인 newlib-nano 는 기본으로 실수 출력을 뺍니다. CubeIDE 에서 <em>Project Properties → C/C++ Build → Settings → MCU Settings → Use float with printf from newlib-nano (-u _printf_float)</em> 를 켜야 합니다. 시뮬레이터는 프로젝트 설정 <code>printfFloat</code> 이 같은 역할입니다(L09 에서 사용).</li></ol></div></div>
+<p>터미널 프로그램은 줄바꿈으로 <code>\r\n</code>(CR LF) 을 기대하는 경우가 많아 예제는 <code>\r\n</code> 으로 끝냅니다.</p>
+<h2 id="예제-1-printf-카운터-수신-에코">예제 1 — printf 카운터 + 수신 에코<a class="anchor" href="#예제-1-printf-카운터-수신-에코">#</a></h2>
+<p>1초마다 카운터를 출력하면서, 터미널에서 입력한 글자를 받아 되돌려 보냅니다.</p>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l06-printf" data-sim-src="../sim/index.html?ex=l06-printf&amp;embed=1" data-sim-id="l06-printf"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">printf 카운터 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l06-printf" target="_blank" rel="noopener">새 창</a><code class="sim-id">l06-printf</code></div>
+<div class="code-block code-example" data-example="l06-printf"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN PV */</span>
+<span class="tk-t">uint8_t</span> rx_byte;               <span class="tk-c">// 수신 1바이트 버퍼</span>
+<span class="tk-k">volatile</span> <span class="tk-t">uint8_t</span> rx_flag = <span class="tk-n">0</span>;  <span class="tk-c">// 콜백 -&gt; 메인 루프 알림</span>
+<span class="tk-t">uint32_t</span> count = <span class="tk-n">0</span>;
+<span class="tk-t">uint32_t</span> last_print = <span class="tk-n">0</span>;
+<span class="tk-c">/* USER CODE END PV */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN 2 */</span>
+  <span class="tk-f">printf</span>(<span class="tk-s">"\r\nHello, STM32!\r\n"</span>);
+  <span class="tk-h">HAL_UART_Receive_IT</span>(&amp;huart2, &amp;rx_byte, <span class="tk-n">1</span>);    <span class="tk-c">// 1바이트 수신 인터럽트 시작</span>
+  <span class="tk-c">/* USER CODE END 2 */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    <span class="tk-k">if</span> (<span class="tk-h">HAL_GetTick</span>() - last_print &gt;= <span class="tk-n">1000</span>) {   <span class="tk-c">// 1초마다 (HAL_Delay 없이)</span>
+      last_print = <span class="tk-h">HAL_GetTick</span>();
+      <span class="tk-f">printf</span>(<span class="tk-s">"count = %lu\r\n"</span>, count++);
+      <span class="tk-h">HAL_GPIO_TogglePin</span>(LD2_GPIO_Port, LD2_Pin);
+    }
+    <span class="tk-k">if</span> (rx_flag) {
+      rx_flag = <span class="tk-n">0</span>;
+      <span class="tk-f">printf</span>(<span class="tk-s">"echo: %c (0x%02X)\r\n"</span>, rx_byte, rx_byte);
+    }
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span>
+
+<span class="tk-c">/* USER CODE BEGIN 4 */</span>
+<span class="tk-c">/* printf 리타깃: syscalls.c 의 _write() 가 글자마다 이 함수를 부릅니다. */</span>
+<span class="tk-t">int</span> <span class="tk-f">__io_putchar</span>(<span class="tk-t">int</span> ch)
+{
+  <span class="tk-h">HAL_UART_Transmit</span>(&amp;huart2, (<span class="tk-t">uint8_t</span> *)&amp;ch, <span class="tk-n">1</span>, <span class="tk-m">HAL_MAX_DELAY</span>);
+  <span class="tk-k">return</span> ch;
+}
+
+<span class="tk-c">/* 요청한 바이트 수를 다 받으면 호출됩니다. */</span>
+<span class="tk-t">void</span> <span class="tk-h">HAL_UART_RxCpltCallback</span>(<span class="tk-t">UART_HandleTypeDef</span> *huart)
+{
+  <span class="tk-k">if</span> (huart-&gt;Instance == <span class="tk-m">USART2</span>) {
+    rx_flag = <span class="tk-n">1</span>;
+    <span class="tk-h">HAL_UART_Receive_IT</span>(&amp;huart2, &amp;rx_byte, <span class="tk-n">1</span>);  <span class="tk-c">// 다음 바이트를 받도록 다시 켜기</span>
+  }
+}
+<span class="tk-c">/* USER CODE END 4 */</span></code></pre></div>
+<h3 id="코드-읽기">코드 읽기<a class="anchor" href="#코드-읽기">#</a></h3>
+<ul><li>**<code>HAL_Delay</code> 없이 1초마다** — <code>HAL_GetTick() - last_print &gt;= 1000</code> 을 확인하는 방식이라 루프가 멈추지 않고, 그 사이에 수신 처리도 할 수 있습니다.</li><li><strong>수신 인터럽트</strong> — <code>u2</code> 에서 한 번 <code>HAL_UART_Receive_IT</code> 로 1바이트 수신을 예약하고, 콜백에서 <strong>다시 예약</strong>합니다. 다시 예약하지 않으면 첫 글자만 받고 끝납니다.</li><li><strong>콜백은 짧게</strong> — 콜백은 <code>rx_flag</code> 만 세우고, printf 는 메인 루프에서 합니다(L05 의 규칙).</li><li><code>%lu</code> — <code>uint32_t</code> 는 Arm GCC 에서 <code>unsigned long</code> 이므로 <code>%lu</code> 가 맞습니다(<code>%u</code> 도 동작하지만 경고).</li></ul>
+<h2 id="예제-2-한-줄-명령어로-led-제어">예제 2 — 한 줄 명령어로 LED 제어<a class="anchor" href="#예제-2-한-줄-명령어로-led-제어">#</a></h2>
+<p>글자를 버퍼에 모아 두었다가 Enter(<code>\r</code> 또는 <code>\n</code>)가 오면 한 줄을 완성하고, 메인 루프에서 <code>strcmp</code> 로 명령을 해석합니다.</p>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l06-command" data-sim-src="../sim/index.html?ex=l06-command&amp;embed=1" data-sim-id="l06-command"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">UART 명령어 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l06-command" target="_blank" rel="noopener">새 창</a><code class="sim-id">l06-command</code></div>
+<div class="code-block code-example" data-example="l06-command"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN PV */</span>
+<span class="tk-t">uint8_t</span> rx_byte;
+<span class="tk-t">char</span> line[<span class="tk-n">32</span>];                   <span class="tk-c">// 한 줄 명령 버퍼</span>
+<span class="tk-t">uint8_t</span> line_len = <span class="tk-n">0</span>;
+<span class="tk-k">volatile</span> <span class="tk-t">uint8_t</span> line_ready = <span class="tk-n">0</span>; <span class="tk-c">// Enter 가 들어오면 1</span>
+<span class="tk-c">/* USER CODE END PV */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN 2 */</span>
+  <span class="tk-f">printf</span>(<span class="tk-s">"\r\nCommands: on, off, toggle\r\n&gt; "</span>);
+  <span class="tk-f">fflush</span>(stdout);                               <span class="tk-c">// 줄바꿈 없는 프롬프트를 바로 내보내기</span>
+  <span class="tk-h">HAL_UART_Receive_IT</span>(&amp;huart2, &amp;rx_byte, <span class="tk-n">1</span>);
+  <span class="tk-c">/* USER CODE END 2 */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    <span class="tk-k">if</span> (line_ready) {
+      <span class="tk-k">if</span> (<span class="tk-f">strcmp</span>(line, <span class="tk-s">"on"</span>) == <span class="tk-n">0</span>) {
+        <span class="tk-h">HAL_GPIO_WritePin</span>(LD2_GPIO_Port, LD2_Pin, <span class="tk-m">GPIO_PIN_SET</span>);
+        <span class="tk-f">printf</span>(<span class="tk-s">"LED ON\r\n"</span>);
+      } <span class="tk-k">else</span> <span class="tk-k">if</span> (<span class="tk-f">strcmp</span>(line, <span class="tk-s">"off"</span>) == <span class="tk-n">0</span>) {
+        <span class="tk-h">HAL_GPIO_WritePin</span>(LD2_GPIO_Port, LD2_Pin, <span class="tk-m">GPIO_PIN_RESET</span>);
+        <span class="tk-f">printf</span>(<span class="tk-s">"LED OFF\r\n"</span>);
+      } <span class="tk-k">else</span> <span class="tk-k">if</span> (<span class="tk-f">strcmp</span>(line, <span class="tk-s">"toggle"</span>) == <span class="tk-n">0</span>) {
+        <span class="tk-h">HAL_GPIO_TogglePin</span>(LD2_GPIO_Port, LD2_Pin);
+        <span class="tk-f">printf</span>(<span class="tk-s">"LED TOGGLE\r\n"</span>);
+      } <span class="tk-k">else</span> {
+        <span class="tk-f">printf</span>(<span class="tk-s">"unknown command: %s\r\n"</span>, line);
+      }
+      <span class="tk-f">printf</span>(<span class="tk-s">"&gt; "</span>);
+      <span class="tk-f">fflush</span>(stdout);
+      line_len = <span class="tk-n">0</span>;
+      line_ready = <span class="tk-n">0</span>;              <span class="tk-c">// 처리 끝: 다음 줄 받기 허용</span>
+    }
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span>
+
+<span class="tk-c">/* USER CODE BEGIN 4 */</span>
+<span class="tk-c">/* printf 리타깃: syscalls.c 의 _write() 가 글자마다 이 함수를 부릅니다. */</span>
+<span class="tk-t">int</span> <span class="tk-f">__io_putchar</span>(<span class="tk-t">int</span> ch)
+{
+  <span class="tk-h">HAL_UART_Transmit</span>(&amp;huart2, (<span class="tk-t">uint8_t</span> *)&amp;ch, <span class="tk-n">1</span>, <span class="tk-m">HAL_MAX_DELAY</span>);
+  <span class="tk-k">return</span> ch;
+}
+
+<span class="tk-t">void</span> <span class="tk-h">HAL_UART_RxCpltCallback</span>(<span class="tk-t">UART_HandleTypeDef</span> *huart)
+{
+  <span class="tk-k">if</span> (huart-&gt;Instance == <span class="tk-m">USART2</span>) {
+    <span class="tk-k">if</span> (rx_byte == <span class="tk-s">'\r'</span> || rx_byte == <span class="tk-s">'\n'</span>) {
+      <span class="tk-k">if</span> (line_len &gt; <span class="tk-n">0</span> &amp;&amp; !line_ready) {
+        line[line_len] = <span class="tk-s">'\0'</span>;     <span class="tk-c">// 문자열 끝 표시</span>
+        line_ready = <span class="tk-n">1</span>;
+      }
+    } <span class="tk-k">else</span> <span class="tk-k">if</span> (!line_ready &amp;&amp; line_len &lt; <span class="tk-k">sizeof</span>(line) - <span class="tk-n">1</span>) {
+      line[line_len++] = rx_byte;
+    }
+    <span class="tk-h">HAL_UART_Receive_IT</span>(&amp;huart2, &amp;rx_byte, <span class="tk-n">1</span>);
+  }
+}
+<span class="tk-c">/* USER CODE END 4 */</span></code></pre></div>
+<ul><li><code>line[line_len] = &#x27;\0&#x27;</code> — C 문자열은 끝에 0 이 있어야 <code>strcmp</code>, <code>printf(&quot;%s&quot;)</code> 가 끝을 압니다.</li><li><code>line_len &lt; sizeof(line) - 1</code> — 버퍼가 넘치지 않도록 마지막 한 칸은 <code>&#x27;\0&#x27;</code> 자리로 남깁니다.</li><li>한 줄을 처리하는 동안(<code>line_ready == 1</code>) 들어온 글자는 버립니다. 더 견고하게 하려면 링 버퍼를 씁니다(과제).</li></ul>
+<div class="callout callout-task"><div class="callout-title">실습</div><div class="callout-body"><ol><li>예제 1에서 보레이트를 <code>9600</code> 으로 바꾸고(핀아웃·설정의 USART2), 터미널은 115200 그대로 두면 어떻게 보이나요? 다시 맞춰 보세요.</li><li>예제 1의 콜백에서 <code>HAL_UART_Receive_IT</code> 줄을 지우면 어떻게 되나요?</li><li>예제 2에 <code>blink &lt;ms&gt;</code> 명령을 추가하세요. 예: <code>blink 200</code> → LD2 를 200 ms 간격으로 깜빡임. (힌트: <code>strncmp(line, &quot;blink &quot;, 6)</code>, <code>atoi(line + 6)</code>)</li></ol></div></div>
+<div class="callout callout-check"><div class="callout-title">스스로 확인</div><div class="callout-body"><ul><li>115200 bps 로 100 글자를 보내는 데 대략 몇 ms 가 걸리나요? 그동안 <code>HAL_UART_Transmit</code> 은 무엇을 하나요?</li><li><code>printf(&quot;A&quot;); HAL_Delay(3000); printf(&quot;B\r\n&quot;);</code> 을 실행하면 터미널에 언제 무엇이 보이나요?</li></ul></div></div>
+<h2 id="자주-나는-오류와-해결">자주 나는 오류와 해결<a class="anchor" href="#자주-나는-오류와-해결">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인</th><th>해결</th></tr></thead><tbody><tr><td>터미널에 알 수 없는 글자(깨진 문자)만 나옴</td><td><strong>보레이트 불일치</strong>, 클럭 설정 오류</td><td>양쪽 보레이트·8N1 동일하게, SystemClock 설정 확인</td></tr><tr><td>printf 가 아무것도 안 나옴</td><td>리타깃 함수 없음, <code>__io_putchar</code> 이름 오타</td><td>USER CODE 4 에 <code>__io_putchar</code> 정의, PFP 에 원형</td></tr><tr><td>줄바꿈 없는 printf 가 늦게 나옴</td><td>stdout 줄 버퍼</td><td><code>\n</code> 을 붙이거나 <code>fflush(stdout)</code></td></tr><tr><td><code>%f</code> 자리에 아무것도 없음</td><td>newlib-nano 실수 출력 꺼짐</td><td><code>-u _printf_float</code> (시뮬레이터: <code>printfFloat</code> 설정)</td></tr><tr><td>첫 글자만 받고 이후 수신 안 됨</td><td>콜백에서 <code>Receive_IT</code> 재예약 누락</td><td>콜백 끝에서 다시 <code>HAL_UART_Receive_IT</code></td></tr><tr><td>수신 콜백이 전혀 안 불림</td><td>NVIC 에서 USART2 global interrupt 꺼짐</td><td>NVIC 켜기</td></tr><tr><td>실물에서 COM 포트가 안 보임</td><td>ST-Link 드라이버, 충전 전용 케이블</td><td>드라이버 설치, 장치 관리자에서 <em>STMicroelectronics STLink Virtual COM Port</em> 확인</td></tr></tbody></table></div>
+<h2 id="과제">과제<a class="anchor" href="#과제">#</a></h2>
+<ol><li>수신 바이트를 64바이트 <strong>링 버퍼</strong>에 넣는 방식으로 예제 2를 바꾸세요. 콜백은 넣기만, 메인 루프는 꺼내서 줄을 조립합니다.</li><li><code>HAL_UART_Transmit</code> 대신 <code>HAL_UART_Transmit_IT</code> 를 쓰는 <code>__io_putchar</code> 를 만들면 어떤 문제가 생기는지 조사하세요. (힌트: 전송 중 버퍼)</li><li><code>status</code> 명령을 추가해 가동 시간(<code>HAL_GetTick()</code>), LED 상태, 받은 명령 수를 한 번에 출력하세요.</li></ol>
+<h2 id="참고자료">참고자료<a class="anchor" href="#참고자료">#</a></h2>
+<ul><li>ST, <em>RM0383</em>, 19장 USART</li><li>ST, <em>UM1725 — STM32F4 HAL</em>, UART Generic Driver (<code>HAL_UART_Transmit</code>, <code>HAL_UART_Receive_IT</code>, 콜백)</li><li>ST, <em>UM1724 — Nucleo-64 user manual</em>, ST-Link 가상 COM 포트와 USART2 연결(SB13/SB14)</li><li>이 사이트의 <a href="hal-reference.html#uart">HAL 레퍼런스 — UART</a></li></ul>
+      <nav class="pager"><a class="pager-prev" href="l05.html"><span>이전 · L05</span>외부 인터럽트 EXTI</a><a class="pager-next" href="l07.html"><span>다음 · L07</span>타이머 인터럽트</a></nav>
+    </div>
+    <aside class="lesson-toc"><div class="toc-title">이 레슨의 내용</div><div class="toc-links"><a class="toc-l2" href="#학습-목표">학습 목표</a><a class="toc-l2" href="#uart-기초">UART 기초</a><a class="toc-l3" href="#nucleo-의-가상-com-포트">Nucleo 의 가상 COM 포트</a><a class="toc-l2" href="#hal-송수신-함수">HAL 송수신 함수</a><a class="toc-l2" href="#printf-리타깃">printf 리타깃</a><a class="toc-l2" href="#예제-1-printf-카운터-수신-에코">예제 1 — printf 카운터 + 수신 에코</a><a class="toc-l3" href="#코드-읽기">코드 읽기</a><a class="toc-l2" href="#예제-2-한-줄-명령어로-led-제어">예제 2 — 한 줄 명령어로 LED 제어</a><a class="toc-l2" href="#자주-나는-오류와-해결">자주 나는 오류와 해결</a><a class="toc-l2" href="#과제">과제</a><a class="toc-l2" href="#참고자료">참고자료</a></div></aside>
+  </div>
+</article>
+
+</main>
+<script src="../assets/js/site.js"></script>
+</body>
+</html>

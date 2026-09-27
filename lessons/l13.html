@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L13. DC 모터 드라이버 · studySTM32</title>
+<meta name="description" content="L298N의 IN1·IN2·ENA로 방향과 PWM 속도를 제어하고, 가변저항·버튼으로 속도와 방향을 바꿉니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
+<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="../assets/css/stm32.css">
+<link rel="stylesheet" href="../assets/css/ml-theme.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
+<script src="../assets/js/theme.js"></script>
+</head>
+<body class="lesson-page track-page-periph">
+<button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
+<aside class="sidebar" id="sidebar">
+<nav class="sidebar-nav">
+<div class="brand-row"><a class="brand" href="../index.html"><span class="brand-mark">32</span><span class="brand-text">studySTM32<small>STM32 HAL 인터랙티브 강좌</small></span></a></div>
+<div class="side-tools"><a class="side-tool" href="../sim/index.html">시뮬레이터</a><a class="side-tool" href="../lessons/hal-reference.html">HAL 레퍼런스</a></div>
+<div class="nav-track" data-track="basics">
+<div class="nav-track-title track-basics"><span class="nav-part-no">PART 1</span>시작하기</div>
+<ul>
+<li><a href="../lessons/l01.html" data-slug="l01"><span class="nav-no">L01</span>STM32 시리즈와 개발 환경</a></li>
+<li><a href="../lessons/l02.html" data-slug="l02"><span class="nav-no">L02</span>시뮬레이터 둘러보기와 첫 프로젝트</a></li>
+<li><a href="../lessons/l03.html" data-slug="l03"><span class="nav-no">L03</span>GPIO 출력 — LED</a></li>
+<li><a href="../lessons/l04.html" data-slug="l04"><span class="nav-no">L04</span>GPIO 입력 — 스위치</a></li>
+<li><a href="../lessons/l05.html" data-slug="l05"><span class="nav-no">L05</span>외부 인터럽트 EXTI</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="comm">
+<div class="nav-track-title track-comm"><span class="nav-part-no">PART 2</span>통신·타이머·아날로그</div>
+<ul>
+<li><a href="../lessons/l06.html" data-slug="l06"><span class="nav-no">L06</span>UART와 printf</a></li>
+<li><a href="../lessons/l07.html" data-slug="l07"><span class="nav-no">L07</span>타이머 인터럽트</a></li>
+<li><a href="../lessons/l08.html" data-slug="l08"><span class="nav-no">L08</span>PWM — LED 밝기와 서보</a></li>
+<li><a href="../lessons/l09.html" data-slug="l09"><span class="nav-no">L09</span>ADC — 가변저항·조도센서</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="periph">
+<div class="nav-track-title track-periph"><span class="nav-part-no">PART 3</span>주변기기</div>
+<ul>
+<li><a href="../lessons/l10.html" data-slug="l10"><span class="nav-no">L10</span>I2C와 LCD1602</a></li>
+<li><a href="../lessons/l11.html" data-slug="l11"><span class="nav-no">L11</span>SPI 기초</a></li>
+<li><a href="../lessons/l12.html" data-slug="l12"><span class="nav-no">L12</span>7세그먼트 FND</a></li>
+<li><a href="../lessons/l13.html" class="active" data-slug="l13"><span class="nav-no">L13</span>DC 모터 드라이버</a></li>
+<li><a href="../lessons/l14.html" data-slug="l14"><span class="nav-no">L14</span>스텝모터</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="project">
+<div class="nav-track-title track-project"><span class="nav-part-no">PART 4</span>프로젝트</div>
+<ul>
+<li><a href="../lessons/l15.html" data-slug="l15"><span class="nav-no">L15</span>미니 프로젝트: 스마트 선풍기</a></li>
+<li><a href="../lessons/l16.html" data-slug="l16"><span class="nav-no">L16</span>실물 보드로 옮기기</a></li>
+</ul>
+</div>
+</nav>
+</aside>
+<div class="sidebar-scrim" id="scrim"></div>
+<main class="main">
+<header class="topbar"><a class="topbar-brand" href="../index.html"><span class="brand-mark">32</span>studySTM32</a><nav class="topnav" aria-label="사이트 메뉴"><a href="../index.html">강의 홈</a><a href="../sim/index.html">시뮬레이터</a><a href="../lessons/hal-reference.html">HAL 레퍼런스</a></nav><button class="theme-icon" type="button" data-theme-toggle data-theme-icon aria-label="테마 전환"></button></header>
+
+<article class="lesson" data-slug="l13" data-track="periph">
+  <div class="lesson-head">
+    <div class="crumbs"><span class="track-pill track-periph">PART 3</span> 주변기기 &middot; 약 70분 &middot; 중급</div>
+    <h1><span class="lesson-no">L13</span>DC 모터 드라이버</h1>
+    <p class="lede">L298N의 IN1·IN2·ENA로 방향과 PWM 속도를 제어하고, 가변저항·버튼으로 속도와 방향을 바꿉니다.</p>
+    <div class="requires">선수 레슨: <a href="l08.html">L08</a> <a href="l09.html">L09</a></div>
+    <div class="lesson-actions">
+      <label class="done-toggle"><input type="checkbox" id="doneCheck"><span>학습 완료로 표시</span></label>
+      <a class="ghost-btn tool-sim" href="../sim/index.html?ex=l13-motor-basic" data-sim-src="../sim/index.html?ex=l13-motor-basic&amp;embed=1">시뮬레이터에서 실습</a>
+    </div>
+  </div>
+  <div class="lesson-grid">
+    <div class="lesson-body">
+<h2 id="학습-목표">학습 목표<a class="anchor" href="#학습-목표">#</a></h2>
+<ul><li>MCU 핀으로 모터를 직접 돌리면 안 되는 이유와 <strong>H-브리지</strong> 드라이버의 원리를 설명합니다.</li><li>L298N 모듈의 <strong>IN1 · IN2(방향)</strong> 와 <strong>ENA(PWM 속도)</strong> 로 정방향 · 역방향 · 정지를 제어합니다.</li><li>모터용 PWM 주파수를 고르고(PSC · ARR), 방향과 속도를 합친 <code>motor_set(-999 ~ +999)</code> 함수를 씁니다.</li><li>가변저항으로 속도, 버튼 인터럽트로 방향을 바꾸는 프로그램을 만듭니다.</li></ul>
+<h2 id="왜-드라이버가-필요한가">왜 드라이버가 필요한가<a class="anchor" href="#왜-드라이버가-필요한가">#</a></h2>
+<p>작은 DC 모터도 수백 mA ~ 수 A 를 흘리고, 멈출 때는 코일에서 <strong>역기전력</strong>(전압 스파이크)이 생깁니다. STM32 핀은 수 mA ~ 20 mA 밖에 못 내고 3.3 V 이므로 모터를 직접 연결하면 핀이 망가집니다. 모터는 <strong>별도 전원 + 드라이버</strong>로 돌리고, MCU 는 드라이버에 <strong>논리 신호만</strong> 줍니다.</p>
+<p><strong>H-브리지</strong>는 스위치 4개를 H 모양으로 배치해, 대각선 두 개를 켜는 방향에 따라 모터에 흐르는 전류 방향(= 회전 방향)을 바꿉니다. L298N 은 H-브리지 두 개(모터 A, B)가 든 칩이고, 흔히 쓰는 빨간 모듈에는 5 V 레귤레이터와 방열판이 붙어 있습니다.</p>
+<h2 id="l298n-모듈-연결">L298N 모듈 연결<a class="anchor" href="#l298n-모듈-연결">#</a></h2>
+<div class="table-wrap pinmap"><table><thead><tr><th>STM32 핀</th><th>신호</th><th>L298N</th><th>역할</th></tr></thead><tbody><tr><td><code>PB4</code></td><td><code>GPIO_Output</code>, 라벨 <code>MOTOR_IN1</code></td><td>IN1</td><td>방향</td></tr><tr><td><code>PB5</code></td><td><code>GPIO_Output</code>, 라벨 <code>MOTOR_IN2</code></td><td>IN2</td><td>방향</td></tr><tr><td><code>PA6</code></td><td><code>TIM3_CH1</code> (PWM)</td><td><strong>ENA</strong> (점퍼 제거)</td><td>속도</td></tr><tr><td>GND</td><td>—</td><td>GND</td><td><strong>공통 접지 필수</strong></td></tr><tr><td>—</td><td>—</td><td>12V(VS)</td><td>모터 전원 (배터리/어댑터)</td></tr><tr><td>—</td><td>—</td><td>OUT1 · OUT2</td><td>모터 두 선</td></tr></tbody></table></div>
+<p>모듈의 ENA 핀에는 보통 점퍼가 꽂혀 있어 항상 HIGH(최고 속도)입니다. <strong>점퍼를 빼고</strong> ENA 에 PWM 을 연결해야 속도를 조절할 수 있습니다.</p>
+<h3 id="진리표-l298n-데이터시트">진리표 (L298N 데이터시트)<a class="anchor" href="#진리표-l298n-데이터시트">#</a></h3>
+<div class="table-wrap"><table><thead><tr><th>ENA</th><th>IN1</th><th>IN2</th><th>동작</th></tr></thead><tbody><tr><td>H (또는 PWM)</td><td>H</td><td>L</td><td>정방향</td></tr><tr><td>H (또는 PWM)</td><td>L</td><td>H</td><td>역방향</td></tr><tr><td>H</td><td>같음 (L,L / H,H)</td><td></td><td><strong>급정지</strong>(브레이크 — 모터 단자를 단락)</td></tr><tr><td>L</td><td>X</td><td>X</td><td><strong>자유 정지</strong>(전원 차단, 관성으로 멈춤)</td></tr></tbody></table></div>
+<p>PWM 을 ENA 에 넣으면 H 인 동안만 전원이 걸려 평균 전압이 듀티비에 비례합니다.</p>
+<h3 id="pwm-주파수">PWM 주파수<a class="anchor" href="#pwm-주파수">#</a></h3>
+<p>1 kHz 같은 낮은 주파수로 모터를 돌리면 코일이 떨며 <strong>"삐-" 소리</strong>가 납니다. 사람 귀에 들리지 않는 20 kHz 근처를 많이 씁니다.</p>
+<ul><li>84 MHz / (PSC 3 + 1) / (ARR 999 + 1) = <strong>21 kHz</strong>, 듀티 범위 0 ~ 999</li></ul>
+<p>CubeMX: <code>PA6</code> → <code>TIM3_CH1</code>, TIM3 Channel1 <strong>PWM Generation CH1</strong>, Prescaler <code>3</code>, Counter Period <code>999</code>, Pulse <code>0</code>.</p>
+<div class="callout callout-info"><div class="callout-title">L298N 은 전압을 먹습니다</div><div class="callout-body"><p>L298N 은 오래된 바이폴라 트랜지스터 구조라 출력에서 <strong>약 2 V(최대 수 V)</strong> 가 빠집니다. 6 V 모터를 6 V 전원으로 돌리면 약 4 V 만 걸립니다. 효율이 중요한 작품에는 TB6612FNG, DRV8833 같은 MOSFET 드라이버가 더 좋습니다. 제어 방법(IN1/IN2 + PWM)은 거의 같습니다.</p></div></div>
+<h2 id="motorset-함수">motor_set 함수<a class="anchor" href="#motorset-함수">#</a></h2>
+<p>방향과 속도를 부호 있는 정수 하나로 다루면 코드가 깔끔해집니다. 양수 = 정방향, 음수 = 역방향, 0 = 정지.</p>
+<div class="code-block code-example" data-example="l13-motor-basic"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN 0 */</span>
+<span class="tk-c">/* speed: -999 ~ +999. 부호가 방향, 크기가 PWM 듀티(ARR=999 기준)입니다. */</span>
+<span class="tk-t">void</span> <span class="tk-f">motor_set</span>(<span class="tk-t">int</span> speed)
+{
+  <span class="tk-k">if</span> (speed &gt; <span class="tk-n">999</span>) speed = <span class="tk-n">999</span>;
+  <span class="tk-k">if</span> (speed &lt; -<span class="tk-n">999</span>) speed = -<span class="tk-n">999</span>;
+
+  <span class="tk-k">if</span> (speed &gt; <span class="tk-n">0</span>) {                 <span class="tk-c">// 정방향: IN1=1, IN2=0</span>
+    <span class="tk-h">HAL_GPIO_WritePin</span>(MOTOR_IN1_GPIO_Port, MOTOR_IN1_Pin, <span class="tk-m">GPIO_PIN_SET</span>);
+    <span class="tk-h">HAL_GPIO_WritePin</span>(MOTOR_IN2_GPIO_Port, MOTOR_IN2_Pin, <span class="tk-m">GPIO_PIN_RESET</span>);
+  } <span class="tk-k">else</span> <span class="tk-k">if</span> (speed &lt; <span class="tk-n">0</span>) {          <span class="tk-c">// 역방향: IN1=0, IN2=1</span>
+    <span class="tk-h">HAL_GPIO_WritePin</span>(MOTOR_IN1_GPIO_Port, MOTOR_IN1_Pin, <span class="tk-m">GPIO_PIN_RESET</span>);
+    <span class="tk-h">HAL_GPIO_WritePin</span>(MOTOR_IN2_GPIO_Port, MOTOR_IN2_Pin, <span class="tk-m">GPIO_PIN_SET</span>);
+    speed = -speed;
+  } <span class="tk-k">else</span> {                         <span class="tk-c">// 정지: EN=0 이면 자유 회전으로 멈춤</span>
+    <span class="tk-h">HAL_GPIO_WritePin</span>(MOTOR_IN1_GPIO_Port, MOTOR_IN1_Pin, <span class="tk-m">GPIO_PIN_RESET</span>);
+    <span class="tk-h">HAL_GPIO_WritePin</span>(MOTOR_IN2_GPIO_Port, MOTOR_IN2_Pin, <span class="tk-m">GPIO_PIN_RESET</span>);
+  }
+  <span class="tk-h">__HAL_TIM_SET_COMPARE</span>(&amp;htim3, <span class="tk-m">TIM_CHANNEL_1</span>, speed);   <span class="tk-c">// ENA 에 PWM</span>
+}
+<span class="tk-c">/* USER CODE END 0 */</span></code></pre></div>
+<h2 id="예제-1-정방향-정지-역방향">예제 1 — 정방향 · 정지 · 역방향<a class="anchor" href="#예제-1-정방향-정지-역방향">#</a></h2>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l13-motor-basic" data-sim-src="../sim/index.html?ex=l13-motor-basic&amp;embed=1" data-sim-id="l13-motor-basic"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">모터 기본 동작 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l13-motor-basic" target="_blank" rel="noopener">새 창</a><code class="sim-id">l13-motor-basic</code></div>
+<div class="code-block code-example" data-example="l13-motor-basic"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c">  <span class="tk-c">/* USER CODE BEGIN 2 */</span>
+  <span class="tk-h">HAL_TIM_PWM_Start</span>(&amp;htim3, <span class="tk-m">TIM_CHANNEL_1</span>);
+  <span class="tk-c">/* USER CODE END 2 */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    <span class="tk-f">motor_set</span>(<span class="tk-n">600</span>);    <span class="tk-c">// 정방향 60 %</span>
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">2000</span>);
+    <span class="tk-f">motor_set</span>(<span class="tk-n">0</span>);      <span class="tk-c">// 정지</span>
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">1000</span>);
+    <span class="tk-f">motor_set</span>(-<span class="tk-n">999</span>);   <span class="tk-c">// 역방향 100 %</span>
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">2000</span>);
+    <span class="tk-f">motor_set</span>(<span class="tk-n">0</span>);
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">1000</span>);
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span></code></pre></div>
+<p>시뮬레이터의 모터 노드는 ENA 듀티와 IN1/IN2 에 따라 회전 방향과 속도(최대 <code>maxRpm</code>)를 보여 줍니다. 실물 모터는 듀티가 너무 낮으면(보통 20~30 % 이하) 마찰을 이기지 못해 <strong>돌지 않고 윙 소리만</strong> 납니다.</p>
+<h2 id="예제-2-가변저항-속도-버튼-방향">예제 2 — 가변저항 속도 + 버튼 방향<a class="anchor" href="#예제-2-가변저항-속도-버튼-방향">#</a></h2>
+<p>가변저항(<code>PA0</code>, ADC1_IN0)으로 속도를, B1(EXTI)으로 방향을 바꿉니다. 상태는 1초에 두 번 UART 로 기록합니다.</p>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l13-motor" data-sim-src="../sim/index.html?ex=l13-motor&amp;embed=1" data-sim-id="l13-motor"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">가변저항 + 버튼 모터 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l13-motor" target="_blank" rel="noopener">새 창</a><code class="sim-id">l13-motor</code></div>
+<div class="code-block code-example" data-example="l13-motor"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN PV */</span>
+<span class="tk-k">volatile</span> <span class="tk-t">int</span> dir = <span class="tk-n">1</span>;              <span class="tk-c">// +1 정방향, -1 역방향 (버튼 인터럽트가 바꿈)</span>
+<span class="tk-k">volatile</span> <span class="tk-t">uint32_t</span> last_press = <span class="tk-n">0</span>;
+<span class="tk-t">int</span> last_dir = <span class="tk-n">1</span>;
+<span class="tk-t">uint32_t</span> last_print = <span class="tk-n">0</span>;
+<span class="tk-c">/* USER CODE END PV */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    <span class="tk-t">int</span> speed = (<span class="tk-t">int</span>)(<span class="tk-f">read_pot</span>() * <span class="tk-n">999</span> / <span class="tk-n">4095</span>);
+    <span class="tk-k">if</span> (speed &lt; <span class="tk-n">50</span>) speed = <span class="tk-n">0</span>;          <span class="tk-c">// 데드존: 끝까지 내리면 확실히 정지</span>
+
+    <span class="tk-k">if</span> (dir != last_dir) {              <span class="tk-c">// 방향이 바뀌면 먼저 멈췄다가</span>
+      <span class="tk-f">motor_set</span>(<span class="tk-n">0</span>);
+      <span class="tk-h">HAL_Delay</span>(<span class="tk-n">300</span>);
+      last_dir = dir;
+    }
+    <span class="tk-f">motor_set</span>(dir * speed);
+
+    <span class="tk-k">if</span> (<span class="tk-h">HAL_GetTick</span>() - last_print &gt;= <span class="tk-n">500</span>) {
+      last_print = <span class="tk-h">HAL_GetTick</span>();
+      <span class="tk-f">printf</span>(<span class="tk-s">"dir=%s  duty=%d%%\r\n"</span>, dir &gt; <span class="tk-n">0</span> ? <span class="tk-s">"CW "</span> : <span class="tk-s">"CCW"</span>, speed * <span class="tk-n">100</span> / <span class="tk-n">999</span>);
+    }
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">20</span>);
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span>
+
+<span class="tk-c">/* USER CODE BEGIN 4 */</span>
+<span class="tk-c">/* printf 리타깃: syscalls.c 의 _write() 가 글자마다 이 함수를 부릅니다. */</span>
+<span class="tk-t">int</span> <span class="tk-f">__io_putchar</span>(<span class="tk-t">int</span> ch)
+{
+  <span class="tk-h">HAL_UART_Transmit</span>(&amp;huart2, (<span class="tk-t">uint8_t</span> *)&amp;ch, <span class="tk-n">1</span>, <span class="tk-m">HAL_MAX_DELAY</span>);
+  <span class="tk-k">return</span> ch;
+}
+
+<span class="tk-t">void</span> <span class="tk-h">HAL_GPIO_EXTI_Callback</span>(<span class="tk-t">uint16_t</span> GPIO_Pin)
+{
+  <span class="tk-k">if</span> (GPIO_Pin == B1_Pin &amp;&amp; <span class="tk-h">HAL_GetTick</span>() - last_press &gt; <span class="tk-n">200</span>) {
+    last_press = <span class="tk-h">HAL_GetTick</span>();
+    dir = -dir;
+  }
+}
+<span class="tk-c">/* USER CODE END 4 */</span></code></pre></div>
+<ul><li><strong>데드존</strong> — 가변저항을 끝까지 내려도 ADC 값이 0 이 아닐 수 있으니, 50 미만은 0 으로 처리해 확실히 멈춥니다.</li><li><strong>방향 전환 전 정지</strong> — 돌던 모터를 곧바로 반대로 돌리면 큰 전류가 흐르고 기구에 충격이 갑니다. 300 ms 멈췄다가 바꿉니다.</li><li><code>dir</code> 은 인터럽트에서 바뀌므로 <code>volatile</code>, 메인 루프는 <code>last_dir</code> 과 비교해 변화를 감지합니다.</li></ul>
+<div class="callout callout-warn"><div class="callout-title">모터는 반드시 별도 전원</div><div class="callout-body"><p>모터를 켜는 순간 전류가 크게 흘러 전원 전압이 떨어지면 STM32 가 <strong>리셋</strong>됩니다(브라운아웃). 모터 전원은 배터리나 어댑터로 따로 공급하고, <strong>GND 만 보드와 공통</strong>으로 묶으세요. 전원 단자 근처에 100 µF 전해 콘덴서를 달면 도움이 됩니다.</p></div></div>
+<div class="callout callout-task"><div class="callout-title">실습</div><div class="callout-body"><ol><li>예제 1의 속도를 200 / 400 / 600 / 800 / 999 로 차례로 올리는 <strong>소프트 스타트</strong>로 바꾸세요(단계마다 300 ms).</li><li><code>motor_set(0)</code> 을 급정지(IN1 = IN2 = HIGH, ENA = 999)로 바꾸는 <code>motor_brake()</code> 를 만들고 자유 정지와 비교하세요.</li><li>예제 2에서 방향 전환 때 300 ms 동안 속도를 <strong>서서히 0으로 줄였다가</strong> 반대 방향으로 올리도록 바꾸세요.</li></ol></div></div>
+<div class="callout callout-check"><div class="callout-title">스스로 확인</div><div class="callout-body"><ul><li>IN1 = L, IN2 = H, ENA 듀티 50 % 일 때 모터는?</li><li>모터 PWM 을 21 kHz 로 할 때 72 MHz 보드에서는 PSC · ARR 를 어떻게 잡나요?</li></ul></div></div>
+<h2 id="자주-나는-오류와-해결">자주 나는 오류와 해결<a class="anchor" href="#자주-나는-오류와-해결">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인</th><th>해결</th></tr></thead><tbody><tr><td>모터가 전혀 안 돔</td><td>GND 공통 안 됨, ENA 점퍼·배선, <code>HAL_TIM_PWM_Start</code> 누락, 모터 전원 없음</td><td>GND 연결, PWM 시작, 전원 확인</td></tr><tr><td>한쪽 방향으로만 돔</td><td>IN2 핀 미연결 또는 라벨 오류</td><td>배선·라벨 확인</td></tr><tr><td>낮은 속도에서 윙 소리만 나고 안 돔</td><td>듀티가 기동 토크보다 낮음</td><td>최소 듀티(예: 250) 설정, 데드존</td></tr><tr><td>모터를 켜면 보드가 리셋됨</td><td>전원 공유로 전압 강하, 역기전력 노이즈</td><td>모터 전원 분리, 콘덴서, 배선 꼬기</td></tr><tr><td>모터에서 삐 소리</td><td>PWM 주파수가 가청 대역</td><td>PSC/ARR 로 20 kHz 근처로</td></tr><tr><td>속도가 최고에서 더 안 올라감</td><td>L298N 전압 강하</td><td>전원 전압 확인, MOSFET 드라이버 고려</td></tr></tbody></table></div>
+<h2 id="과제">과제<a class="anchor" href="#과제">#</a></h2>
+<ol><li>모터 B(IN3 · IN4 · ENB)를 추가해 두 바퀴 로봇의 <code>drive(left, right)</code> 함수를 만드세요. 전진·후진·제자리 회전을 구현합니다.</li><li>UART 명령(<code>speed 50</code>, <code>dir cw</code>, <code>stop</code>)으로 모터를 제어하세요(L06 명령어 파서 활용).</li><li>L298N 과 TB6612FNG 의 전압 강하, 최대 전류, 제어 핀을 비교하는 표를 만드세요.</li></ol>
+<h2 id="참고자료">참고자료<a class="anchor" href="#참고자료">#</a></h2>
+<ul><li>ST, <em>L298 Dual Full-Bridge Driver datasheet</em> — 진리표, 전압 강하</li><li>Toshiba, <em>TB6612FNG datasheet</em> (MOSFET H-브리지 비교)</li><li>ST, <em>AN4776 — General-purpose timer cookbook</em>, PWM</li><li>이 사이트의 L08 PWM, L09 ADC, <a href="hal-reference.html#tim-pwm">HAL 레퍼런스 — TIM · PWM</a></li></ul>
+      <nav class="pager"><a class="pager-prev" href="l12.html"><span>이전 · L12</span>7세그먼트 FND</a><a class="pager-next" href="l14.html"><span>다음 · L14</span>스텝모터</a></nav>
+    </div>
+    <aside class="lesson-toc"><div class="toc-title">이 레슨의 내용</div><div class="toc-links"><a class="toc-l2" href="#학습-목표">학습 목표</a><a class="toc-l2" href="#왜-드라이버가-필요한가">왜 드라이버가 필요한가</a><a class="toc-l2" href="#l298n-모듈-연결">L298N 모듈 연결</a><a class="toc-l3" href="#진리표-l298n-데이터시트">진리표 (L298N 데이터시트)</a><a class="toc-l3" href="#pwm-주파수">PWM 주파수</a><a class="toc-l2" href="#motorset-함수">motor_set 함수</a><a class="toc-l2" href="#예제-1-정방향-정지-역방향">예제 1 — 정방향 · 정지 · 역방향</a><a class="toc-l2" href="#예제-2-가변저항-속도-버튼-방향">예제 2 — 가변저항 속도 + 버튼 방향</a><a class="toc-l2" href="#자주-나는-오류와-해결">자주 나는 오류와 해결</a><a class="toc-l2" href="#과제">과제</a><a class="toc-l2" href="#참고자료">참고자료</a></div></aside>
+  </div>
+</article>
+
+</main>
+<script src="../assets/js/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+t=500 odr=20 count=1
+t=1000 odr=0 count=2
+t=1500 odr=20 count=3
+t=2000 odr=0 count=4
+done 6

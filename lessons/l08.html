@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L08. PWM — LED 밝기와 서보 · studySTM32</title>
+<meta name="description" content="PWM 주파수·듀티를 PSC·ARR·CCR로 정하고, LED 페이드와 50 Hz 서보 각도 제어를 구현합니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
+<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="../assets/css/stm32.css">
+<link rel="stylesheet" href="../assets/css/ml-theme.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
+<script src="../assets/js/theme.js"></script>
+</head>
+<body class="lesson-page track-page-comm">
+<button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
+<aside class="sidebar" id="sidebar">
+<nav class="sidebar-nav">
+<div class="brand-row"><a class="brand" href="../index.html"><span class="brand-mark">32</span><span class="brand-text">studySTM32<small>STM32 HAL 인터랙티브 강좌</small></span></a></div>
+<div class="side-tools"><a class="side-tool" href="../sim/index.html">시뮬레이터</a><a class="side-tool" href="../lessons/hal-reference.html">HAL 레퍼런스</a></div>
+<div class="nav-track" data-track="basics">
+<div class="nav-track-title track-basics"><span class="nav-part-no">PART 1</span>시작하기</div>
+<ul>
+<li><a href="../lessons/l01.html" data-slug="l01"><span class="nav-no">L01</span>STM32 시리즈와 개발 환경</a></li>
+<li><a href="../lessons/l02.html" data-slug="l02"><span class="nav-no">L02</span>시뮬레이터 둘러보기와 첫 프로젝트</a></li>
+<li><a href="../lessons/l03.html" data-slug="l03"><span class="nav-no">L03</span>GPIO 출력 — LED</a></li>
+<li><a href="../lessons/l04.html" data-slug="l04"><span class="nav-no">L04</span>GPIO 입력 — 스위치</a></li>
+<li><a href="../lessons/l05.html" data-slug="l05"><span class="nav-no">L05</span>외부 인터럽트 EXTI</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="comm">
+<div class="nav-track-title track-comm"><span class="nav-part-no">PART 2</span>통신·타이머·아날로그</div>
+<ul>
+<li><a href="../lessons/l06.html" data-slug="l06"><span class="nav-no">L06</span>UART와 printf</a></li>
+<li><a href="../lessons/l07.html" data-slug="l07"><span class="nav-no">L07</span>타이머 인터럽트</a></li>
+<li><a href="../lessons/l08.html" class="active" data-slug="l08"><span class="nav-no">L08</span>PWM — LED 밝기와 서보</a></li>
+<li><a href="../lessons/l09.html" data-slug="l09"><span class="nav-no">L09</span>ADC — 가변저항·조도센서</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="periph">
+<div class="nav-track-title track-periph"><span class="nav-part-no">PART 3</span>주변기기</div>
+<ul>
+<li><a href="../lessons/l10.html" data-slug="l10"><span class="nav-no">L10</span>I2C와 LCD1602</a></li>
+<li><a href="../lessons/l11.html" data-slug="l11"><span class="nav-no">L11</span>SPI 기초</a></li>
+<li><a href="../lessons/l12.html" data-slug="l12"><span class="nav-no">L12</span>7세그먼트 FND</a></li>
+<li><a href="../lessons/l13.html" data-slug="l13"><span class="nav-no">L13</span>DC 모터 드라이버</a></li>
+<li><a href="../lessons/l14.html" data-slug="l14"><span class="nav-no">L14</span>스텝모터</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="project">
+<div class="nav-track-title track-project"><span class="nav-part-no">PART 4</span>프로젝트</div>
+<ul>
+<li><a href="../lessons/l15.html" data-slug="l15"><span class="nav-no">L15</span>미니 프로젝트: 스마트 선풍기</a></li>
+<li><a href="../lessons/l16.html" data-slug="l16"><span class="nav-no">L16</span>실물 보드로 옮기기</a></li>
+</ul>
+</div>
+</nav>
+</aside>
+<div class="sidebar-scrim" id="scrim"></div>
+<main class="main">
+<header class="topbar"><a class="topbar-brand" href="../index.html"><span class="brand-mark">32</span>studySTM32</a><nav class="topnav" aria-label="사이트 메뉴"><a href="../index.html">강의 홈</a><a href="../sim/index.html">시뮬레이터</a><a href="../lessons/hal-reference.html">HAL 레퍼런스</a></nav><button class="theme-icon" type="button" data-theme-toggle data-theme-icon aria-label="테마 전환"></button></header>
+
+<article class="lesson" data-slug="l08" data-track="comm">
+  <div class="lesson-head">
+    <div class="crumbs"><span class="track-pill track-comm">PART 2</span> 통신·타이머·아날로그 &middot; 약 70분 &middot; 초급</div>
+    <h1><span class="lesson-no">L08</span>PWM — LED 밝기와 서보</h1>
+    <p class="lede">PWM 주파수·듀티를 PSC·ARR·CCR로 정하고, LED 페이드와 50 Hz 서보 각도 제어를 구현합니다.</p>
+    <div class="requires">선수 레슨: <a href="l07.html">L07</a></div>
+    <div class="lesson-actions">
+      <label class="done-toggle"><input type="checkbox" id="doneCheck"><span>학습 완료로 표시</span></label>
+      <a class="ghost-btn tool-sim" href="../sim/index.html?ex=l08-pwm-led" data-sim-src="../sim/index.html?ex=l08-pwm-led&amp;embed=1">시뮬레이터에서 실습</a><a class="ghost-btn" href="hal-reference.html">HAL 레퍼런스</a>
+    </div>
+  </div>
+  <div class="lesson-grid">
+    <div class="lesson-body">
+<h2 id="학습-목표">학습 목표<a class="anchor" href="#학습-목표">#</a></h2>
+<ul><li>PWM 의 <strong>주파수</strong>와 <strong>듀티비</strong>를 설명하고, 타이머의 PSC · ARR · CCR 로 두 값을 정합니다.</li><li>CubeMX 에서 타이머 채널을 <strong>PWM Generation</strong> 으로 설정하고 <code>HAL_TIM_PWM_Start</code> · <code>__HAL_TIM_SET_COMPARE</code> 로 출력합니다.</li><li>LED 밝기를 부드럽게 바꾸고(페이드), 50 Hz 서보 모터의 각도를 펄스 폭으로 제어합니다.</li></ul>
+<h2 id="pwm-이란">PWM 이란<a class="anchor" href="#pwm-이란">#</a></h2>
+<p>PWM(Pulse Width Modulation)은 디지털 핀을 아주 빠르게 켰다 껐다 하면서 <strong>켜져 있는 시간의 비율(듀티비)</strong> 을 바꾸는 방법입니다. LED 는 사람 눈이 따라가지 못하는 속도(수백 Hz 이상)로 깜빡이면 평균 밝기로 보이고, 모터는 평균 전압에 해당하는 속도로 돕니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">text</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-text">듀티 25 %   ▔▔╲___________▔▔╲___________     평균 = 3.3 V × 0.25 ≈ 0.8 V
+듀티 75 %   ▔▔▔▔▔▔▔▔╲_____▔▔▔▔▔▔▔▔╲_____     평균 ≈ 2.5 V
+            |&lt;─── 주기 T = 1 / f ───&gt;|</code></pre></div>
+<h2 id="타이머로-pwm-만들기">타이머로 PWM 만들기<a class="anchor" href="#타이머로-pwm-만들기">#</a></h2>
+<p>PWM 모드 1 에서 타이머 채널은 <strong>CNT &lt; CCR 인 동안 HIGH, 나머지 LOW</strong> 를 출력합니다. 그래서</p>
+<ul><li><strong>주파수</strong> = 타이머 클럭 / ((PSC + 1) × (ARR + 1)) — L07 과 같은 공식</li><li><strong>듀티비</strong> = CCR / (ARR + 1) — CCR 은 CubeMX 의 <em>Pulse</em> 값, 코드에서는 <code>__HAL_TIM_SET_COMPARE</code> 로 바꿈</li></ul>
+<div class="table-wrap regmap"><table><thead><tr><th>용도</th><th>타이머 클럭</th><th>PSC</th><th>ARR</th><th>주파수</th><th>CCR 범위</th></tr></thead><tbody><tr><td>LED 밝기</td><td>84 MHz</td><td>83</td><td>999</td><td>1 kHz</td><td>0(꺼짐) ~ 999(거의 100 %)</td></tr><tr><td>서보 (SG90)</td><td>84 MHz</td><td>83</td><td>19999</td><td>50 Hz (20 ms)</td><td>500 ~ 2500 = 0.5 ~ 2.5 ms</td></tr><tr><td>DC 모터 (L13)</td><td>84 MHz</td><td>3</td><td>999</td><td>21 kHz</td><td>0 ~ 999</td></tr></tbody></table></div>
+<p>PSC = 83 으로 두면 카운터 1틱이 <strong>1 µs</strong> 라서 서보처럼 "펄스 폭 몇 µs" 로 말하는 장치를 다루기 편합니다. CCR 을 ARR+1 이상으로 두면 계속 HIGH(100 %), 0 이면 계속 LOW 입니다.</p>
+<h3 id="핀과-채널">핀과 채널<a class="anchor" href="#핀과-채널">#</a></h3>
+<p>타이머 채널은 정해진 핀으로만 나갑니다(대체 기능 AF). NUCLEO-F411RE 에서 자주 쓰는 조합입니다.</p>
+<div class="table-wrap pinmap"><table><thead><tr><th>핀</th><th>신호</th><th>Nucleo 헤더</th><th>비고</th></tr></thead><tbody><tr><td><code>PA0</code></td><td><code>TIM2_CH1</code></td><td>A0</td><td>서보 예제</td></tr><tr><td><code>PA5</code></td><td><code>TIM2_CH1</code></td><td>D13</td><td>LD2 와 같은 핀 — 보드 LED 밝기 조절 가능</td></tr><tr><td><code>PA6</code></td><td><code>TIM3_CH1</code></td><td>D12</td><td>LED 페이드 예제</td></tr><tr><td><code>PA7</code></td><td><code>TIM3_CH2</code></td><td>D11</td><td></td></tr><tr><td><code>PB6</code></td><td><code>TIM4_CH1</code></td><td>D10</td><td></td></tr></tbody></table></div>
+<h3 id="cubemx-설정-tim3-ch1-1-khz">CubeMX 설정 (TIM3 CH1, 1 kHz)<a class="anchor" href="#cubemx-설정-tim3-ch1-1-khz">#</a></h3>
+<ol><li><code>PA6</code> 을 눌러 <code>TIM3_CH1</code> 선택</li><li><strong>TIM3 → Channel1: PWM Generation CH1</strong></li><li>Prescaler <code>83</code>, Counter Period <code>999</code>, PWM Generation Channel 1 → Mode <em>PWM mode 1</em>, **Pulse <code>0</code>**, Polarity High</li></ol>
+<h2 id="예제-1-led-페이드">예제 1 — LED 페이드<a class="anchor" href="#예제-1-led-페이드">#</a></h2>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l08-pwm-led" data-sim-src="../sim/index.html?ex=l08-pwm-led&amp;embed=1" data-sim-id="l08-pwm-led"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">LED 페이드 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l08-pwm-led" target="_blank" rel="noopener">새 창</a><code class="sim-id">l08-pwm-led</code></div>
+<div class="code-block code-example" data-example="l08-pwm-led"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN PV */</span>
+<span class="tk-t">int</span> duty = <span class="tk-n">0</span>;      <span class="tk-c">// 0 ~ 999 (ARR)</span>
+<span class="tk-t">int</span> step = <span class="tk-n">10</span>;     <span class="tk-c">// 한 번에 바뀌는 양 (+ 밝아짐, - 어두워짐)</span>
+<span class="tk-c">/* USER CODE END PV */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN 2 */</span>
+  <span class="tk-h">HAL_TIM_PWM_Start</span>(&amp;htim3, <span class="tk-m">TIM_CHANNEL_1</span>);   <span class="tk-c">// PWM 출력 시작 (이걸 빼면 핀이 움직이지 않습니다)</span>
+  <span class="tk-c">/* USER CODE END 2 */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    <span class="tk-h">__HAL_TIM_SET_COMPARE</span>(&amp;htim3, <span class="tk-m">TIM_CHANNEL_1</span>, duty);
+    duty += step;
+    <span class="tk-k">if</span> (duty &gt;= <span class="tk-n">999</span>) {
+      duty = <span class="tk-n">999</span>;
+      step = -step;
+    } <span class="tk-k">else</span> <span class="tk-k">if</span> (duty &lt;= <span class="tk-n">0</span>) {
+      duty = <span class="tk-n">0</span>;
+      step = -step;
+    }
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">10</span>);
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span></code></pre></div>
+<ul><li><code>HAL_TIM_PWM_Start(&amp;htim3, TIM_CHANNEL_1)</code> 을 빼먹으면 설정은 되어 있어도 <strong>핀이 전혀 움직이지 않습니다.</strong> 가장 흔한 실수입니다.</li><li>10 ms 마다 듀티를 10 씩 바꾸므로 0 → 999 까지 약 1초, 다시 0 까지 1초 걸립니다.</li><li>예제 회로에는 <strong>로직 분석기</strong> 노드(<code>ch0</code>)가 같은 핀에 연결되어 있어, 실습 결과 영역에서 파형의 폭이 변하는 것을 볼 수 있습니다.</li></ul>
+<div class="callout callout-tip"><div class="callout-title">사람 눈은 밝기를 로그로 느낍니다</div><div class="callout-body"><p>듀티를 일정하게 올려도 어두운 쪽에서 밝기 변화가 크고, 밝은 쪽에서는 거의 변화가 없어 보입니다. 자연스러운 페이드를 원하면 듀티를 제곱으로 바꾸는 <strong>감마 보정</strong>(예: <code>ccr = duty * duty / 999</code>)을 써 보세요.</p></div></div>
+<h2 id="예제-2-서보-모터-스윕">예제 2 — 서보 모터 스윕<a class="anchor" href="#예제-2-서보-모터-스윕">#</a></h2>
+<p>취미용 서보(SG90 등)는 <strong>20 ms(50 Hz) 마다 들어오는 펄스의 폭</strong>으로 각도를 정합니다. 표준은 1 ms(0°) ~ 2 ms(180°) 이지만, SG90 계열은 대략 0.5 ms ~ 2.5 ms 에서 0° ~ 180° 로 움직이는 경우가 많습니다. 제품마다 다르니 <strong>양 끝은 조금씩 넓혀 가며 확인</strong>하세요.</p>
+<div class="table-wrap pinmap"><table><thead><tr><th>핀</th><th>신호</th><th>서보 선</th></tr></thead><tbody><tr><td><code>PA0</code></td><td><code>TIM2_CH1</code> (PSC 83, ARR 19999, Pulse 1500)</td><td>신호(주황/노랑)</td></tr><tr><td>—</td><td>5 V 전원</td><td>빨강</td></tr><tr><td>—</td><td>GND (보드 GND 와 공통)</td><td>갈색/검정</td></tr></tbody></table></div>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l08-servo" data-sim-src="../sim/index.html?ex=l08-servo&amp;embed=1" data-sim-id="l08-servo"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">서보 스윕 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l08-servo" target="_blank" rel="noopener">새 창</a><code class="sim-id">l08-servo</code></div>
+<div class="code-block code-example" data-example="l08-servo"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN 0 */</span>
+<span class="tk-c">/* 0~180도 -&gt; 500~2500 us. 타이머 1틱 = 1 us 이므로 펄스 폭(us)을 그대로 CCR 에 씁니다. */</span>
+<span class="tk-t">void</span> <span class="tk-f">servo_write</span>(<span class="tk-t">uint8_t</span> angle)
+{
+  <span class="tk-k">if</span> (angle &gt; <span class="tk-n">180</span>) angle = <span class="tk-n">180</span>;
+  <span class="tk-t">uint32_t</span> pulse = <span class="tk-n">500</span> + (<span class="tk-t">uint32_t</span>)angle * <span class="tk-n">2000</span> / <span class="tk-n">180</span>;
+  <span class="tk-h">__HAL_TIM_SET_COMPARE</span>(&amp;htim2, <span class="tk-m">TIM_CHANNEL_1</span>, pulse);
+}
+<span class="tk-c">/* USER CODE END 0 */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN 2 */</span>
+  <span class="tk-h">HAL_TIM_PWM_Start</span>(&amp;htim2, <span class="tk-m">TIM_CHANNEL_1</span>);
+  <span class="tk-c">/* USER CODE END 2 */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    <span class="tk-k">for</span> (<span class="tk-t">int</span> a = <span class="tk-n">0</span>; a &lt;= <span class="tk-n">180</span>; a += <span class="tk-n">10</span>) {
+      <span class="tk-f">servo_write</span>(a);
+      <span class="tk-h">HAL_Delay</span>(<span class="tk-n">100</span>);
+    }
+    <span class="tk-k">for</span> (<span class="tk-t">int</span> a = <span class="tk-n">180</span>; a &gt;= <span class="tk-n">0</span>; a -= <span class="tk-n">10</span>) {
+      <span class="tk-f">servo_write</span>(a);
+      <span class="tk-h">HAL_Delay</span>(<span class="tk-n">100</span>);
+    }
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span></code></pre></div>
+<p><code>servo_write()</code> 는 각도를 <code>500 + 각도 × 2000 / 180</code> µs 로 바꿉니다. 먼저 <code>(uint32_t)angle * 2000</code> 을 계산한 뒤 나누어, 정수 나눗셈에서 정밀도를 잃지 않게 했습니다. 시뮬레이터의 서보 노드는 <code>minUs</code>/<code>maxUs</code> 속성(500/2500)으로 같은 대응을 합니다.</p>
+<div class="callout callout-warn"><div class="callout-title">서보 전원은 따로</div><div class="callout-body"><p>서보는 움직이는 순간 수백 mA 를 끌어 씁니다. 실물에서 Nucleo 의 5V 핀으로 여러 개를 돌리면 전압이 떨어져 보드가 리셋될 수 있습니다. <strong>별도 5 V 전원</strong>을 쓰고, 그 전원의 GND 를 보드 GND 와 <strong>반드시 연결</strong>하세요(신호의 기준점).</p></div></div>
+<div class="callout callout-task"><div class="callout-title">실습</div><div class="callout-body"><ol><li>예제 1의 PWM 주파수를 <strong>10 Hz</strong>(PSC 8399, ARR 999)로 바꾸면 LED 가 어떻게 보이나요? 사람 눈에 깜빡임이 보이지 않는 최소 주파수는 대략 얼마일까요?</li><li>예제 1을 감마 보정 방식으로 바꾸고 차이를 비교하세요.</li><li>예제 2를 B1 버튼으로 0° → 90° → 180° 로 한 칸씩 움직이게 바꾸세요.</li></ol></div></div>
+<div class="callout callout-check"><div class="callout-title">스스로 확인</div><div class="callout-body"><ul><li>PSC 83, ARR 19999 에서 CCR = 1500 이면 펄스 폭과 듀티비는?</li><li>같은 타이머(TIM3)의 CH1 과 CH2 를 서로 다른 <strong>주파수</strong>로 쓸 수 있나요? 서로 다른 <strong>듀티</strong>는요?</li></ul></div></div>
+<h2 id="자주-나는-오류와-해결">자주 나는 오류와 해결<a class="anchor" href="#자주-나는-오류와-해결">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인</th><th>해결</th></tr></thead><tbody><tr><td>핀에 아무 신호도 없음</td><td><code>HAL_TIM_PWM_Start</code> 누락, 채널을 PWM Generation 으로 설정하지 않음</td><td>두 가지 모두 확인</td></tr><tr><td>다른 채널 번호를 써서 안 바뀜</td><td><code>TIM_CHANNEL_2</code> 인데 CH1 핀에 연결</td><td>핀아웃의 채널 번호와 코드 일치</td></tr><tr><td>밝기가 최대에서 더 안 올라감 / 항상 켜짐</td><td>CCR &gt; ARR</td><td>CCR 을 0 ~ ARR 범위로 제한</td></tr><tr><td>서보가 떨리거나 끝에서 윙 소리</td><td>펄스 폭이 기구 한계를 넘음, 전원 부족</td><td>min/max µs 를 좁히기, 별도 전원 + 공통 GND</td></tr><tr><td>서보가 전혀 안 움직임</td><td>주파수가 50 Hz 가 아님(ARR 을 999 로 둠), GND 미연결</td><td>PSC 83 / ARR 19999, GND 공통</td></tr></tbody></table></div>
+<h2 id="과제">과제<a class="anchor" href="#과제">#</a></h2>
+<ol><li>RGB LED(공통 캐소드)를 TIM3 CH1~CH3 (<code>PA6</code>, <code>PA7</code>, <code>PB0</code>)에 연결하고 무지개색이 순서대로 바뀌게 하세요. <code>PB0</code> 은 <code>TIM3_CH3</code> 입니다.</li><li>가변저항(L09)으로 서보 각도를 조절하는 프로그램을 설계해 보세요(ADC 는 다음 레슨).</li><li>같은 PWM 을 72 MHz 보드(F103)에서 만들려면 PSC 를 얼마로 바꿔야 하나요? 1 kHz LED 용과 50 Hz 서보용 모두 계산하세요.</li></ol>
+<h2 id="참고자료">참고자료<a class="anchor" href="#참고자료">#</a></h2>
+<ul><li>ST, <em>RM0383</em>, 13.3.10 PWM mode</li><li>ST, <em>AN4776 — General-purpose timer cookbook</em>, PWM 생성</li><li>ST, <em>UM1725 — STM32F4 HAL</em>, <code>HAL_TIM_PWM_Start</code>, <code>__HAL_TIM_SET_COMPARE</code></li><li>TowerPro SG90 데이터시트 (펄스 폭·동작 전압)</li><li>이 사이트의 <a href="hal-reference.html#tim-pwm">HAL 레퍼런스 — TIM · PWM</a></li></ul>
+      <nav class="pager"><a class="pager-prev" href="l07.html"><span>이전 · L07</span>타이머 인터럽트</a><a class="pager-next" href="l09.html"><span>다음 · L09</span>ADC — 가변저항·조도센서</a></nav>
+    </div>
+    <aside class="lesson-toc"><div class="toc-title">이 레슨의 내용</div><div class="toc-links"><a class="toc-l2" href="#학습-목표">학습 목표</a><a class="toc-l2" href="#pwm-이란">PWM 이란</a><a class="toc-l2" href="#타이머로-pwm-만들기">타이머로 PWM 만들기</a><a class="toc-l3" href="#핀과-채널">핀과 채널</a><a class="toc-l3" href="#cubemx-설정-tim3-ch1-1-khz">CubeMX 설정 (TIM3 CH1, 1 kHz)</a><a class="toc-l2" href="#예제-1-led-페이드">예제 1 — LED 페이드</a><a class="toc-l2" href="#예제-2-서보-모터-스윕">예제 2 — 서보 모터 스윕</a><a class="toc-l2" href="#자주-나는-오류와-해결">자주 나는 오류와 해결</a><a class="toc-l2" href="#과제">과제</a><a class="toc-l2" href="#참고자료">참고자료</a></div></aside>
+  </div>
+</article>
+
+</main>
+<script src="../assets/js/site.js"></script>
+</body>
+</html>

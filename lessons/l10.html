@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L10. I2C와 LCD1602 · studySTM32</title>
+<meta name="description" content="I2C 주소와 HAL의 8비트 주소 규칙, PCF8574 4비트 LCD 프로토콜, 완성 드라이버와 I2C 스캐너를 만듭니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
+<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="../assets/css/stm32.css">
+<link rel="stylesheet" href="../assets/css/ml-theme.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
+<script src="../assets/js/theme.js"></script>
+</head>
+<body class="lesson-page track-page-periph">
+<button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
+<aside class="sidebar" id="sidebar">
+<nav class="sidebar-nav">
+<div class="brand-row"><a class="brand" href="../index.html"><span class="brand-mark">32</span><span class="brand-text">studySTM32<small>STM32 HAL 인터랙티브 강좌</small></span></a></div>
+<div class="side-tools"><a class="side-tool" href="../sim/index.html">시뮬레이터</a><a class="side-tool" href="../lessons/hal-reference.html">HAL 레퍼런스</a></div>
+<div class="nav-track" data-track="basics">
+<div class="nav-track-title track-basics"><span class="nav-part-no">PART 1</span>시작하기</div>
+<ul>
+<li><a href="../lessons/l01.html" data-slug="l01"><span class="nav-no">L01</span>STM32 시리즈와 개발 환경</a></li>
+<li><a href="../lessons/l02.html" data-slug="l02"><span class="nav-no">L02</span>시뮬레이터 둘러보기와 첫 프로젝트</a></li>
+<li><a href="../lessons/l03.html" data-slug="l03"><span class="nav-no">L03</span>GPIO 출력 — LED</a></li>
+<li><a href="../lessons/l04.html" data-slug="l04"><span class="nav-no">L04</span>GPIO 입력 — 스위치</a></li>
+<li><a href="../lessons/l05.html" data-slug="l05"><span class="nav-no">L05</span>외부 인터럽트 EXTI</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="comm">
+<div class="nav-track-title track-comm"><span class="nav-part-no">PART 2</span>통신·타이머·아날로그</div>
+<ul>
+<li><a href="../lessons/l06.html" data-slug="l06"><span class="nav-no">L06</span>UART와 printf</a></li>
+<li><a href="../lessons/l07.html" data-slug="l07"><span class="nav-no">L07</span>타이머 인터럽트</a></li>
+<li><a href="../lessons/l08.html" data-slug="l08"><span class="nav-no">L08</span>PWM — LED 밝기와 서보</a></li>
+<li><a href="../lessons/l09.html" data-slug="l09"><span class="nav-no">L09</span>ADC — 가변저항·조도센서</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="periph">
+<div class="nav-track-title track-periph"><span class="nav-part-no">PART 3</span>주변기기</div>
+<ul>
+<li><a href="../lessons/l10.html" class="active" data-slug="l10"><span class="nav-no">L10</span>I2C와 LCD1602</a></li>
+<li><a href="../lessons/l11.html" data-slug="l11"><span class="nav-no">L11</span>SPI 기초</a></li>
+<li><a href="../lessons/l12.html" data-slug="l12"><span class="nav-no">L12</span>7세그먼트 FND</a></li>
+<li><a href="../lessons/l13.html" data-slug="l13"><span class="nav-no">L13</span>DC 모터 드라이버</a></li>
+<li><a href="../lessons/l14.html" data-slug="l14"><span class="nav-no">L14</span>스텝모터</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="project">
+<div class="nav-track-title track-project"><span class="nav-part-no">PART 4</span>프로젝트</div>
+<ul>
+<li><a href="../lessons/l15.html" data-slug="l15"><span class="nav-no">L15</span>미니 프로젝트: 스마트 선풍기</a></li>
+<li><a href="../lessons/l16.html" data-slug="l16"><span class="nav-no">L16</span>실물 보드로 옮기기</a></li>
+</ul>
+</div>
+</nav>
+</aside>
+<div class="sidebar-scrim" id="scrim"></div>
+<main class="main">
+<header class="topbar"><a class="topbar-brand" href="../index.html"><span class="brand-mark">32</span>studySTM32</a><nav class="topnav" aria-label="사이트 메뉴"><a href="../index.html">강의 홈</a><a href="../sim/index.html">시뮬레이터</a><a href="../lessons/hal-reference.html">HAL 레퍼런스</a></nav><button class="theme-icon" type="button" data-theme-toggle data-theme-icon aria-label="테마 전환"></button></header>
+
+<article class="lesson" data-slug="l10" data-track="periph">
+  <div class="lesson-head">
+    <div class="crumbs"><span class="track-pill track-periph">PART 3</span> 주변기기 &middot; 약 90분 &middot; 중급</div>
+    <h1><span class="lesson-no">L10</span>I2C와 LCD1602</h1>
+    <p class="lede">I2C 주소와 HAL의 8비트 주소 규칙, PCF8574 4비트 LCD 프로토콜, 완성 드라이버와 I2C 스캐너를 만듭니다.</p>
+    <div class="requires">선수 레슨: <a href="l06.html">L06</a></div>
+    <div class="lesson-actions">
+      <label class="done-toggle"><input type="checkbox" id="doneCheck"><span>학습 완료로 표시</span></label>
+      <a class="ghost-btn tool-sim" href="../sim/index.html?ex=l10-lcd" data-sim-src="../sim/index.html?ex=l10-lcd&amp;embed=1">시뮬레이터에서 실습</a><a class="ghost-btn" href="hal-reference.html">HAL 레퍼런스</a>
+    </div>
+  </div>
+  <div class="lesson-grid">
+    <div class="lesson-body">
+<h2 id="학습-목표">학습 목표<a class="anchor" href="#학습-목표">#</a></h2>
+<ul><li>I2C 버스(SDA · SCL, 오픈드레인, 풀업, 7비트 주소, ACK)의 동작을 설명합니다.</li><li>HAL 이 <strong>7비트 주소를 왼쪽으로 1비트 민 값</strong>(<code>0x27 &lt;&lt; 1</code>)을 받는 이유를 압니다.</li><li>PCF8574 I2C 백팩이 달린 LCD1602 를 <strong>4비트 모드</strong>로 초기화하고 글자를 쓰는 드라이버를 이해하고 사용합니다.</li><li>I2C 스캐너로 연결된 장치를 찾고, <code>HAL_I2C_Mem_Read</code> 로 센서 레지스터를 읽습니다.</li></ul>
+<h2 id="i2c-기초">I2C 기초<a class="anchor" href="#i2c-기초">#</a></h2>
+<p>I2C 는 <strong>SDA(데이터)</strong> 와 <strong>SCL(클럭)</strong> 두 선으로 여러 장치를 연결하는 버스입니다. 마스터(STM32)가 클럭을 만들고, 장치마다 고유한 <strong>7비트 주소</strong>로 상대를 고릅니다.</p>
+<ul><li>두 선은 <strong>오픈드레인</strong> — 장치들은 선을 LOW 로 끌어내리기만 하고, HIGH 는 <strong>풀업 저항</strong>(보통 4.7 kΩ)이 만듭니다. 풀업이 없으면 통신이 안 됩니다.</li><li>한 번의 전송: <strong>START → 주소(7비트) + R/W 비트 → ACK → 데이터 바이트 → ACK … → STOP</strong></li><li>장치가 자기 주소를 알아들으면 9번째 클럭에 SDA 를 LOW 로 당겨 <strong>ACK</strong> 를 보냅니다. 아무도 ACK 하지 않으면 HAL 함수는 <code>HAL_ERROR</code> 를 돌려줍니다.</li><li>속도: 표준 모드 100 kHz, 고속 모드 400 kHz</li></ul>
+<h3 id="hal-주소-규칙-1">HAL 주소 규칙: <code>&lt;&lt; 1</code><a class="anchor" href="#hal-주소-규칙-1">#</a></h3>
+<p>주소 바이트는 <strong>상위 7비트 = 주소, 최하위 1비트 = 읽기(1)/쓰기(0)</strong> 입니다. HAL 함수는 이 바이트 모양 그대로(주소를 한 칸 민 값)를 받습니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-p">#define</span> <span class="tk-f">LCD_ADDR</span> (<span class="tk-n">0x27</span> &lt;&lt; <span class="tk-n">1</span>)     <span class="tk-c">// 0x27 → 0x4E. HAL 이 R/W 비트를 알아서 채움</span>
+<span class="tk-h">HAL_I2C_Master_Transmit</span>(&amp;hi2c1, <span class="tk-m">LCD_ADDR</span>, data, <span class="tk-n">2</span>, <span class="tk-n">10</span>);</code></pre></div>
+<p><code>0x27</code> 을 그대로 넘기면 HAL 은 주소 <code>0x13</code> 에게 말을 거는 셈이 되어 응답이 없습니다. <strong>I2C 오류의 절반은 이 실수</strong>입니다.</p>
+<h3 id="핀-nucleo-f411re">핀 (NUCLEO-F411RE)<a class="anchor" href="#핀-nucleo-f411re">#</a></h3>
+<div class="table-wrap pinmap"><table><thead><tr><th>핀</th><th>신호</th><th>Nucleo 헤더</th><th>비고</th></tr></thead><tbody><tr><td><code>PB8</code></td><td><code>I2C1_SCL</code></td><td>D15 (SCL)</td><td>아두이노 I2C 위치 — 이 강좌 기본</td></tr><tr><td><code>PB9</code></td><td><code>I2C1_SDA</code></td><td>D14 (SDA)</td><td></td></tr><tr><td><code>PB6</code> / <code>PB7</code></td><td><code>I2C1_SCL</code> / <code>I2C1_SDA</code></td><td>D10 / 모포</td><td>다른 선택지</td></tr></tbody></table></div>
+<p>CubeMX: <strong>Connectivity → I2C1 → I2C</strong>, Speed Mode Standard(100 kHz). 기본 핀이 PB6/PB7 로 잡히면 PB8/PB9 를 직접 눌러 <code>I2C1_SCL</code>/<code>I2C1_SDA</code> 로 바꿉니다.</p>
+<h2 id="lcd1602-와-pcf8574-백팩">LCD1602 와 PCF8574 백팩<a class="anchor" href="#lcd1602-와-pcf8574-백팩">#</a></h2>
+<p>LCD1602(HD44780 호환)는 원래 데이터 8선 + 제어 3선이 필요합니다. 뒤에 붙은 <strong>PCF8574 I2C 확장 칩</strong>이 I2C 로 받은 1바이트를 8개 핀으로 내보내 LCD 를 대신 조작합니다. 흔한 백팩의 비트 배치는 다음과 같습니다.</p>
+<div class="table-wrap regmap"><table><thead><tr><th>PCF8574 비트</th><th>P7</th><th>P6</th><th>P5</th><th>P4</th><th>P3</th><th>P2</th><th>P1</th><th>P0</th></tr></thead><tbody><tr><td>LCD 신호</td><td>D7</td><td>D6</td><td>D5</td><td>D4</td><td>백라이트</td><td>EN</td><td>RW</td><td>RS</td></tr></tbody></table></div>
+<ul><li>데이터선이 4개(D4~D7)뿐이라 LCD 를 <strong>4비트 모드</strong>로 쓰고, 1바이트를 <strong>상위 4비트 → 하위 4비트</strong> 두 번에 나눠 보냅니다.</li><li><strong>RS</strong> = 0 이면 명령, 1 이면 글자 데이터. <strong>RW</strong> 는 항상 0(쓰기).</li><li>LCD 는 <strong>EN 이 1 → 0 으로 떨어질 때</strong> 데이터선을 읽습니다. 그래서 같은 값을 EN=1, EN=0 두 번 연달아 보냅니다.</li><li>주소는 PCF8574 가 <code>0x27</code>, PCF8574<strong>A</strong> 가 <code>0x3F</code> 인 경우가 많습니다. 모르면 아래 스캐너로 찾으세요.</li></ul>
+<h3 id="드라이버-코드">드라이버 코드<a class="anchor" href="#드라이버-코드">#</a></h3>
+<p><code>USER CODE BEGIN 0</code> 에 들어가는 완성 드라이버입니다. 함수는 <code>lcd_init</code>, <code>lcd_set_cursor(행, 열)</code>, <code>lcd_print(문자열)</code> 세 개만 쓰면 됩니다.</p>
+<div class="code-block code-example" data-example="l10-lcd"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN 0 */</span>
+<span class="tk-c">/* ---- I2C LCD1602 (PCF8574 백팩) 드라이버 ----
+ * PCF8574 비트: P0=RS, P1=RW, P2=EN, P3=백라이트, P4~P7=D4~D7 (4비트 모드) */</span>
+<span class="tk-p">#define</span> <span class="tk-f">LCD_ADDR</span>  (<span class="tk-n">0x27</span> &lt;&lt; <span class="tk-n">1</span>)   <span class="tk-c">// HAL 은 7비트 주소를 왼쪽으로 1비트 민 값을 받습니다</span>
+<span class="tk-p">#define</span> <span class="tk-m">LCD_RS</span>    <span class="tk-n">0x01</span>
+<span class="tk-p">#define</span> <span class="tk-m">LCD_EN</span>    <span class="tk-n">0x04</span>
+<span class="tk-p">#define</span> <span class="tk-m">LCD_BL</span>    <span class="tk-n">0x08</span>
+
+<span class="tk-c">/* 상위 4비트(nibble)를 EN 펄스와 함께 보냅니다. */</span>
+<span class="tk-t">void</span> <span class="tk-f">lcd_send4</span>(<span class="tk-t">uint8_t</span> nibble, <span class="tk-t">uint8_t</span> rs)
+{
+  <span class="tk-t">uint8_t</span> data[<span class="tk-n">2</span>];
+  data[<span class="tk-n">0</span>] = nibble | <span class="tk-m">LCD_BL</span> | <span class="tk-m">LCD_EN</span> | rs;   <span class="tk-c">// EN = 1</span>
+  data[<span class="tk-n">1</span>] = nibble | <span class="tk-m">LCD_BL</span> | rs;            <span class="tk-c">// EN = 0 (하강 에지에서 LCD 가 읽음)</span>
+  <span class="tk-h">HAL_I2C_Master_Transmit</span>(&amp;hi2c1, <span class="tk-m">LCD_ADDR</span>, data, <span class="tk-n">2</span>, <span class="tk-n">10</span>);
+}
+
+<span class="tk-c">/* 8비트 값을 상위 -&gt; 하위 4비트 순서로 두 번 나눠 보냅니다. */</span>
+<span class="tk-t">void</span> <span class="tk-f">lcd_send</span>(<span class="tk-t">uint8_t</span> value, <span class="tk-t">uint8_t</span> rs)
+{
+  <span class="tk-f">lcd_send4</span>(value &amp; <span class="tk-n">0xF0</span>, rs);
+  <span class="tk-f">lcd_send4</span>((value &lt;&lt; <span class="tk-n">4</span>) &amp; <span class="tk-n">0xF0</span>, rs);
+}
+
+<span class="tk-t">void</span> <span class="tk-f">lcd_cmd</span>(<span class="tk-t">uint8_t</span> cmd)
+{
+  <span class="tk-f">lcd_send</span>(cmd, <span class="tk-n">0</span>);
+  <span class="tk-k">if</span> (cmd == <span class="tk-n">0x01</span> || cmd == <span class="tk-n">0x02</span>) <span class="tk-h">HAL_Delay</span>(<span class="tk-n">2</span>);   <span class="tk-c">// Clear / Home 은 1.5 ms 이상 걸림</span>
+}
+
+<span class="tk-t">void</span> <span class="tk-f">lcd_data</span>(<span class="tk-t">uint8_t</span> ch)
+{
+  <span class="tk-f">lcd_send</span>(ch, <span class="tk-m">LCD_RS</span>);
+}
+
+<span class="tk-t">void</span> <span class="tk-f">lcd_init</span>(<span class="tk-t">void</span>)
+{
+  <span class="tk-h">HAL_Delay</span>(<span class="tk-n">50</span>);                 <span class="tk-c">// 전원 인가 후 안정화</span>
+  <span class="tk-f">lcd_send4</span>(<span class="tk-n">0x30</span>, <span class="tk-n">0</span>); <span class="tk-h">HAL_Delay</span>(<span class="tk-n">5</span>);
+  <span class="tk-f">lcd_send4</span>(<span class="tk-n">0x30</span>, <span class="tk-n">0</span>); <span class="tk-h">HAL_Delay</span>(<span class="tk-n">1</span>);
+  <span class="tk-f">lcd_send4</span>(<span class="tk-n">0x30</span>, <span class="tk-n">0</span>); <span class="tk-h">HAL_Delay</span>(<span class="tk-n">1</span>);
+  <span class="tk-f">lcd_send4</span>(<span class="tk-n">0x20</span>, <span class="tk-n">0</span>); <span class="tk-h">HAL_Delay</span>(<span class="tk-n">1</span>);   <span class="tk-c">// 4비트 모드로 전환</span>
+  <span class="tk-f">lcd_cmd</span>(<span class="tk-n">0x28</span>);                 <span class="tk-c">// 4비트, 2줄, 5x8 글꼴</span>
+  <span class="tk-f">lcd_cmd</span>(<span class="tk-n">0x08</span>);                 <span class="tk-c">// 표시 끔</span>
+  <span class="tk-f">lcd_cmd</span>(<span class="tk-n">0x01</span>);                 <span class="tk-c">// 화면 지우기</span>
+  <span class="tk-f">lcd_cmd</span>(<span class="tk-n">0x06</span>);                 <span class="tk-c">// 글자 쓰면 커서 오른쪽으로</span>
+  <span class="tk-f">lcd_cmd</span>(<span class="tk-n">0x0C</span>);                 <span class="tk-c">// 표시 켬, 커서 숨김</span>
+}
+
+<span class="tk-t">void</span> <span class="tk-f">lcd_set_cursor</span>(<span class="tk-t">uint8_t</span> row, <span class="tk-t">uint8_t</span> col)
+{
+  <span class="tk-t">uint8_t</span> addr = (row == <span class="tk-n">0</span> ? <span class="tk-n">0x00</span> : <span class="tk-n">0x40</span>) + col;   <span class="tk-c">// 1행 DDRAM 0x00, 2행 0x40</span>
+  <span class="tk-f">lcd_cmd</span>(<span class="tk-n">0x80</span> | addr);
+}
+
+<span class="tk-t">void</span> <span class="tk-f">lcd_print</span>(<span class="tk-k">const</span> <span class="tk-t">char</span> *s)
+{
+  <span class="tk-k">while</span> (*s) {
+    <span class="tk-f">lcd_data</span>((<span class="tk-t">uint8_t</span>)*s++);
+  }
+}
+<span class="tk-c">/* USER CODE END 0 */</span></code></pre></div>
+<h3 id="초기화-순서가-이런-이유">초기화 순서가 이런 이유<a class="anchor" href="#초기화-순서가-이런-이유">#</a></h3>
+<p>전원이 켜진 LCD 는 8비트 모드인지 4비트 모드인지 알 수 없습니다. 그래서 HD44780 데이터시트의 절차대로 <code>0x3</code> 을 세 번(8비트 모드로 확실히 맞춤) 보낸 뒤 <code>0x2</code> 로 4비트 모드에 들어가고, 그다음부터 명령을 두 번에 나눠 보냅니다.</p>
+<div class="table-wrap"><table><thead><tr><th>명령</th><th>값</th><th>의미</th></tr></thead><tbody><tr><td>Function set</td><td><code>0x28</code></td><td>4비트, 2줄, 5×8 글꼴</td></tr><tr><td>Display off</td><td><code>0x08</code></td><td>초기화 중 표시 끔</td></tr><tr><td>Clear</td><td><code>0x01</code></td><td>화면 지움 (1.52 ms 걸림 → 2 ms 대기)</td></tr><tr><td>Entry mode</td><td><code>0x06</code></td><td>글자를 쓰면 커서가 오른쪽으로</td></tr><tr><td>Display on</td><td><code>0x0C</code></td><td>표시 켬, 커서·깜빡임 끔</td></tr><tr><td>Set DDRAM addr</td><td><code>0x80 | addr</code></td><td>커서 위치. 1행 = <code>0x00</code>~, 2행 = <code>0x40</code>~</td></tr></tbody></table></div>
+<h2 id="예제-1-hello-카운터">예제 1 — Hello + 카운터<a class="anchor" href="#예제-1-hello-카운터">#</a></h2>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l10-lcd" data-sim-src="../sim/index.html?ex=l10-lcd&amp;embed=1" data-sim-id="l10-lcd"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">LCD 카운터 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l10-lcd" target="_blank" rel="noopener">새 창</a><code class="sim-id">l10-lcd</code></div>
+<div class="code-block code-example" data-example="l10-lcd"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN PV */</span>
+<span class="tk-t">uint32_t</span> count = <span class="tk-n">0</span>;
+<span class="tk-t">char</span> buf[<span class="tk-n">17</span>];               <span class="tk-c">// LCD 한 줄 16글자 + '\0'</span>
+<span class="tk-c">/* USER CODE END PV */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN 2 */</span>
+  <span class="tk-k">if</span> (<span class="tk-h">HAL_I2C_IsDeviceReady</span>(&amp;hi2c1, <span class="tk-m">LCD_ADDR</span>, <span class="tk-n">3</span>, <span class="tk-n">100</span>) != <span class="tk-m">HAL_OK</span>) {
+    <span class="tk-h">HAL_GPIO_WritePin</span>(LD2_GPIO_Port, LD2_Pin, <span class="tk-m">GPIO_PIN_SET</span>);   <span class="tk-c">// LCD 응답 없음 -&gt; LD2 켜서 알림</span>
+  }
+  <span class="tk-f">lcd_init</span>();
+  <span class="tk-f">lcd_set_cursor</span>(<span class="tk-n">0</span>, <span class="tk-n">0</span>);
+  <span class="tk-f">lcd_print</span>(<span class="tk-s">"Hello, STM32!"</span>);
+  <span class="tk-c">/* USER CODE END 2 */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    <span class="tk-f">sprintf</span>(buf, <span class="tk-s">"Count: %-9lu"</span>, count++);   <span class="tk-c">// 16칸을 꽉 채워 이전 글자를 덮어씀</span>
+    <span class="tk-f">lcd_set_cursor</span>(<span class="tk-n">1</span>, <span class="tk-n">0</span>);
+    <span class="tk-f">lcd_print</span>(buf);
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">1000</span>);
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span></code></pre></div>
+<ul><li><code>HAL_I2C_IsDeviceReady</code> 로 먼저 LCD 가 응답하는지 확인하고, 없으면 LD2 를 켜 알립니다.</li><li><code>&quot;Count: %-9lu&quot;</code> 는 7글자 + 왼쪽 정렬 9칸 = <strong>16글자를 꽉 채워</strong> 이전에 있던 긴 숫자의 잔상을 덮어씁니다.</li></ul>
+<p>LCD 는 <code>lcd_cmd(0x01)</code>(Clear)로 지우는 것보다 덮어쓰는 편이 빠르고 깜빡임이 없습니다.</p>
+<h2 id="예제-2-i2c-스캐너와-레지스터-읽기">예제 2 — I2C 스캐너와 레지스터 읽기<a class="anchor" href="#예제-2-i2c-스캐너와-레지스터-읽기">#</a></h2>
+<p>주소를 모를 때는 1 ~ 127 모든 주소에 <code>HAL_I2C_IsDeviceReady</code> 를 보내 ACK 하는 주소를 찾습니다. 예제 회로에는 LCD(0x27)와 LM75 형 온도센서를 흉내 낸 범용 I2C 장치(0x48)가 연결되어 있습니다.</p>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l10-scan" data-sim-src="../sim/index.html?ex=l10-scan&amp;embed=1" data-sim-id="l10-scan"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">I2C 스캐너 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l10-scan" target="_blank" rel="noopener">새 창</a><code class="sim-id">l10-scan</code></div>
+<div class="code-block code-example" data-example="l10-scan"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c">  <span class="tk-c">/* USER CODE BEGIN 2 */</span>
+  <span class="tk-f">printf</span>(<span class="tk-s">"\r\nI2C scan...\r\n"</span>);
+  <span class="tk-k">for</span> (<span class="tk-t">uint16_t</span> addr = <span class="tk-n">1</span>; addr &lt; <span class="tk-n">128</span>; addr++) {
+    <span class="tk-k">if</span> (<span class="tk-h">HAL_I2C_IsDeviceReady</span>(&amp;hi2c1, addr &lt;&lt; <span class="tk-n">1</span>, <span class="tk-n">1</span>, <span class="tk-n">10</span>) == <span class="tk-m">HAL_OK</span>) {
+      <span class="tk-f">printf</span>(<span class="tk-s">"  found device at 0x%02X\r\n"</span>, addr);
+    }
+  }
+  <span class="tk-f">printf</span>(<span class="tk-s">"scan done.\r\n"</span>);
+  <span class="tk-c">/* USER CODE END 2 */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    <span class="tk-k">if</span> (<span class="tk-h">HAL_I2C_Mem_Read</span>(&amp;hi2c1, <span class="tk-n">0x48</span> &lt;&lt; <span class="tk-n">1</span>, <span class="tk-n">0x00</span>, <span class="tk-m">I2C_MEMADD_SIZE_8BIT</span>, reg, <span class="tk-n">2</span>, <span class="tk-n">100</span>) == <span class="tk-m">HAL_OK</span>) {
+      <span class="tk-t">int16_t</span> raw = (<span class="tk-t">int16_t</span>)((reg[<span class="tk-n">0</span>] &lt;&lt; <span class="tk-n">8</span>) | reg[<span class="tk-n">1</span>]);
+      <span class="tk-t">int</span> t10 = (raw &gt;&gt; <span class="tk-n">7</span>) * <span class="tk-n">5</span>;             <span class="tk-c">// 0.5 도 단위 -&gt; 0.1 도 단위 (양수 온도 기준)</span>
+      <span class="tk-f">printf</span>(<span class="tk-s">"temp = %d.%d C  (raw 0x%02X 0x%02X)\r\n"</span>, t10 / <span class="tk-n">10</span>, t10 % <span class="tk-n">10</span>, reg[<span class="tk-n">0</span>], reg[<span class="tk-n">1</span>]);
+    } <span class="tk-k">else</span> {
+      <span class="tk-f">printf</span>(<span class="tk-s">"0x48 no response\r\n"</span>);
+    }
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">1000</span>);
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span></code></pre></div>
+<p><code>HAL_I2C_Mem_Read</code> 는 "레지스터 주소를 쓰고(START) → 다시 START → 데이터 읽기" 를 한 번에 해 주는 함수입니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-h">HAL_I2C_Mem_Read</span>(&amp;hi2c1, 장치주소 &lt;&lt; <span class="tk-n">1</span>, 레지스터주소, <span class="tk-m">I2C_MEMADD_SIZE_8BIT</span>, 버퍼, 길이, 타임아웃);</code></pre></div>
+<p>LM75 의 0번 레지스터는 온도를 2바이트로 담고, 상위 9비트가 0.5 °C 단위 온도입니다. <code>0x19 0x80</code> → <code>0x1980 &gt;&gt; 7 = 51</code> → 51 × 0.5 = <strong>25.5 °C</strong>. 시뮬레이터 장치의 <code>regs</code> 속성을 바꾸면 읽히는 값이 바뀝니다.</p>
+<div class="callout callout-task"><div class="callout-title">실습</div><div class="callout-body"><ol><li>LCD 노드의 <code>addr</code> 를 <code>0x3F</code> 로 바꾸고 예제 1을 실행해 보세요. 무엇이 달라지나요? 코드를 어떻게 고치면 되나요?</li><li>예제 1의 둘째 줄에 가동 시간을 <code>12:34</code>(분:초) 형식으로 표시하세요.</li><li>예제 2의 <code>regs</code> 첫 두 바이트를 <code>1E 00</code> 으로 바꾸면 몇 °C 로 표시되나요?</li></ol></div></div>
+<div class="callout callout-check"><div class="callout-title">스스로 확인</div><div class="callout-body"><ul><li>7비트 주소 <code>0x3F</code> 를 HAL 에 넘길 때의 값은?</li><li>LCD 2행 5열(0부터 셈)의 DDRAM 주소와 보내야 할 명령 바이트는?</li></ul></div></div>
+<h2 id="자주-나는-오류와-해결">자주 나는 오류와 해결<a class="anchor" href="#자주-나는-오류와-해결">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인</th><th>해결</th></tr></thead><tbody><tr><td><code>HAL_ERROR</code>, 아무것도 표시 안 됨</td><td>주소를 <code>&lt;&lt; 1</code> 하지 않음, 주소가 0x3F, 배선(SDA↔SCL 바뀜)</td><td>스캐너로 주소 확인, <code>(addr &lt;&lt; 1)</code></td></tr><tr><td>백라이트만 켜지고 글자 없음 / 네모 칸만</td><td>대비(contrast) 가변저항 조정 필요, 초기화 순서·지연 부족</td><td>백팩 뒤 파란 가변저항 돌리기, <code>lcd_init</code> 지연 확인</td></tr><tr><td>이상한 글자가 섞여 나옴</td><td>4비트 순서 착오(하위 먼저 보냄), EN 펄스 없음</td><td>상위 → 하위 순서, EN=1 → EN=0 두 번 보내기</td></tr><tr><td>한동안 되다가 <code>HAL_BUSY</code> 로 멈춤</td><td>전송 중 리셋되어 장치가 SDA 를 잡고 있음</td><td>전원 껐다 켜기, 긴 배선 줄이기</td></tr><tr><td>스캐너가 모든 주소에서 응답</td><td>풀업 없음·배선 단락 등으로 SDA 가 항상 LOW</td><td>풀업 저항과 배선 확인</td></tr></tbody></table></div>
+<h2 id="과제">과제<a class="anchor" href="#과제">#</a></h2>
+<ol><li>한 줄 전체를 덮어쓰는 <code>lcd_print_line(row, text)</code> 함수를 만드세요. 글자가 16개보다 짧으면 나머지 칸을 공백으로 채웁니다.</li><li>가변저항(L09) 값을 LCD 에 막대 그래프(<code>#</code> 16칸)로 표시하세요.</li><li>PCF8574 백팩이 없는 LCD1602 를 GPIO 6개로 직접 4비트 구동하려면 어떤 핀이 필요하고 코드가 어떻게 바뀌는지 조사하세요.</li></ol>
+<h2 id="참고자료">참고자료<a class="anchor" href="#참고자료">#</a></h2>
+<ul><li>NXP, <em>UM10204 — I2C-bus specification and user manual</em></li><li>Hitachi, <em>HD44780U datasheet</em> — 4비트 초기화 절차(Figure 24), 명령표</li><li>TI/NXP, <em>PCF8574 Remote 8-bit I/O expander</em> 데이터시트</li><li>ST, <em>UM1725 — STM32F4 HAL</em>, I2C Generic Driver (<code>HAL_I2C_Master_Transmit</code>, <code>HAL_I2C_Mem_Read</code>, <code>HAL_I2C_IsDeviceReady</code>)</li><li>이 사이트의 <a href="hal-reference.html#i2c">HAL 레퍼런스 — I2C</a></li></ul>
+      <nav class="pager"><a class="pager-prev" href="l09.html"><span>이전 · L09</span>ADC — 가변저항·조도센서</a><a class="pager-next" href="l11.html"><span>다음 · L11</span>SPI 기초</a></nav>
+    </div>
+    <aside class="lesson-toc"><div class="toc-title">이 레슨의 내용</div><div class="toc-links"><a class="toc-l2" href="#학습-목표">학습 목표</a><a class="toc-l2" href="#i2c-기초">I2C 기초</a><a class="toc-l3" href="#hal-주소-규칙-1">HAL 주소 규칙: `&lt;&lt; 1`</a><a class="toc-l3" href="#핀-nucleo-f411re">핀 (NUCLEO-F411RE)</a><a class="toc-l2" href="#lcd1602-와-pcf8574-백팩">LCD1602 와 PCF8574 백팩</a><a class="toc-l3" href="#드라이버-코드">드라이버 코드</a><a class="toc-l3" href="#초기화-순서가-이런-이유">초기화 순서가 이런 이유</a><a class="toc-l2" href="#예제-1-hello-카운터">예제 1 — Hello + 카운터</a><a class="toc-l2" href="#예제-2-i2c-스캐너와-레지스터-읽기">예제 2 — I2C 스캐너와 레지스터 읽기</a><a class="toc-l2" href="#자주-나는-오류와-해결">자주 나는 오류와 해결</a><a class="toc-l2" href="#과제">과제</a><a class="toc-l2" href="#참고자료">참고자료</a></div></aside>
+  </div>
+</article>
+
+</main>
+<script src="../assets/js/site.js"></script>
+</body>
+</html>

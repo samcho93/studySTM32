@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L14. 스텝모터 · studySTM32</title>
+<meta name="description" content="28BYJ-48과 ULN2003으로 풀스텝·하프스텝 시퀀스를 구동하고, 스텝 수로 각도를 제어합니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
+<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="../assets/css/stm32.css">
+<link rel="stylesheet" href="../assets/css/ml-theme.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
+<script src="../assets/js/theme.js"></script>
+</head>
+<body class="lesson-page track-page-periph">
+<button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
+<aside class="sidebar" id="sidebar">
+<nav class="sidebar-nav">
+<div class="brand-row"><a class="brand" href="../index.html"><span class="brand-mark">32</span><span class="brand-text">studySTM32<small>STM32 HAL 인터랙티브 강좌</small></span></a></div>
+<div class="side-tools"><a class="side-tool" href="../sim/index.html">시뮬레이터</a><a class="side-tool" href="../lessons/hal-reference.html">HAL 레퍼런스</a></div>
+<div class="nav-track" data-track="basics">
+<div class="nav-track-title track-basics"><span class="nav-part-no">PART 1</span>시작하기</div>
+<ul>
+<li><a href="../lessons/l01.html" data-slug="l01"><span class="nav-no">L01</span>STM32 시리즈와 개발 환경</a></li>
+<li><a href="../lessons/l02.html" data-slug="l02"><span class="nav-no">L02</span>시뮬레이터 둘러보기와 첫 프로젝트</a></li>
+<li><a href="../lessons/l03.html" data-slug="l03"><span class="nav-no">L03</span>GPIO 출력 — LED</a></li>
+<li><a href="../lessons/l04.html" data-slug="l04"><span class="nav-no">L04</span>GPIO 입력 — 스위치</a></li>
+<li><a href="../lessons/l05.html" data-slug="l05"><span class="nav-no">L05</span>외부 인터럽트 EXTI</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="comm">
+<div class="nav-track-title track-comm"><span class="nav-part-no">PART 2</span>통신·타이머·아날로그</div>
+<ul>
+<li><a href="../lessons/l06.html" data-slug="l06"><span class="nav-no">L06</span>UART와 printf</a></li>
+<li><a href="../lessons/l07.html" data-slug="l07"><span class="nav-no">L07</span>타이머 인터럽트</a></li>
+<li><a href="../lessons/l08.html" data-slug="l08"><span class="nav-no">L08</span>PWM — LED 밝기와 서보</a></li>
+<li><a href="../lessons/l09.html" data-slug="l09"><span class="nav-no">L09</span>ADC — 가변저항·조도센서</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="periph">
+<div class="nav-track-title track-periph"><span class="nav-part-no">PART 3</span>주변기기</div>
+<ul>
+<li><a href="../lessons/l10.html" data-slug="l10"><span class="nav-no">L10</span>I2C와 LCD1602</a></li>
+<li><a href="../lessons/l11.html" data-slug="l11"><span class="nav-no">L11</span>SPI 기초</a></li>
+<li><a href="../lessons/l12.html" data-slug="l12"><span class="nav-no">L12</span>7세그먼트 FND</a></li>
+<li><a href="../lessons/l13.html" data-slug="l13"><span class="nav-no">L13</span>DC 모터 드라이버</a></li>
+<li><a href="../lessons/l14.html" class="active" data-slug="l14"><span class="nav-no">L14</span>스텝모터</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="project">
+<div class="nav-track-title track-project"><span class="nav-part-no">PART 4</span>프로젝트</div>
+<ul>
+<li><a href="../lessons/l15.html" data-slug="l15"><span class="nav-no">L15</span>미니 프로젝트: 스마트 선풍기</a></li>
+<li><a href="../lessons/l16.html" data-slug="l16"><span class="nav-no">L16</span>실물 보드로 옮기기</a></li>
+</ul>
+</div>
+</nav>
+</aside>
+<div class="sidebar-scrim" id="scrim"></div>
+<main class="main">
+<header class="topbar"><a class="topbar-brand" href="../index.html"><span class="brand-mark">32</span>studySTM32</a><nav class="topnav" aria-label="사이트 메뉴"><a href="../index.html">강의 홈</a><a href="../sim/index.html">시뮬레이터</a><a href="../lessons/hal-reference.html">HAL 레퍼런스</a></nav><button class="theme-icon" type="button" data-theme-toggle data-theme-icon aria-label="테마 전환"></button></header>
+
+<article class="lesson" data-slug="l14" data-track="periph">
+  <div class="lesson-head">
+    <div class="crumbs"><span class="track-pill track-periph">PART 3</span> 주변기기 &middot; 약 60분 &middot; 중급</div>
+    <h1><span class="lesson-no">L14</span>스텝모터</h1>
+    <p class="lede">28BYJ-48과 ULN2003으로 풀스텝·하프스텝 시퀀스를 구동하고, 스텝 수로 각도를 제어합니다.</p>
+    <div class="requires">선수 레슨: <a href="l03.html">L03</a></div>
+    <div class="lesson-actions">
+      <label class="done-toggle"><input type="checkbox" id="doneCheck"><span>학습 완료로 표시</span></label>
+      <a class="ghost-btn tool-sim" href="../sim/index.html?ex=l14-stepper" data-sim-src="../sim/index.html?ex=l14-stepper&amp;embed=1">시뮬레이터에서 실습</a>
+    </div>
+  </div>
+  <div class="lesson-grid">
+    <div class="lesson-body">
+<h2 id="학습-목표">학습 목표<a class="anchor" href="#학습-목표">#</a></h2>
+<ul><li>스텝모터가 <strong>코일에 전류를 넣는 순서</strong>만으로 정해진 각도씩 회전하는 원리를 이해합니다.</li><li>28BYJ-48(5 V 유니폴라)과 ULN2003 드라이버 보드를 연결하고, <strong>1상 · 2상(풀스텝) · 하프스텝</strong> 시퀀스를 표로 씁니다.</li><li>스텝 수로 각도를 계산하고(풀스텝 2048 / 하프스텝 4096 스텝 = 1회전), 스텝 간격으로 속도를 정합니다.</li></ul>
+<h2 id="스텝모터와-28byj-48">스텝모터와 28BYJ-48<a class="anchor" href="#스텝모터와-28byj-48">#</a></h2>
+<p>스텝모터는 여러 코일(상)에 <strong>정해진 순서로 전류를 흘리면</strong> 그때마다 회전자가 한 칸(스텝)씩 끌려가며 도는 모터입니다. 엔코더 없이도 "몇 스텝 보냈는지" 로 위치를 알 수 있어 3D 프린터, 카메라 짐벌, 계량기 바늘 등에 쓰입니다.</p>
+<p><strong>28BYJ-48</strong> 은 교육용으로 가장 흔한 5 V 소형 스텝모터입니다.</p>
+<div class="table-wrap"><table><thead><tr><th>항목</th><th>값</th></tr></thead><tbody><tr><td>종류</td><td>유니폴라 4상, 5 V</td></tr><tr><td>내부 모터</td><td>풀스텝 32 스텝 / 회전</td></tr><tr><td>기어비</td><td>약 1 : 64 (정확히는 약 63.68)</td></tr><tr><td>출력축 1회전</td><td>풀스텝 약 <strong>2048</strong> 스텝, 하프스텝 약 <strong>4096</strong> 스텝</td></tr><tr><td>최대 속도</td><td>대략 10~15 rpm (풀스텝 간격 약 2 ms)</td></tr></tbody></table></div>
+<p><strong>ULN2003</strong> 은 달링턴 트랜지스터 7개가 든 칩으로, MCU 의 약한 신호(IN1~IN4)를 받아 코일 전류를 GND 쪽으로 흘려 줍니다(역기전력 다이오드 내장). 드라이버 보드의 LED 4개가 지금 켜진 코일을 보여 줍니다.</p>
+<h2 id="연결">연결<a class="anchor" href="#연결">#</a></h2>
+<div class="table-wrap pinmap"><table><thead><tr><th>STM32 핀</th><th>라벨</th><th>ULN2003 보드</th><th>비트</th></tr></thead><tbody><tr><td><code>PC0</code></td><td><code>ST_IN1</code></td><td>IN1</td><td>bit0</td></tr><tr><td><code>PC1</code></td><td><code>ST_IN2</code></td><td>IN2</td><td>bit1</td></tr><tr><td><code>PC2</code></td><td><code>ST_IN3</code></td><td>IN3</td><td>bit2</td></tr><tr><td><code>PC3</code></td><td><code>ST_IN4</code></td><td>IN4</td><td>bit3</td></tr><tr><td>—</td><td>—</td><td>+ (5~12 V 중 모터 정격 <strong>5 V</strong>)</td><td>별도 5 V 권장</td></tr><tr><td>GND</td><td>—</td><td>−</td><td>공통 GND</td></tr></tbody></table></div>
+<h2 id="구동-시퀀스">구동 시퀀스<a class="anchor" href="#구동-시퀀스">#</a></h2>
+<p>IN1~IN4 를 bit0~bit3 으로 보고 한 스텝마다 켤 코일을 표로 만듭니다.</p>
+<div class="table-wrap regmap"><table><thead><tr><th>방식</th><th>단계 수</th><th>시퀀스 (IN4 IN3 IN2 IN1)</th><th>특징</th></tr></thead><tbody><tr><td>1상 (웨이브)</td><td>4</td><td><code>0001</code> <code>0010</code> <code>0100</code> <code>1000</code></td><td>전류 적음, 토크 약함</td></tr><tr><td><strong>2상 풀스텝</strong></td><td>4</td><td><code>0011</code> <code>0110</code> <code>1100</code> <code>1001</code></td><td>코일 2개씩 — 토크 강함 (예제 1)</td></tr><tr><td><strong>하프스텝</strong></td><td>8</td><td><code>0001</code> <code>0011</code> <code>0010</code> <code>0110</code> <code>0100</code> <code>1100</code> <code>1000</code> <code>1001</code></td><td>1상·2상을 번갈아 — 각도 절반, 부드러움 (예제 2)</td></tr></tbody></table></div>
+<p>표를 <strong>순서대로</strong> 진행하면 정방향, <strong>거꾸로</strong> 진행하면 역방향입니다. 코드에서는 현재 위치 <code>step_index</code> 를 +1 또는 −1 하고 표 길이로 나머지를 취해 순환시킵니다: <code>(step_index + dir + 4) % 4</code> (+4 는 음수가 되지 않게 하는 요령).</p>
+<h2 id="예제-1-풀스텝-1회전-왕복">예제 1 — 풀스텝 1회전 왕복<a class="anchor" href="#예제-1-풀스텝-1회전-왕복">#</a></h2>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l14-stepper" data-sim-src="../sim/index.html?ex=l14-stepper&amp;embed=1" data-sim-id="l14-stepper"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">풀스텝 1회전 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l14-stepper" target="_blank" rel="noopener">새 창</a><code class="sim-id">l14-stepper</code></div>
+<div class="code-block code-example" data-example="l14-stepper"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN PV */</span>
+<span class="tk-t">int</span> step_index = <span class="tk-n">0</span>;          <span class="tk-c">// 시퀀스 표의 현재 위치</span>
+<span class="tk-c">/* USER CODE END PV */</span>
+
+<span class="tk-c">/* USER CODE BEGIN 0 */</span>
+<span class="tk-c">/* 2상 여자 풀스텝: 코일 두 개씩 차례로 (IN1..IN4 = bit0..bit3) */</span>
+<span class="tk-k">const</span> <span class="tk-t">uint8_t</span> <span class="tk-m">FULL_SEQ</span>[<span class="tk-n">4</span>] = {<span class="tk-n">0x03</span>, <span class="tk-n">0x06</span>, <span class="tk-n">0x0C</span>, <span class="tk-n">0x09</span>};
+
+<span class="tk-c">/* p 의 bit0~bit3 을 IN1~IN4 에 출력합니다. */</span>
+<span class="tk-t">void</span> <span class="tk-f">stepper_out</span>(<span class="tk-t">uint8_t</span> p)
+{
+  <span class="tk-h">HAL_GPIO_WritePin</span>(ST_IN1_GPIO_Port, ST_IN1_Pin, (p &amp; <span class="tk-n">0x01</span>) ? <span class="tk-m">GPIO_PIN_SET</span> : <span class="tk-m">GPIO_PIN_RESET</span>);
+  <span class="tk-h">HAL_GPIO_WritePin</span>(ST_IN2_GPIO_Port, ST_IN2_Pin, (p &amp; <span class="tk-n">0x02</span>) ? <span class="tk-m">GPIO_PIN_SET</span> : <span class="tk-m">GPIO_PIN_RESET</span>);
+  <span class="tk-h">HAL_GPIO_WritePin</span>(ST_IN3_GPIO_Port, ST_IN3_Pin, (p &amp; <span class="tk-n">0x04</span>) ? <span class="tk-m">GPIO_PIN_SET</span> : <span class="tk-m">GPIO_PIN_RESET</span>);
+  <span class="tk-h">HAL_GPIO_WritePin</span>(ST_IN4_GPIO_Port, ST_IN4_Pin, (p &amp; <span class="tk-n">0x08</span>) ? <span class="tk-m">GPIO_PIN_SET</span> : <span class="tk-m">GPIO_PIN_RESET</span>);
+}
+
+<span class="tk-c">/* steps &gt; 0 이면 정방향, &lt; 0 이면 역방향. 한 스텝마다 delay_ms 쉽니다. */</span>
+<span class="tk-t">void</span> <span class="tk-f">stepper_move</span>(<span class="tk-t">int</span> steps, <span class="tk-t">uint32_t</span> delay_ms)
+{
+  <span class="tk-t">int</span> dir = (steps &gt;= <span class="tk-n">0</span>) ? <span class="tk-n">1</span> : -<span class="tk-n">1</span>;
+  <span class="tk-k">if</span> (steps &lt; <span class="tk-n">0</span>) steps = -steps;
+  <span class="tk-k">for</span> (<span class="tk-t">int</span> i = <span class="tk-n">0</span>; i &lt; steps; i++) {
+    step_index = (step_index + dir + <span class="tk-n">4</span>) % <span class="tk-n">4</span>;
+    <span class="tk-f">stepper_out</span>(<span class="tk-m">FULL_SEQ</span>[step_index]);
+    <span class="tk-h">HAL_Delay</span>(delay_ms);
+  }
+  <span class="tk-f">stepper_out</span>(<span class="tk-n">0</span>);            <span class="tk-c">// 멈추면 코일 전류를 끊어 발열을 줄입니다</span>
+}
+<span class="tk-c">/* USER CODE END 0 */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    <span class="tk-f">stepper_move</span>(<span class="tk-n">2048</span>, <span class="tk-n">2</span>);     <span class="tk-c">// 정방향 1회전 (약 4초)</span>
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">500</span>);
+    <span class="tk-f">stepper_move</span>(-<span class="tk-n">2048</span>, <span class="tk-n">2</span>);    <span class="tk-c">// 역방향 1회전</span>
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">500</span>);
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span></code></pre></div>
+<ul><li><code>stepper_out()</code> 은 패턴의 비트 4개를 IN1~IN4 에 내보냅니다.</li><li>스텝 간격 2 ms × 2048 스텝 ≈ <strong>4.1 초에 1회전</strong>(약 15 rpm) — 28BYJ-48 의 한계 근처입니다. 더 빠르게 하면 스텝을 놓칩니다(탈조).</li><li>움직임이 끝나면 <code>stepper_out(0)</code> 으로 코일 전류를 끕니다. 켜 둔 채로 두면 위치는 단단히 유지되지만(유지 토크) 모터와 드라이버가 뜨거워집니다.</li></ul>
+<h2 id="예제-2-하프스텝으로-90-씩">예제 2 — 하프스텝으로 90° 씩<a class="anchor" href="#예제-2-하프스텝으로-90-씩">#</a></h2>
+<p>하프스텝은 1회전이 4096 스텝이므로 <strong>90° = 1024 스텝</strong> 입니다. 스텝 간격은 절반인 1 ms 로 두어 같은 회전 속도를 냅니다.</p>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l14-stepper-half" data-sim-src="../sim/index.html?ex=l14-stepper-half&amp;embed=1" data-sim-id="l14-stepper-half"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">하프스텝 90도 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l14-stepper-half" target="_blank" rel="noopener">새 창</a><code class="sim-id">l14-stepper-half</code></div>
+<div class="code-block code-example" data-example="l14-stepper-half"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN 0 */</span>
+<span class="tk-c">/* 하프스텝: 1상 -&gt; 2상 -&gt; 1상 ... 8단계 (IN1..IN4 = bit0..bit3) */</span>
+<span class="tk-k">const</span> <span class="tk-t">uint8_t</span> <span class="tk-m">HALF_SEQ</span>[<span class="tk-n">8</span>] = {<span class="tk-n">0x01</span>, <span class="tk-n">0x03</span>, <span class="tk-n">0x02</span>, <span class="tk-n">0x06</span>, <span class="tk-n">0x04</span>, <span class="tk-n">0x0C</span>, <span class="tk-n">0x08</span>, <span class="tk-n">0x09</span>};
+
+<span class="tk-c">/* p 의 bit0~bit3 을 IN1~IN4 에 출력합니다. */</span>
+<span class="tk-t">void</span> <span class="tk-f">stepper_out</span>(<span class="tk-t">uint8_t</span> p)
+{
+  <span class="tk-h">HAL_GPIO_WritePin</span>(ST_IN1_GPIO_Port, ST_IN1_Pin, (p &amp; <span class="tk-n">0x01</span>) ? <span class="tk-m">GPIO_PIN_SET</span> : <span class="tk-m">GPIO_PIN_RESET</span>);
+  <span class="tk-h">HAL_GPIO_WritePin</span>(ST_IN2_GPIO_Port, ST_IN2_Pin, (p &amp; <span class="tk-n">0x02</span>) ? <span class="tk-m">GPIO_PIN_SET</span> : <span class="tk-m">GPIO_PIN_RESET</span>);
+  <span class="tk-h">HAL_GPIO_WritePin</span>(ST_IN3_GPIO_Port, ST_IN3_Pin, (p &amp; <span class="tk-n">0x04</span>) ? <span class="tk-m">GPIO_PIN_SET</span> : <span class="tk-m">GPIO_PIN_RESET</span>);
+  <span class="tk-h">HAL_GPIO_WritePin</span>(ST_IN4_GPIO_Port, ST_IN4_Pin, (p &amp; <span class="tk-n">0x08</span>) ? <span class="tk-m">GPIO_PIN_SET</span> : <span class="tk-m">GPIO_PIN_RESET</span>);
+}
+
+<span class="tk-t">void</span> <span class="tk-f">stepper_move_half</span>(<span class="tk-t">int</span> steps, <span class="tk-t">uint32_t</span> delay_ms)
+{
+  <span class="tk-t">int</span> dir = (steps &gt;= <span class="tk-n">0</span>) ? <span class="tk-n">1</span> : -<span class="tk-n">1</span>;
+  <span class="tk-k">if</span> (steps &lt; <span class="tk-n">0</span>) steps = -steps;
+  <span class="tk-k">for</span> (<span class="tk-t">int</span> i = <span class="tk-n">0</span>; i &lt; steps; i++) {
+    step_index = (step_index + dir + <span class="tk-n">8</span>) % <span class="tk-n">8</span>;
+    <span class="tk-f">stepper_out</span>(<span class="tk-m">HALF_SEQ</span>[step_index]);
+    <span class="tk-h">HAL_Delay</span>(delay_ms);
+  }
+  <span class="tk-f">stepper_out</span>(<span class="tk-n">0</span>);
+}
+<span class="tk-c">/* USER CODE END 0 */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    <span class="tk-k">for</span> (<span class="tk-t">int</span> k = <span class="tk-n">0</span>; k &lt; <span class="tk-n">4</span>; k++) {
+      <span class="tk-f">stepper_move_half</span>(<span class="tk-n">1024</span>, <span class="tk-n">1</span>);   <span class="tk-c">// 90도 = 4096 / 4</span>
+      <span class="tk-h">HAL_Delay</span>(<span class="tk-n">500</span>);
+    }
+    <span class="tk-f">stepper_move_half</span>(-<span class="tk-n">4096</span>, <span class="tk-n">1</span>);    <span class="tk-c">// 한 바퀴 되돌아가기</span>
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">1000</span>);
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span></code></pre></div>
+<p><span class="math">스텝 수 = 각도 / 360 × 4096</span> 　 (하프스텝) 　 <span class="math">1회전 시간 = 4096 × 스텝 간격</span></p>
+<div class="callout callout-tip"><div class="callout-title">속도를 올리고 싶다면 가속을 쓰세요</div><div class="callout-body"><p>스텝모터는 <strong>정지 상태에서 갑자기 빠른 속도</strong>로 출발하면 따라오지 못합니다. 처음 몇십 스텝은 간격을 길게(예: 4 ms) 시작해 목표 간격까지 줄여 가는 <strong>가감속</strong>을 넣으면 더 빠른 속도까지 안정적으로 돌 수 있습니다.</p></div></div>
+<div class="callout callout-task"><div class="callout-title">실습</div><div class="callout-body"><ol><li>예제 1의 시퀀스를 <strong>1상(웨이브)</strong> 으로 바꾸고 차이(토크·전류)를 설명하세요.</li><li><code>stepper_move(512, 2)</code> 는 몇 도 회전인가요? 시뮬레이터에서 확인하세요.</li><li>예제 1의 스텝 간격을 1 ms 로 줄이면 실물에서는 어떤 일이 생길 수 있는지 예측하세요.</li></ol></div></div>
+<div class="callout callout-check"><div class="callout-title">스스로 확인</div><div class="callout-body"><ul><li>하프스텝으로 45° 돌리려면 몇 스텝?</li><li><code>step_index = (step_index - 1 + 8) % 8;</code> 는 어떤 동작인가요?</li></ul></div></div>
+<h2 id="자주-나는-오류와-해결">자주 나는 오류와 해결<a class="anchor" href="#자주-나는-오류와-해결">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인</th><th>해결</th></tr></thead><tbody><tr><td>떨기만 하고 돌지 않음</td><td>코일 순서(IN 배선) 틀림, 스텝 간격이 너무 짧음</td><td>IN1~IN4 순서 확인, 간격 2 ms 이상</td></tr><tr><td>한 방향으로만 돔</td><td>역방향에서 인덱스가 음수가 됨</td><td><code>(i + dir + 4) % 4</code> 처럼 양수로 만들기</td></tr><tr><td>힘이 약하고 쉽게 멈춤</td><td>전원 전압·전류 부족(USB 5 V 공유), 1상 구동</td><td>별도 5 V, 2상 풀스텝</td></tr><tr><td>모터·드라이버가 뜨거움</td><td>멈춘 동안에도 코일에 전류</td><td>이동 뒤 <code>stepper_out(0)</code></td></tr><tr><td>1회전이 정확히 한 바퀴가 아님</td><td>기어비가 정확히 64 가 아님(63.68…)</td><td>정밀 위치는 실측 보정 또는 다른 모터</td></tr></tbody></table></div>
+<h2 id="과제">과제<a class="anchor" href="#과제">#</a></h2>
+<ol><li>가변저항(L09) 값으로 스텝 간격(2~20 ms)을 바꿔 <strong>속도 조절</strong> 기능을 만드세요.</li><li>시계 초침: 1초마다 6°(하프스텝 약 68 스텝)씩 움직이세요. 누적 오차를 줄이려면 어떻게 계산해야 할까요?</li><li>가감속을 넣은 <code>stepper_move_accel(steps)</code> 를 만들고, 가감속 없이 가능한 최대 속도와 비교하세요.</li></ol>
+<h2 id="참고자료">참고자료<a class="anchor" href="#참고자료">#</a></h2>
+<ul><li>28BYJ-48 스텝모터 데이터시트 (Kiatronics 등 판매처 자료)</li><li>TI / ST, <em>ULN2003A datasheet</em> — 달링턴 어레이, 내장 다이오드</li><li>ST, <em>AN235 — Stepper motor driving</em> (스텝 방식 개념)</li><li>이 사이트의 L03 GPIO 출력</li></ul>
+      <nav class="pager"><a class="pager-prev" href="l13.html"><span>이전 · L13</span>DC 모터 드라이버</a><a class="pager-next" href="l15.html"><span>다음 · L15</span>미니 프로젝트: 스마트 선풍기</a></nav>
+    </div>
+    <aside class="lesson-toc"><div class="toc-title">이 레슨의 내용</div><div class="toc-links"><a class="toc-l2" href="#학습-목표">학습 목표</a><a class="toc-l2" href="#스텝모터와-28byj-48">스텝모터와 28BYJ-48</a><a class="toc-l2" href="#연결">연결</a><a class="toc-l2" href="#구동-시퀀스">구동 시퀀스</a><a class="toc-l2" href="#예제-1-풀스텝-1회전-왕복">예제 1 — 풀스텝 1회전 왕복</a><a class="toc-l2" href="#예제-2-하프스텝으로-90-씩">예제 2 — 하프스텝으로 90° 씩</a><a class="toc-l2" href="#자주-나는-오류와-해결">자주 나는 오류와 해결</a><a class="toc-l2" href="#과제">과제</a><a class="toc-l2" href="#참고자료">참고자료</a></div></aside>
+  </div>
+</article>
+
+</main>
+<script src="../assets/js/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L02. 시뮬레이터 둘러보기와 첫 프로젝트 · studySTM32</title>
+<meta name="description" content="CubeMX 핀아웃 → Generate Code → USER CODE 구역 → Build → Run 흐름을 시뮬레이터에서 처음부터 끝까지 따라 합니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
+<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="../assets/css/stm32.css">
+<link rel="stylesheet" href="../assets/css/ml-theme.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
+<script src="../assets/js/theme.js"></script>
+</head>
+<body class="lesson-page track-page-basics">
+<button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
+<aside class="sidebar" id="sidebar">
+<nav class="sidebar-nav">
+<div class="brand-row"><a class="brand" href="../index.html"><span class="brand-mark">32</span><span class="brand-text">studySTM32<small>STM32 HAL 인터랙티브 강좌</small></span></a></div>
+<div class="side-tools"><a class="side-tool" href="../sim/index.html">시뮬레이터</a><a class="side-tool" href="../lessons/hal-reference.html">HAL 레퍼런스</a></div>
+<div class="nav-track" data-track="basics">
+<div class="nav-track-title track-basics"><span class="nav-part-no">PART 1</span>시작하기</div>
+<ul>
+<li><a href="../lessons/l01.html" data-slug="l01"><span class="nav-no">L01</span>STM32 시리즈와 개발 환경</a></li>
+<li><a href="../lessons/l02.html" class="active" data-slug="l02"><span class="nav-no">L02</span>시뮬레이터 둘러보기와 첫 프로젝트</a></li>
+<li><a href="../lessons/l03.html" data-slug="l03"><span class="nav-no">L03</span>GPIO 출력 — LED</a></li>
+<li><a href="../lessons/l04.html" data-slug="l04"><span class="nav-no">L04</span>GPIO 입력 — 스위치</a></li>
+<li><a href="../lessons/l05.html" data-slug="l05"><span class="nav-no">L05</span>외부 인터럽트 EXTI</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="comm">
+<div class="nav-track-title track-comm"><span class="nav-part-no">PART 2</span>통신·타이머·아날로그</div>
+<ul>
+<li><a href="../lessons/l06.html" data-slug="l06"><span class="nav-no">L06</span>UART와 printf</a></li>
+<li><a href="../lessons/l07.html" data-slug="l07"><span class="nav-no">L07</span>타이머 인터럽트</a></li>
+<li><a href="../lessons/l08.html" data-slug="l08"><span class="nav-no">L08</span>PWM — LED 밝기와 서보</a></li>
+<li><a href="../lessons/l09.html" data-slug="l09"><span class="nav-no">L09</span>ADC — 가변저항·조도센서</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="periph">
+<div class="nav-track-title track-periph"><span class="nav-part-no">PART 3</span>주변기기</div>
+<ul>
+<li><a href="../lessons/l10.html" data-slug="l10"><span class="nav-no">L10</span>I2C와 LCD1602</a></li>
+<li><a href="../lessons/l11.html" data-slug="l11"><span class="nav-no">L11</span>SPI 기초</a></li>
+<li><a href="../lessons/l12.html" data-slug="l12"><span class="nav-no">L12</span>7세그먼트 FND</a></li>
+<li><a href="../lessons/l13.html" data-slug="l13"><span class="nav-no">L13</span>DC 모터 드라이버</a></li>
+<li><a href="../lessons/l14.html" data-slug="l14"><span class="nav-no">L14</span>스텝모터</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="project">
+<div class="nav-track-title track-project"><span class="nav-part-no">PART 4</span>프로젝트</div>
+<ul>
+<li><a href="../lessons/l15.html" data-slug="l15"><span class="nav-no">L15</span>미니 프로젝트: 스마트 선풍기</a></li>
+<li><a href="../lessons/l16.html" data-slug="l16"><span class="nav-no">L16</span>실물 보드로 옮기기</a></li>
+</ul>
+</div>
+</nav>
+</aside>
+<div class="sidebar-scrim" id="scrim"></div>
+<main class="main">
+<header class="topbar"><a class="topbar-brand" href="../index.html"><span class="brand-mark">32</span>studySTM32</a><nav class="topnav" aria-label="사이트 메뉴"><a href="../index.html">강의 홈</a><a href="../sim/index.html">시뮬레이터</a><a href="../lessons/hal-reference.html">HAL 레퍼런스</a></nav><button class="theme-icon" type="button" data-theme-toggle data-theme-icon aria-label="테마 전환"></button></header>
+
+<article class="lesson" data-slug="l02" data-track="basics">
+  <div class="lesson-head">
+    <div class="crumbs"><span class="track-pill track-basics">PART 1</span> 시작하기 &middot; 약 50분 &middot; 입문</div>
+    <h1><span class="lesson-no">L02</span>시뮬레이터 둘러보기와 첫 프로젝트</h1>
+    <p class="lede">CubeMX 핀아웃 → Generate Code → USER CODE 구역 → Build → Run 흐름을 시뮬레이터에서 처음부터 끝까지 따라 합니다.</p>
+    <div class="requires">선수 레슨: <a href="l01.html">L01</a></div>
+    <div class="lesson-actions">
+      <label class="done-toggle"><input type="checkbox" id="doneCheck"><span>학습 완료로 표시</span></label>
+      <a class="ghost-btn tool-sim" href="../sim/index.html?ex=l02-first" data-sim-src="../sim/index.html?ex=l02-first&amp;embed=1">시뮬레이터에서 실습</a>
+    </div>
+  </div>
+  <div class="lesson-grid">
+    <div class="lesson-body">
+<h2 id="학습-목표">학습 목표<a class="anchor" href="#학습-목표">#</a></h2>
+<ul><li>시뮬레이터의 네 영역 — <strong>프로젝트 탐색기, 디자인 영역(회로 노드 / 핀아웃·설정 / 코드), 실습 결과 영역, Properties</strong> — 이 각각 무엇을 하는지 압니다.</li><li>CubeMX 흐름 <strong>핀아웃 설정 → Generate Code → USER CODE 작성 → Build → Run</strong> 을 처음부터 끝까지 한 번 해 봅니다.</li><li><code>main.c</code> 의 구조(초기화 함수 호출 → <code>while (1)</code>)와 <strong>USER CODE 구역 규칙</strong>을 설명할 수 있습니다.</li></ul>
+<h2 id="시뮬레이터-화면-구성">시뮬레이터 화면 구성<a class="anchor" href="#시뮬레이터-화면-구성">#</a></h2>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l02-first" data-sim-src="../sim/index.html?ex=l02-first&amp;embed=1" data-sim-id="l02-first"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">첫 프로젝트 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l02-first" target="_blank" rel="noopener">새 창</a><code class="sim-id">l02-first</code></div>
+<p>시뮬레이터는 STM32CubeIDE와 CubeMX 화면을 한 페이지에 합친 모양입니다. 레슨 페이지에서 위 버튼을 누르면 오른쪽 실습 패널에 열리고, <strong>새 창</strong>을 누르면 전체 화면으로 열립니다. 화면은 다음 네 영역으로 나뉩니다.</p>
+<div class="table-wrap"><table><thead><tr><th>영역</th><th>하는 일</th><th>CubeIDE에서는</th></tr></thead><tbody><tr><td><strong>프로젝트 탐색기</strong> (왼쪽)</td><td><code>Core/Inc/main.h</code>, <code>Core/Src/main.c</code>, <code>.ioc</code> 설정, 읽기 전용 HAL 헤더(<code>Drivers/STM32F4xx_HAL_Driver/Inc/*.h</code>) 파일 트리</td><td>Project Explorer</td></tr><tr><td><strong>디자인 영역</strong> (가운데)</td><td>세 개의 탭: <strong>회로 노드</strong> · <strong>핀아웃·설정</strong> · <strong>코드</strong></td><td><code>.ioc</code> 편집기 + C 편집기</td></tr><tr><td><strong>실습 결과 영역</strong></td><td>보드 그림(LD2·B1), 연결한 장치의 상태(LED 밝기, LCD 글자, 모터 회전), UART 터미널, 로직 분석기 파형</td><td>실물 보드 + 터미널 프로그램</td></tr><tr><td><strong>Properties</strong></td><td>선택한 핀·노드·주변장치의 속성(LED 색, 가변저항 값, 보레이트 …)을 보고 바꾸기</td><td>Properties 뷰</td></tr></tbody></table></div>
+<h3 id="디자인-영역의-세-탭">디자인 영역의 세 탭<a class="anchor" href="#디자인-영역의-세-탭">#</a></h3>
+<ul><li><strong>회로 노드</strong> — LED, 버튼, 가변저항, LCD, 모터 같은 장치 노드를 놓고, 노드의 포트를 MCU 핀에 선으로 연결합니다.</li></ul>
+<p>보드 내장 장치(LD2, B1, ST-Link 가상 COM)는 처음부터 들어 있습니다.</p>
+<ul><li><strong>핀아웃·설정</strong> — CubeMX처럼 칩 그림에서 핀을 눌러 기능(<code>GPIO_Output</code>, <code>USART2_TX</code>, <code>TIM3_CH1</code> …)을 고르고,</li></ul>
+<p>주변장치 모드와 파라미터(보레이트, 타이머 PSC/ARR, ADC 채널), NVIC 인터럽트를 켭니다. 핀에 <strong>User Label</strong>(예: <code>LD2</code>)을 붙일 수 있습니다.</p>
+<ul><li><strong>코드</strong> — 설정으로 생성된 <code>main.c</code> 를 편집합니다. 여러분이 코드를 쓸 수 있는 곳은 <code>/* USER CODE BEGIN ... */</code> 와 <code>/* USER CODE END ... */</code> 사이뿐입니다.</li></ul>
+<h2 id="첫-프로젝트-따라-하기">첫 프로젝트: 따라 하기<a class="anchor" href="#첫-프로젝트-따라-하기">#</a></h2>
+<p>목표는 보드 LED <strong>LD2를 0.1초 켜고 0.9초 끄는</strong> 심장 박동 표시등입니다. 위의 예제 버튼으로 완성본을 열 수 있지만, 처음 한 번은 아래 순서대로 직접 해 보세요.</p>
+<ol><li><strong>보드 고르기</strong> — 새 프로젝트에서 보드 <code>NUCLEO-F411RE</code> 를 고릅니다. SYSCLK는 84 MHz로 설정되어 있습니다.</li><li><strong>핀아웃</strong> — 핀아웃·설정 탭에서 <code>PA5</code> 를 눌러 <code>GPIO_Output</code> 을 고르고, User Label을 <code>LD2</code> 로 적습니다. (Nucleo 보드 기본 설정에는 이미 들어 있습니다.)</li><li><strong>Generate Code</strong> — 코드를 생성하면 <code>main.h</code> 에 라벨 매크로가, <code>main.c</code> 에 <code>MX_GPIO_Init()</code> 이 만들어집니다.</li><li><strong>USER CODE 작성</strong> — <code>main.c</code> 의 <code>while (1)</code> 안, <code>USER CODE BEGIN 3</code> 구역에 아래 코드를 씁니다.</li><li><strong>Build</strong> — 빌드 버튼을 누르고 콘솔에 오류가 0개인지 확인합니다. 플래시·RAM 사용량(text/data/bss)도 표시됩니다.</li><li><strong>Run</strong> — 실행하면 실습 결과 영역의 보드 그림에서 LD2가 1초에 한 번 짧게 깜빡입니다.</li></ol>
+<div class="code-block code-example" data-example="l02-first"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c">  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    <span class="tk-h">HAL_GPIO_WritePin</span>(LD2_GPIO_Port, LD2_Pin, <span class="tk-m">GPIO_PIN_SET</span>);    <span class="tk-c">// LD2 켜기</span>
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">100</span>);
+    <span class="tk-h">HAL_GPIO_WritePin</span>(LD2_GPIO_Port, LD2_Pin, <span class="tk-m">GPIO_PIN_RESET</span>);  <span class="tk-c">// LD2 끄기</span>
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">900</span>);
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span></code></pre></div>
+<h2 id="생성된-코드-읽기">생성된 코드 읽기<a class="anchor" href="#생성된-코드-읽기">#</a></h2>
+<p>CubeMX가 만든 <code>main.c</code> 는 항상 같은 뼈대를 가집니다. (주석과 일부 줄은 줄였습니다)</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-p">#include</span> <span class="tk-s">"main.h"</span>
+
+<span class="tk-c">/* USER CODE BEGIN Includes */</span>
+<span class="tk-c">/* USER CODE END Includes */</span>
+
+<span class="tk-c">/* USER CODE BEGIN PV */</span>          <span class="tk-c">// 전역 변수는 여기</span>
+<span class="tk-c">/* USER CODE END PV */</span>
+
+<span class="tk-t">void</span> <span class="tk-f">SystemClock_Config</span>(<span class="tk-t">void</span>);
+<span class="tk-k">static</span> <span class="tk-t">void</span> <span class="tk-h">MX_GPIO_Init</span>(<span class="tk-t">void</span>);
+<span class="tk-c">/* USER CODE BEGIN PFP */</span>         <span class="tk-c">// 내 함수 원형은 여기</span>
+<span class="tk-c">/* USER CODE END PFP */</span>
+
+<span class="tk-c">/* USER CODE BEGIN 0 */</span>           <span class="tk-c">// 내 함수 정의 (main 위)</span>
+<span class="tk-c">/* USER CODE END 0 */</span>
+
+<span class="tk-t">int</span> <span class="tk-f">main</span>(<span class="tk-t">void</span>)
+{
+  <span class="tk-h">HAL_Init</span>();                     <span class="tk-c">// HAL 초기화 + 1 ms SysTick 시작</span>
+  <span class="tk-f">SystemClock_Config</span>();           <span class="tk-c">// 클럭 트리 설정 (84 MHz)</span>
+  <span class="tk-h">MX_GPIO_Init</span>();                 <span class="tk-c">// CubeMX에서 설정한 핀 초기화</span>
+
+  <span class="tk-c">/* USER CODE BEGIN 2 */</span>         <span class="tk-c">// 초기화 뒤 한 번만 실행할 코드</span>
+  <span class="tk-c">/* USER CODE END 2 */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>       <span class="tk-c">// 계속 반복할 코드</span>
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span>
+}
+
+<span class="tk-c">/* USER CODE BEGIN 4 */</span>           <span class="tk-c">// 콜백 함수 등 (main 아래)</span>
+<span class="tk-c">/* USER CODE END 4 */</span></code></pre></div>
+<p><code>main.h</code> 에는 핀 라벨로 만든 매크로가 들어갑니다. 코드에서 <code>GPIOA</code>, <code>GPIO_PIN_5</code> 대신 <code>LD2_GPIO_Port</code>, <code>LD2_Pin</code> 을 쓰면 나중에 LED를 다른 핀으로 옮겨도 CubeMX에서 라벨만 옮기면 됩니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Inc/main.h</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-p">#define</span> LD2_Pin <span class="tk-m">GPIO_PIN_5</span>
+<span class="tk-p">#define</span> LD2_GPIO_Port <span class="tk-m">GPIOA</span>
+<span class="tk-p">#define</span> B1_Pin <span class="tk-m">GPIO_PIN_13</span>
+<span class="tk-p">#define</span> B1_GPIO_Port <span class="tk-m">GPIOC</span></code></pre></div>
+<div class="callout callout-warn"><div class="callout-title">USER CODE 구역 밖에 쓴 코드는 사라집니다</div><div class="callout-body"><p>CubeMX 설정을 바꾸고 코드를 다시 생성하면 <code>USER CODE BEGIN</code> ~ <code>END</code> <strong>사이만 보존</strong>되고 나머지는 새로 덮어씁니다. <code>#include</code> 는 <code>Includes</code> 구역, 전역 변수는 <code>PV</code>, 함수 원형은 <code>PFP</code>, 함수 정의는 <code>0</code> 또는 <code>4</code> 구역에 쓰는 습관을 들이세요.</p></div></div>
+<h3 id="이-강좌의-코드-표기">이 강좌의 코드 표기<a class="anchor" href="#이-강좌의-코드-표기">#</a></h3>
+<p>레슨의 코드 블록은 위처럼 <code>/* USER CODE BEGIN ... */</code> 표시와 함께 보여 줍니다. 시뮬레이터 예제도 같은 구역에 같은 코드가 들어 있으니, 표시된 구역에 그대로 옮겨 쓰면 됩니다. 실물 CubeIDE 프로젝트에서도 마찬가지입니다(L16).</p>
+<h2 id="실습">실습<a class="anchor" href="#실습">#</a></h2>
+<div class="callout callout-task"><div class="callout-title">실습 A — 속도 바꾸기</div><div class="callout-body"><ol><li>예제를 열고 <code>HAL_Delay(100)</code> 과 <code>HAL_Delay(900)</code> 의 값을 바꿔 <strong>빠르게 두 번 깜빡이고 쉬는</strong> 패턴을 만드세요.</li><li>Build → Run 으로 확인합니다. 빌드 오류가 나면 콘솔의 줄 번호를 눌러 해당 줄로 이동합니다.</li></ol></div></div>
+<div class="callout callout-task"><div class="callout-title">실습 B — 코드 재생성 실험</div><div class="callout-body"><ol><li><code>USER CODE</code> 구역 <strong>밖</strong>(예: <code>MX_GPIO_Init();</code> 바로 아래)에 <code>HAL_Delay(1000);</code> 을 한 줄 넣습니다.</li><li>핀아웃·설정 탭에서 아무 설정이나 바꾼 뒤 코드를 다시 생성하고, 그 줄이 사라지는지 확인합니다.</li><li>같은 줄을 <code>USER CODE BEGIN 2</code> 구역에 넣고 다시 생성해 보존되는지 확인합니다.</li></ol></div></div>
+<div class="callout callout-check"><div class="callout-title">스스로 확인</div><div class="callout-body"><ul><li><code>HAL_Init()</code> 이 없으면 <code>HAL_Delay()</code> 가 동작하지 않는 이유는? (힌트: SysTick)</li><li>핀 라벨을 <code>LD2</code> 에서 <code>LED_STATUS</code> 로 바꾸면 코드에서 무엇을 고쳐야 하나요?</li></ul></div></div>
+<h2 id="자주-나는-오류와-해결">자주 나는 오류와 해결<a class="anchor" href="#자주-나는-오류와-해결">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>증상·메시지</th><th>원인</th><th>해결</th></tr></thead><tbody><tr><td><code>&#x27;LD2_Pin&#x27; undeclared</code></td><td>핀에 User Label을 붙이지 않았거나 다른 이름으로 붙임</td><td>핀아웃에서 라벨 확인 후 다시 생성, 또는 <code>GPIO_PIN_5</code> / <code>GPIOA</code> 직접 사용</td></tr><tr><td>코드를 다시 생성했더니 내가 쓴 코드가 없어짐</td><td><code>USER CODE</code> 구역 밖에 작성</td><td>구역 안으로 옮기기 (위 실습 B)</td></tr><tr><td>빌드는 되는데 LED가 켜진 채 그대로</td><td><code>while (1)</code> 밖(<code>USER CODE 2</code>)에 깜빡임 코드를 씀</td><td>반복할 코드는 <code>USER CODE BEGIN 3</code> 에</td></tr><tr><td><code>expected &#x27;;&#x27; before ...</code></td><td>앞 줄 끝의 세미콜론 누락</td><td>오류가 난 줄의 <strong>바로 윗줄</strong>을 확인</td></tr><tr><td>실행해도 아무 변화 없음</td><td>핀을 <code>GPIO_Output</code> 으로 설정하지 않음(Reset 상태)</td><td>핀아웃에서 PA5 기능 확인 후 다시 생성</td></tr></tbody></table></div>
+<h2 id="과제">과제<a class="anchor" href="#과제">#</a></h2>
+<ol><li>LD2로 모스 부호 SOS(짧게 3번, 길게 3번, 짧게 3번)를 반복하는 프로그램을 만드세요. 짧게 = 200 ms, 길게 = 600 ms.</li><li>생성된 <code>main.c</code> 에서 <code>HAL_Init</code>, <code>SystemClock_Config</code>, <code>MX_GPIO_Init</code> 이 각각 무엇을 하는지 한 줄씩 적으세요.</li><li>여러분이 쓴 코드를 USER CODE 구역별(Includes / PV / PFP / 0 / 2 / 3 / 4)로 나누어 정리하는 표를 만드세요.</li></ol>
+<h2 id="참고자료">참고자료<a class="anchor" href="#참고자료">#</a></h2>
+<ul><li>ST, <em>UM1718 — STM32CubeMX for STM32 configuration and initialization C code generation</em> (USER CODE 구역 설명)</li><li>ST, <em>UM2609 — STM32CubeIDE user guide</em></li><li>ST, <em>UM1725 — Description of STM32F4 HAL and low-layer drivers</em> (<code>HAL_Init</code>, <code>HAL_Delay</code>)</li><li>이 사이트의 <a href="hal-reference.html#코어">HAL 레퍼런스 — 코어</a></li></ul>
+      <nav class="pager"><a class="pager-prev" href="l01.html"><span>이전 · L01</span>STM32 시리즈와 개발 환경</a><a class="pager-next" href="l03.html"><span>다음 · L03</span>GPIO 출력 — LED</a></nav>
+    </div>
+    <aside class="lesson-toc"><div class="toc-title">이 레슨의 내용</div><div class="toc-links"><a class="toc-l2" href="#학습-목표">학습 목표</a><a class="toc-l2" href="#시뮬레이터-화면-구성">시뮬레이터 화면 구성</a><a class="toc-l3" href="#디자인-영역의-세-탭">디자인 영역의 세 탭</a><a class="toc-l2" href="#첫-프로젝트-따라-하기">첫 프로젝트: 따라 하기</a><a class="toc-l2" href="#생성된-코드-읽기">생성된 코드 읽기</a><a class="toc-l3" href="#이-강좌의-코드-표기">이 강좌의 코드 표기</a><a class="toc-l2" href="#실습">실습</a><a class="toc-l2" href="#자주-나는-오류와-해결">자주 나는 오류와 해결</a><a class="toc-l2" href="#과제">과제</a><a class="toc-l2" href="#참고자료">참고자료</a></div></aside>
+  </div>
+</article>
+
+</main>
+<script src="../assets/js/site.js"></script>
+</body>
+</html>

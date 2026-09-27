@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L09. ADC — 가변저항·조도센서 · studySTM32</title>
+<meta name="description" content="12비트 ADC 폴링 변환으로 가변저항을 읽고, 여러 채널을 스캔 + DMA로 계속 받아 오는 방법을 익힙니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
+<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="../assets/css/stm32.css">
+<link rel="stylesheet" href="../assets/css/ml-theme.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
+<script src="../assets/js/theme.js"></script>
+</head>
+<body class="lesson-page track-page-comm">
+<button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
+<aside class="sidebar" id="sidebar">
+<nav class="sidebar-nav">
+<div class="brand-row"><a class="brand" href="../index.html"><span class="brand-mark">32</span><span class="brand-text">studySTM32<small>STM32 HAL 인터랙티브 강좌</small></span></a></div>
+<div class="side-tools"><a class="side-tool" href="../sim/index.html">시뮬레이터</a><a class="side-tool" href="../lessons/hal-reference.html">HAL 레퍼런스</a></div>
+<div class="nav-track" data-track="basics">
+<div class="nav-track-title track-basics"><span class="nav-part-no">PART 1</span>시작하기</div>
+<ul>
+<li><a href="../lessons/l01.html" data-slug="l01"><span class="nav-no">L01</span>STM32 시리즈와 개발 환경</a></li>
+<li><a href="../lessons/l02.html" data-slug="l02"><span class="nav-no">L02</span>시뮬레이터 둘러보기와 첫 프로젝트</a></li>
+<li><a href="../lessons/l03.html" data-slug="l03"><span class="nav-no">L03</span>GPIO 출력 — LED</a></li>
+<li><a href="../lessons/l04.html" data-slug="l04"><span class="nav-no">L04</span>GPIO 입력 — 스위치</a></li>
+<li><a href="../lessons/l05.html" data-slug="l05"><span class="nav-no">L05</span>외부 인터럽트 EXTI</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="comm">
+<div class="nav-track-title track-comm"><span class="nav-part-no">PART 2</span>통신·타이머·아날로그</div>
+<ul>
+<li><a href="../lessons/l06.html" data-slug="l06"><span class="nav-no">L06</span>UART와 printf</a></li>
+<li><a href="../lessons/l07.html" data-slug="l07"><span class="nav-no">L07</span>타이머 인터럽트</a></li>
+<li><a href="../lessons/l08.html" data-slug="l08"><span class="nav-no">L08</span>PWM — LED 밝기와 서보</a></li>
+<li><a href="../lessons/l09.html" class="active" data-slug="l09"><span class="nav-no">L09</span>ADC — 가변저항·조도센서</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="periph">
+<div class="nav-track-title track-periph"><span class="nav-part-no">PART 3</span>주변기기</div>
+<ul>
+<li><a href="../lessons/l10.html" data-slug="l10"><span class="nav-no">L10</span>I2C와 LCD1602</a></li>
+<li><a href="../lessons/l11.html" data-slug="l11"><span class="nav-no">L11</span>SPI 기초</a></li>
+<li><a href="../lessons/l12.html" data-slug="l12"><span class="nav-no">L12</span>7세그먼트 FND</a></li>
+<li><a href="../lessons/l13.html" data-slug="l13"><span class="nav-no">L13</span>DC 모터 드라이버</a></li>
+<li><a href="../lessons/l14.html" data-slug="l14"><span class="nav-no">L14</span>스텝모터</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="project">
+<div class="nav-track-title track-project"><span class="nav-part-no">PART 4</span>프로젝트</div>
+<ul>
+<li><a href="../lessons/l15.html" data-slug="l15"><span class="nav-no">L15</span>미니 프로젝트: 스마트 선풍기</a></li>
+<li><a href="../lessons/l16.html" data-slug="l16"><span class="nav-no">L16</span>실물 보드로 옮기기</a></li>
+</ul>
+</div>
+</nav>
+</aside>
+<div class="sidebar-scrim" id="scrim"></div>
+<main class="main">
+<header class="topbar"><a class="topbar-brand" href="../index.html"><span class="brand-mark">32</span>studySTM32</a><nav class="topnav" aria-label="사이트 메뉴"><a href="../index.html">강의 홈</a><a href="../sim/index.html">시뮬레이터</a><a href="../lessons/hal-reference.html">HAL 레퍼런스</a></nav><button class="theme-icon" type="button" data-theme-toggle data-theme-icon aria-label="테마 전환"></button></header>
+
+<article class="lesson" data-slug="l09" data-track="comm">
+  <div class="lesson-head">
+    <div class="crumbs"><span class="track-pill track-comm">PART 2</span> 통신·타이머·아날로그 &middot; 약 70분 &middot; 중급</div>
+    <h1><span class="lesson-no">L09</span>ADC — 가변저항·조도센서</h1>
+    <p class="lede">12비트 ADC 폴링 변환으로 가변저항을 읽고, 여러 채널을 스캔 + DMA로 계속 받아 오는 방법을 익힙니다.</p>
+    <div class="requires">선수 레슨: <a href="l08.html">L08</a></div>
+    <div class="lesson-actions">
+      <label class="done-toggle"><input type="checkbox" id="doneCheck"><span>학습 완료로 표시</span></label>
+      <a class="ghost-btn tool-sim" href="../sim/index.html?ex=l09-pot" data-sim-src="../sim/index.html?ex=l09-pot&amp;embed=1">시뮬레이터에서 실습</a><a class="ghost-btn" href="hal-reference.html">HAL 레퍼런스</a>
+    </div>
+  </div>
+  <div class="lesson-grid">
+    <div class="lesson-body">
+<h2 id="학습-목표">학습 목표<a class="anchor" href="#학습-목표">#</a></h2>
+<ul><li>12비트 ADC 의 분해능과 <strong>변환 공식</strong>(값 ↔ 전압)을 이해합니다.</li><li>가변저항과 조도센서(CDS)를 <strong>분압 회로</strong>로 ADC 핀에 연결합니다.</li><li><code>HAL_ADC_Start</code> → <code>HAL_ADC_PollForConversion</code> → <code>HAL_ADC_GetValue</code> 폴링 변환으로 값을 읽고, PWM 밝기와 UART 출력에 씁니다.</li><li>여러 채널을 <strong>스캔 + 연속 변환 + 순환 DMA</strong> 로 자동으로 받아 오는 설정을 할 수 있습니다.</li></ul>
+<h2 id="adc-기초">ADC 기초<a class="anchor" href="#adc-기초">#</a></h2>
+<p>ADC(Analog-to-Digital Converter)는 핀의 전압을 숫자로 바꿉니다. STM32F4 의 ADC 는 <strong>12비트</strong>라서 0 V ~ 기준 전압(VREF+, Nucleo 에서는 3.3 V)을 <strong>0 ~ 4095</strong> 로 나타냅니다.</p>
+<p><span class="math">전압 = 값 × 3.3 / 4095</span> 　　 <span class="math">값 = 전압 × 4095 / 3.3</span></p>
+<div class="table-wrap"><table><thead><tr><th>입력 전압</th><th>ADC 값</th></tr></thead><tbody><tr><td>0 V</td><td>0</td></tr><tr><td>1.65 V</td><td>약 2048</td></tr><tr><td>3.3 V</td><td>4095</td></tr></tbody></table></div>
+<p>(엄밀히는 한 칸이 3.3/4096 V 이지만, 끝값 4095 가 3.3 V 가 되도록 4095 로 나누는 방식을 흔히 씁니다.)</p>
+<div class="callout callout-danger"><div class="callout-title">ADC 핀에 5 V 금지</div><div class="callout-body"><p>아날로그 입력으로 설정한 핀은 <strong>5V 허용(FT) 핀이라도 3.3 V 를 넘으면 안 됩니다.</strong> 5 V 센서 모듈은 저항 분압으로 3.3 V 이하로 낮추세요.</p></div></div>
+<h3 id="채널과-핀-nucleo-f411re-adc1">채널과 핀 (NUCLEO-F411RE, ADC1)<a class="anchor" href="#채널과-핀-nucleo-f411re-adc1">#</a></h3>
+<div class="table-wrap pinmap"><table><thead><tr><th>핀</th><th>채널</th><th>Nucleo 헤더</th></tr></thead><tbody><tr><td><code>PA0</code></td><td><code>ADC1_IN0</code></td><td>A0</td></tr><tr><td><code>PA1</code></td><td><code>ADC1_IN1</code></td><td>A1</td></tr><tr><td><code>PA4</code></td><td><code>ADC1_IN4</code></td><td>A2</td></tr><tr><td><code>PB0</code></td><td><code>ADC1_IN8</code></td><td>A3</td></tr><tr><td><code>PC1</code></td><td><code>ADC1_IN11</code></td><td>A4</td></tr><tr><td><code>PC0</code></td><td><code>ADC1_IN10</code></td><td>A5</td></tr></tbody></table></div>
+<h3 id="배선-분압-회로">배선: 분압 회로<a class="anchor" href="#배선-분압-회로">#</a></h3>
+<ul><li><strong>가변저항</strong> — 양 끝을 3.3 V 와 GND, 가운데(와이퍼)를 <code>PA0</code> 에. 돌리면 0 ~ 3.3 V 가 나옵니다.</li><li><strong>조도센서(CDS)</strong> — CDS 와 고정 저항(10 kΩ 정도)을 직렬로 3.3 V–GND 사이에 두고 가운데를 <code>PA1</code> 에. 밝을수록 CDS 저항이 작아지므로,</li></ul>
+<p>CDS 가 3.3 V 쪽이면 밝을수록 값이 <strong>커지고</strong>, GND 쪽이면 <strong>작아집니다.</strong> 어느 방향인지는 배선을 보고 판단하세요.</p>
+<h2 id="예제-1-폴링으로-가변저항-읽기">예제 1 — 폴링으로 가변저항 읽기<a class="anchor" href="#예제-1-폴링으로-가변저항-읽기">#</a></h2>
+<p>CubeMX: <strong>Analog → ADC1 → IN0</strong> 체크(나머지는 기본값: 12 bits, 단일 변환). 같은 프로젝트에 TIM3 CH1 PWM(L08)과 USART2(L06)도 켭니다.</p>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l09-pot" data-sim-src="../sim/index.html?ex=l09-pot&amp;embed=1" data-sim-id="l09-pot"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">가변저항 → UART + LED 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l09-pot" target="_blank" rel="noopener">새 창</a><code class="sim-id">l09-pot</code></div>
+<div class="code-block code-example" data-example="l09-pot"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c">  <span class="tk-c">/* USER CODE BEGIN 2 */</span>
+  <span class="tk-h">HAL_TIM_PWM_Start</span>(&amp;htim3, <span class="tk-m">TIM_CHANNEL_1</span>);
+  <span class="tk-c">/* USER CODE END 2 */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    <span class="tk-h">HAL_ADC_Start</span>(&amp;hadc1);                                  <span class="tk-c">// 1) 변환 시작</span>
+    <span class="tk-k">if</span> (<span class="tk-h">HAL_ADC_PollForConversion</span>(&amp;hadc1, <span class="tk-n">10</span>) == <span class="tk-m">HAL_OK</span>) {  <span class="tk-c">// 2) 끝날 때까지 대기 (최대 10 ms)</span>
+      adc_value = <span class="tk-h">HAL_ADC_GetValue</span>(&amp;hadc1);                 <span class="tk-c">// 3) 결과 읽기</span>
+    }
+    <span class="tk-h">HAL_ADC_Stop</span>(&amp;hadc1);
+
+    <span class="tk-h">__HAL_TIM_SET_COMPARE</span>(&amp;htim3, <span class="tk-m">TIM_CHANNEL_1</span>, adc_value * <span class="tk-n">999</span> / <span class="tk-n">4095</span>);
+
+    <span class="tk-k">if</span> (<span class="tk-h">HAL_GetTick</span>() - last_print &gt;= <span class="tk-n">500</span>) {
+      last_print = <span class="tk-h">HAL_GetTick</span>();
+      <span class="tk-t">float</span> volt = adc_value * <span class="tk-n">3.3f</span> / <span class="tk-n">4095.0f</span>;
+      <span class="tk-f">printf</span>(<span class="tk-s">"ADC = %4lu   V = %.2f\r\n"</span>, adc_value, volt);
+    }
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">10</span>);
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span></code></pre></div>
+<p>폴링 변환은 세 단계입니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-h">HAL_ADC_Start</span>(&amp;hadc1);                      <span class="tk-c">// 1) 변환 시작</span>
+<span class="tk-h">HAL_ADC_PollForConversion</span>(&amp;hadc1, <span class="tk-n">10</span>);      <span class="tk-c">// 2) 끝날 때까지 최대 10 ms 대기 → HAL_OK / HAL_TIMEOUT</span>
+<span class="tk-t">uint32_t</span> v = <span class="tk-h">HAL_ADC_GetValue</span>(&amp;hadc1);      <span class="tk-c">// 3) 12비트 결과 (0~4095)</span></code></pre></div>
+<ul><li>같은 값으로 PWM 듀티(<code>adc_value * 999 / 4095</code>)를 정해 가변저항을 돌리면 LED 밝기가 따라 바뀝니다.</li><li><code>printf(&quot;%.2f&quot;)</code> 를 쓰므로 <strong>실수 printf 설정</strong>이 켜져 있어야 합니다(L06). 이 예제는 시뮬레이터 설정 <code>printfFloat</code> 을 켜 두었습니다.</li></ul>
+<p>실수 출력을 피하고 싶다면 <code>mv = adc_value * 3300 / 4095;</code> 로 <strong>mV 정수</strong>를 계산해 <code>%lu mV</code> 로 출력하는 방법도 좋습니다.</p>
+<div class="callout callout-tip"><div class="callout-title">값이 떨린다면 평균을 내세요</div><div class="callout-body"><p>실물 ADC 값은 잡음으로 ±몇 칸씩 흔들립니다. 8번 읽어 평균을 내거나(<code>sum &gt;&gt; 3</code>), 이전 값과 섞는 지수 평균 <code>filtered = (filtered * 7 + v) / 8;</code> 을 쓰면 안정됩니다.</p></div></div>
+<h2 id="예제-2-두-채널을-dma-로-계속-받기">예제 2 — 두 채널을 DMA 로 계속 받기<a class="anchor" href="#예제-2-두-채널을-dma-로-계속-받기">#</a></h2>
+<p>채널이 여러 개면 "시작 → 대기 → 읽기" 를 반복하기 번거롭습니다. <strong>스캔 모드</strong>로 여러 채널을 순서대로 변환하고, <strong>연속 변환 + 순환(Circular) DMA</strong> 로 결과를 배열에 계속 덮어쓰게 하면, CPU 는 배열을 읽기만 하면 됩니다.</p>
+<h3 id="cubemx-설정">CubeMX 설정<a class="anchor" href="#cubemx-설정">#</a></h3>
+<ol><li><strong>ADC1 → IN0, IN1</strong> 체크</li><li>Parameter Settings: <strong>Scan Conversion Mode: Enabled</strong>, <strong>Continuous Conversion Mode: Enabled</strong>, <strong>DMA Continuous Requests: Enabled</strong></li><li><strong>Number Of Conversion: 2</strong> — Rank 1 = Channel 0, Rank 2 = Channel 1 (Sampling Time 은 넉넉히, 예: 84 Cycles)</li><li><strong>DMA Settings → Add → ADC1</strong>, Mode <strong>Circular</strong>, Data Width <strong>Half Word</strong>(16비트)</li></ol>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l09-dma" data-sim-src="../sim/index.html?ex=l09-dma&amp;embed=1" data-sim-id="l09-dma"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">두 채널 DMA 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l09-dma" target="_blank" rel="noopener">새 창</a><code class="sim-id">l09-dma</code></div>
+<div class="code-block code-example" data-example="l09-dma"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN PV */</span>
+<span class="tk-t">uint16_t</span> adc_buf[<span class="tk-n">2</span>];        <span class="tk-c">// [0] = IN0 가변저항, [1] = IN1 조도센서 (rank 순서)</span>
+<span class="tk-c">/* USER CODE END PV */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN 2 */</span>
+  <span class="tk-h">HAL_ADC_Start_DMA</span>(&amp;hadc1, (<span class="tk-t">uint32_t</span> *)adc_buf, <span class="tk-n">2</span>);   <span class="tk-c">// 한 번 시작하면 DMA 가 계속 채웁니다</span>
+  <span class="tk-c">/* USER CODE END 2 */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    <span class="tk-f">printf</span>(<span class="tk-s">"POT = %4u   CDS = %4u\r\n"</span>, adc_buf[<span class="tk-n">0</span>], adc_buf[<span class="tk-n">1</span>]);
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">500</span>);
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span></code></pre></div>
+<ul><li><code>adc_buf[0]</code> 에는 Rank 1(IN0 가변저항), <code>adc_buf[1]</code> 에는 Rank 2(IN1 CDS) 값이 <strong>계속 갱신</strong>됩니다.</li><li><code>HAL_ADC_Start_DMA</code> 의 두 번째 인자 형이 <code>uint32_t *</code> 라서 <code>(uint32_t *)adc_buf</code> 로 캐스트합니다. 실제 전송 단위는 DMA 설정의 Half Word 입니다.</li><li>메인 루프는 필요할 때 배열을 읽기만 합니다. 변환이 끝날 때마다 알림을 받고 싶으면 <code>HAL_ADC_ConvCpltCallback</code> 을 정의합니다.</li></ul>
+<div class="callout callout-warn"><div class="callout-title">실물 CubeIDE: DMA 초기화 순서</div><div class="callout-body"><p>일부 CubeMX 버전은 <code>main()</code> 에서 <code>MX_ADC1_Init()</code> 을 <code>MX_DMA_Init()</code> <strong>보다 먼저</strong> 부르도록 생성해, DMA 가 동작하지 않는 문제가 있었습니다. 배열이 계속 0 이면 <code>MX_DMA_Init();</code> 이 <code>MX_ADC1_Init();</code> 보다 위에 있는지 확인하고, CubeMX 의 <em>Project Manager → Advanced Settings</em> 에서 순서를 바꾸세요.</p></div></div>
+<h3 id="채널을-바꿔-가며-폴링하기-참고">채널을 바꿔 가며 폴링하기 (참고)<a class="anchor" href="#채널을-바꿔-가며-폴링하기-참고">#</a></h3>
+<p>DMA 없이 채널을 바꿔 가며 읽으려면 <code>HAL_ADC_ConfigChannel()</code> 로 채널을 다시 설정한 뒤 변환합니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-t">ADC_ChannelConfTypeDef</span> sConfig = {<span class="tk-n">0</span>};
+sConfig.Channel = <span class="tk-m">ADC_CHANNEL_1</span>;
+sConfig.Rank = <span class="tk-n">1</span>;
+sConfig.SamplingTime = <span class="tk-m">ADC_SAMPLETIME_84CYCLES</span>;
+<span class="tk-h">HAL_ADC_ConfigChannel</span>(&amp;hadc1, &amp;sConfig);    <span class="tk-c">// 이제 Start/Poll/GetValue 는 IN1 을 읽음</span></code></pre></div>
+<div class="callout callout-task"><div class="callout-title">실습</div><div class="callout-body"><ol><li>예제 1에서 가변저항 노드의 <code>value</code> 를 Properties 에서 0, 2048, 4095 로 바꾸며 출력 전압이 공식과 맞는지 확인하세요.</li><li>예제 2의 CDS 노드 <code>lux</code> 를 바꿔 가며 값이 어느 방향으로 변하는지 기록하세요.</li><li>예제 2에 "CDS 값이 기준보다 어두운 쪽이면 LD2 켜기" 를 추가하세요(자동 야간등). 기준값은 실습 2의 결과로 정합니다.</li></ol></div></div>
+<div class="callout callout-check"><div class="callout-title">스스로 확인</div><div class="callout-body"><ul><li>ADC 값이 3000 이면 전압은 약 몇 V 인가요?</li><li>스캔 모드를 끄고 두 채널을 설정하면 DMA 배열의 두 칸에 무엇이 들어올까요?</li></ul></div></div>
+<h2 id="자주-나는-오류와-해결">자주 나는 오류와 해결<a class="anchor" href="#자주-나는-오류와-해결">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인</th><th>해결</th></tr></thead><tbody><tr><td>항상 0 또는 4095</td><td>와이퍼가 아닌 끝 단자에 연결, 핀 채널 틀림</td><td>배선·핀아웃 채널 확인</td></tr><tr><td>값이 크게 흔들림</td><td>떠 있는 입력(연결 안 됨), 잡음</td><td>배선 확인, 평균 필터, 샘플링 시간 늘리기</td></tr><tr><td><code>HAL_ADC_PollForConversion</code> 이 <code>HAL_TIMEOUT</code></td><td><code>HAL_ADC_Start</code> 누락</td><td>Start → Poll → GetValue 순서</td></tr><tr><td>DMA 배열이 계속 0</td><td>DMA 미설정, <code>MX_DMA_Init</code> 순서, DMA Continuous Requests 꺼짐</td><td>위 설정 1~4 와 초기화 순서</td></tr><tr><td>두 번째 채널이 갱신되지 않음</td><td>Scan Conversion Mode 꺼짐, Number Of Conversion = 1</td><td>스캔 켜고 Rank 2 추가</td></tr><tr><td><code>%.2f</code> 자리에 아무것도 안 나옴</td><td>실수 printf 꺼짐</td><td><code>-u _printf_float</code> / <code>printfFloat</code>, 또는 mV 정수로 출력</td></tr></tbody></table></div>
+<h2 id="과제">과제<a class="anchor" href="#과제">#</a></h2>
+<ol><li>가변저항 값으로 <strong>서보 각도</strong>(L08)를 0~180° 로 조절하세요.</li><li>가변저항 값을 10단계로 나눠 LED 5개에 막대 그래프(레벨 미터)로 표시하세요.</li><li>이동 평균(최근 16개)과 지수 평균의 반응 속도·잡음 제거 효과를 비교해 UART 로 출력해 보세요.</li></ol>
+<h2 id="참고자료">참고자료<a class="anchor" href="#참고자료">#</a></h2>
+<ul><li>ST, <em>RM0383</em>, 11장 ADC (스캔·연속 변환·DMA)</li><li>ST, <em>AN2834 — How to get the best ADC accuracy in STM32 microcontrollers</em></li><li>ST, <em>UM1725 — STM32F4 HAL</em>, ADC Generic Driver (<code>HAL_ADC_Start</code>, <code>HAL_ADC_PollForConversion</code>, <code>HAL_ADC_Start_DMA</code>)</li><li>이 사이트의 <a href="hal-reference.html#adc">HAL 레퍼런스 — ADC</a></li></ul>
+      <nav class="pager"><a class="pager-prev" href="l08.html"><span>이전 · L08</span>PWM — LED 밝기와 서보</a><a class="pager-next" href="l10.html"><span>다음 · L10</span>I2C와 LCD1602</a></nav>
+    </div>
+    <aside class="lesson-toc"><div class="toc-title">이 레슨의 내용</div><div class="toc-links"><a class="toc-l2" href="#학습-목표">학습 목표</a><a class="toc-l2" href="#adc-기초">ADC 기초</a><a class="toc-l3" href="#채널과-핀-nucleo-f411re-adc1">채널과 핀 (NUCLEO-F411RE, ADC1)</a><a class="toc-l3" href="#배선-분압-회로">배선: 분압 회로</a><a class="toc-l2" href="#예제-1-폴링으로-가변저항-읽기">예제 1 — 폴링으로 가변저항 읽기</a><a class="toc-l2" href="#예제-2-두-채널을-dma-로-계속-받기">예제 2 — 두 채널을 DMA 로 계속 받기</a><a class="toc-l3" href="#cubemx-설정">CubeMX 설정</a><a class="toc-l3" href="#채널을-바꿔-가며-폴링하기-참고">채널을 바꿔 가며 폴링하기 (참고)</a><a class="toc-l2" href="#자주-나는-오류와-해결">자주 나는 오류와 해결</a><a class="toc-l2" href="#과제">과제</a><a class="toc-l2" href="#참고자료">참고자료</a></div></aside>
+  </div>
+</article>
+
+</main>
+<script src="../assets/js/site.js"></script>
+</body>
+</html>

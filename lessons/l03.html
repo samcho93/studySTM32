@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L03. GPIO 출력 — LED · studySTM32</title>
+<meta name="description" content="GPIO 출력 모드, HAL_GPIO_WritePin·TogglePin, 핀 라벨과 main.h 매크로, BSRR 레지스터 직접 쓰기까지 LED로 익힙니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
+<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="../assets/css/stm32.css">
+<link rel="stylesheet" href="../assets/css/ml-theme.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
+<script src="../assets/js/theme.js"></script>
+</head>
+<body class="lesson-page track-page-basics">
+<button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
+<aside class="sidebar" id="sidebar">
+<nav class="sidebar-nav">
+<div class="brand-row"><a class="brand" href="../index.html"><span class="brand-mark">32</span><span class="brand-text">studySTM32<small>STM32 HAL 인터랙티브 강좌</small></span></a></div>
+<div class="side-tools"><a class="side-tool" href="../sim/index.html">시뮬레이터</a><a class="side-tool" href="../lessons/hal-reference.html">HAL 레퍼런스</a></div>
+<div class="nav-track" data-track="basics">
+<div class="nav-track-title track-basics"><span class="nav-part-no">PART 1</span>시작하기</div>
+<ul>
+<li><a href="../lessons/l01.html" data-slug="l01"><span class="nav-no">L01</span>STM32 시리즈와 개발 환경</a></li>
+<li><a href="../lessons/l02.html" data-slug="l02"><span class="nav-no">L02</span>시뮬레이터 둘러보기와 첫 프로젝트</a></li>
+<li><a href="../lessons/l03.html" class="active" data-slug="l03"><span class="nav-no">L03</span>GPIO 출력 — LED</a></li>
+<li><a href="../lessons/l04.html" data-slug="l04"><span class="nav-no">L04</span>GPIO 입력 — 스위치</a></li>
+<li><a href="../lessons/l05.html" data-slug="l05"><span class="nav-no">L05</span>외부 인터럽트 EXTI</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="comm">
+<div class="nav-track-title track-comm"><span class="nav-part-no">PART 2</span>통신·타이머·아날로그</div>
+<ul>
+<li><a href="../lessons/l06.html" data-slug="l06"><span class="nav-no">L06</span>UART와 printf</a></li>
+<li><a href="../lessons/l07.html" data-slug="l07"><span class="nav-no">L07</span>타이머 인터럽트</a></li>
+<li><a href="../lessons/l08.html" data-slug="l08"><span class="nav-no">L08</span>PWM — LED 밝기와 서보</a></li>
+<li><a href="../lessons/l09.html" data-slug="l09"><span class="nav-no">L09</span>ADC — 가변저항·조도센서</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="periph">
+<div class="nav-track-title track-periph"><span class="nav-part-no">PART 3</span>주변기기</div>
+<ul>
+<li><a href="../lessons/l10.html" data-slug="l10"><span class="nav-no">L10</span>I2C와 LCD1602</a></li>
+<li><a href="../lessons/l11.html" data-slug="l11"><span class="nav-no">L11</span>SPI 기초</a></li>
+<li><a href="../lessons/l12.html" data-slug="l12"><span class="nav-no">L12</span>7세그먼트 FND</a></li>
+<li><a href="../lessons/l13.html" data-slug="l13"><span class="nav-no">L13</span>DC 모터 드라이버</a></li>
+<li><a href="../lessons/l14.html" data-slug="l14"><span class="nav-no">L14</span>스텝모터</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="project">
+<div class="nav-track-title track-project"><span class="nav-part-no">PART 4</span>프로젝트</div>
+<ul>
+<li><a href="../lessons/l15.html" data-slug="l15"><span class="nav-no">L15</span>미니 프로젝트: 스마트 선풍기</a></li>
+<li><a href="../lessons/l16.html" data-slug="l16"><span class="nav-no">L16</span>실물 보드로 옮기기</a></li>
+</ul>
+</div>
+</nav>
+</aside>
+<div class="sidebar-scrim" id="scrim"></div>
+<main class="main">
+<header class="topbar"><a class="topbar-brand" href="../index.html"><span class="brand-mark">32</span>studySTM32</a><nav class="topnav" aria-label="사이트 메뉴"><a href="../index.html">강의 홈</a><a href="../sim/index.html">시뮬레이터</a><a href="../lessons/hal-reference.html">HAL 레퍼런스</a></nav><button class="theme-icon" type="button" data-theme-toggle data-theme-icon aria-label="테마 전환"></button></header>
+
+<article class="lesson" data-slug="l03" data-track="basics">
+  <div class="lesson-head">
+    <div class="crumbs"><span class="track-pill track-basics">PART 1</span> 시작하기 &middot; 약 60분 &middot; 입문</div>
+    <h1><span class="lesson-no">L03</span>GPIO 출력 — LED</h1>
+    <p class="lede">GPIO 출력 모드, HAL_GPIO_WritePin·TogglePin, 핀 라벨과 main.h 매크로, BSRR 레지스터 직접 쓰기까지 LED로 익힙니다.</p>
+    <div class="requires">선수 레슨: <a href="l02.html">L02</a></div>
+    <div class="lesson-actions">
+      <label class="done-toggle"><input type="checkbox" id="doneCheck"><span>학습 완료로 표시</span></label>
+      <a class="ghost-btn tool-sim" href="../sim/index.html?ex=l03-blink" data-sim-src="../sim/index.html?ex=l03-blink&amp;embed=1">시뮬레이터에서 실습</a><a class="ghost-btn" href="hal-reference.html">HAL 레퍼런스</a>
+    </div>
+  </div>
+  <div class="lesson-grid">
+    <div class="lesson-body">
+<h2 id="학습-목표">학습 목표<a class="anchor" href="#학습-목표">#</a></h2>
+<ul><li>GPIO 포트·핀 번호 체계와 출력 모드(푸시풀·오픈드레인), 출력 속도, 초기 레벨 설정을 이해합니다.</li><li><code>HAL_GPIO_WritePin</code> · <code>HAL_GPIO_TogglePin</code> 으로 LED를 켜고 끄고, 핀 라벨 매크로를 활용합니다.</li><li>외부 LED를 <strong>전류 제한 저항</strong>과 함께 올바르게 연결하고, active-high / active-low 를 구분합니다.</li><li><code>ODR</code> · <code>BSRR</code> 레지스터로 같은 일을 하고, BSRR이 왜 안전한지 설명할 수 있습니다.</li></ul>
+<h2 id="gpio-기초">GPIO 기초<a class="anchor" href="#gpio-기초">#</a></h2>
+<p>STM32의 범용 입출력 핀은 <strong>포트(A, B, C …) × 번호(0~15)</strong> 로 부릅니다. <code>PA5</code> 는 포트 A의 5번 핀입니다. 포트마다 16개의 핀과 한 벌의 레지스터(<code>GPIOA-&gt;MODER</code>, <code>-&gt;ODR</code>, <code>-&gt;IDR</code>, <code>-&gt;BSRR</code> …)가 있습니다.</p>
+<div class="table-wrap"><table><thead><tr><th>모드</th><th>용도</th><th>CubeMX 이름</th></tr></thead><tbody><tr><td>입력</td><td>버튼, 디지털 센서 읽기</td><td><code>GPIO_Input</code></td></tr><tr><td>출력</td><td>LED, 릴레이 모듈, 칩 선택(CS) 신호</td><td><code>GPIO_Output</code></td></tr><tr><td>대체 기능(AF)</td><td>UART·SPI·I2C·타이머 같은 주변장치가 핀을 직접 구동</td><td><code>USART2_TX</code>, <code>TIM3_CH1</code> …</td></tr><tr><td>아날로그</td><td>ADC 입력, 전력 절약</td><td><code>GPIO_Analog</code>, <code>ADC1_IN0</code> …</td></tr></tbody></table></div>
+<h3 id="출력-설정-항목-cubemx-gpio">출력 설정 항목 (CubeMX → GPIO)<a class="anchor" href="#출력-설정-항목-cubemx-gpio">#</a></h3>
+<div class="table-wrap"><table><thead><tr><th>항목</th><th>선택지</th><th>설명</th></tr></thead><tbody><tr><td>GPIO output level</td><td>Low / High</td><td><code>MX_GPIO_Init()</code> 이 끝났을 때의 <strong>초기 출력값</strong></td></tr><tr><td>GPIO mode</td><td>Output Push Pull / Output Open Drain</td><td>푸시풀은 HIGH·LOW를 모두 능동 구동. 오픈드레인은 LOW만 끌어내림(I2C, 레벨이 다른 회로)</td></tr><tr><td>GPIO Pull-up/Pull-down</td><td>No pull-up and no pull-down / Pull-up / Pull-down</td><td>출력에서는 보통 없음</td></tr><tr><td>Maximum output speed</td><td>Low / Medium / High / Very High</td><td>에지가 얼마나 가파른지. LED는 Low면 충분(노이즈·EMI가 적음)</td></tr><tr><td>User Label</td><td>예: <code>LD2</code>, <code>LED_RED</code></td><td><code>main.h</code> 에 <code>LED_RED_Pin</code>, <code>LED_RED_GPIO_Port</code> 매크로 생성</td></tr></tbody></table></div>
+<p>CubeMX가 생성하는 <code>MX_GPIO_Init()</code> 의 핵심은 다음과 같습니다. <code>HAL_GPIO_Init()</code> 에 구조체를 채워 넘기는 방식입니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c (생성 코드)</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-k">static</span> <span class="tk-t">void</span> <span class="tk-h">MX_GPIO_Init</span>(<span class="tk-t">void</span>)
+{
+  <span class="tk-t">GPIO_InitTypeDef</span> GPIO_InitStruct = {<span class="tk-n">0</span>};
+
+  <span class="tk-h">__HAL_RCC_GPIOA_CLK_ENABLE</span>();                                  <span class="tk-c">// 포트 A 클럭 켜기</span>
+
+  <span class="tk-h">HAL_GPIO_WritePin</span>(LD2_GPIO_Port, LD2_Pin, <span class="tk-m">GPIO_PIN_RESET</span>);     <span class="tk-c">// 초기 출력 레벨</span>
+
+  GPIO_InitStruct.Pin = LD2_Pin;
+  GPIO_InitStruct.Mode = <span class="tk-m">GPIO_MODE_OUTPUT_PP</span>;                    <span class="tk-c">// 푸시풀 출력</span>
+  GPIO_InitStruct.Pull = <span class="tk-m">GPIO_NOPULL</span>;
+  GPIO_InitStruct.Speed = <span class="tk-m">GPIO_SPEED_FREQ_LOW</span>;
+  <span class="tk-h">HAL_GPIO_Init</span>(LD2_GPIO_Port, &amp;GPIO_InitStruct);
+}</code></pre></div>
+<div class="callout callout-info"><div class="callout-title">클럭을 먼저 켜야 합니다</div><div class="callout-body"><p>STM32는 전력을 아끼려고 주변장치 클럭이 기본으로 꺼져 있습니다. <code>__HAL_RCC_GPIOA_CLK_ENABLE()</code> 없이 GPIOA 레지스터에 쓰면 아무 일도 일어나지 않습니다. CubeMX가 생성 코드에 넣어 주므로, 직접 초기화 코드를 쓸 때만 신경 쓰면 됩니다.</p></div></div>
+<h2 id="hal-함수">HAL 함수<a class="anchor" href="#hal-함수">#</a></h2>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-t">void</span> <span class="tk-h">HAL_GPIO_WritePin</span>(<span class="tk-t">GPIO_TypeDef</span> *GPIOx, <span class="tk-t">uint16_t</span> GPIO_Pin, <span class="tk-t">GPIO_PinState</span> PinState);
+<span class="tk-t">void</span> <span class="tk-h">HAL_GPIO_TogglePin</span>(<span class="tk-t">GPIO_TypeDef</span> *GPIOx, <span class="tk-t">uint16_t</span> GPIO_Pin);</code></pre></div>
+<ul><li><code>GPIOx</code> — 포트 (<code>GPIOA</code>, <code>GPIOB</code> …) 또는 라벨 매크로 <code>LD2_GPIO_Port</code></li><li><code>GPIO_Pin</code> — 핀 비트 (<code>GPIO_PIN_0</code> ~ <code>GPIO_PIN_15</code>, 값은 <code>1 &lt;&lt; n</code>). <code>GPIO_PIN_6 | GPIO_PIN_7</code> 처럼 여러 핀을 한 번에 줄 수 있습니다.</li><li><code>PinState</code> — <code>GPIO_PIN_SET</code>(HIGH, 1) / <code>GPIO_PIN_RESET</code>(LOW, 0)</li></ul>
+<h2 id="예제-1-ld2-깜빡이기">예제 1 — LD2 깜빡이기<a class="anchor" href="#예제-1-ld2-깜빡이기">#</a></h2>
+<p>가장 짧은 STM32 프로그램입니다. <code>TogglePin</code> 은 현재 출력을 반대로 바꿉니다.</p>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l03-blink" data-sim-src="../sim/index.html?ex=l03-blink&amp;embed=1" data-sim-id="l03-blink"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">LD2 깜빡이기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l03-blink" target="_blank" rel="noopener">새 창</a><code class="sim-id">l03-blink</code></div>
+<div class="code-block code-example" data-example="l03-blink"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c">  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    <span class="tk-h">HAL_GPIO_TogglePin</span>(LD2_GPIO_Port, LD2_Pin);
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">500</span>);
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span></code></pre></div>
+<p><code>HAL_Delay(ms)</code> 는 1 ms마다 증가하는 SysTick 카운터(<code>HAL_GetTick()</code>)가 지정 시간만큼 지날 때까지 <strong>기다리는(블로킹)</strong> 함수입니다. 기다리는 동안 CPU는 다른 일을 못 합니다. 여러 일을 동시에 하는 방법은 L06(<code>HAL_GetTick</code> 비교)과 L07(타이머 인터럽트)에서 배웁니다.</p>
+<h2 id="예제-2-외부-led-신호등">예제 2 — 외부 LED 신호등<a class="anchor" href="#예제-2-외부-led-신호등">#</a></h2>
+<p>외부 LED 세 개를 연결해 신호등을 만듭니다.</p>
+<div class="table-wrap pinmap"><table><thead><tr><th>핀</th><th>라벨</th><th>연결</th><th>Nucleo 헤더</th></tr></thead><tbody><tr><td><code>PA6</code></td><td><code>LED_RED</code></td><td>빨강 LED 애노드(+) → 저항 → GND</td><td>D12</td></tr><tr><td><code>PA7</code></td><td><code>LED_YELLOW</code></td><td>노랑 LED</td><td>D11</td></tr><tr><td><code>PA8</code></td><td><code>LED_GREEN</code></td><td>초록 LED</td><td>D7</td></tr></tbody></table></div>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l03-traffic" data-sim-src="../sim/index.html?ex=l03-traffic&amp;embed=1" data-sim-id="l03-traffic"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">신호등 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l03-traffic" target="_blank" rel="noopener">새 창</a><code class="sim-id">l03-traffic</code></div>
+<div class="code-block code-example" data-example="l03-traffic"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN 0 */</span>
+<span class="tk-c">/* 세 LED 를 한 번에 설정합니다. 인자가 0 이 아니면 켭니다. */</span>
+<span class="tk-t">void</span> <span class="tk-f">set_lights</span>(<span class="tk-t">uint8_t</span> red, <span class="tk-t">uint8_t</span> yellow, <span class="tk-t">uint8_t</span> green)
+{
+  <span class="tk-h">HAL_GPIO_WritePin</span>(LED_RED_GPIO_Port, LED_RED_Pin, red ? <span class="tk-m">GPIO_PIN_SET</span> : <span class="tk-m">GPIO_PIN_RESET</span>);
+  <span class="tk-h">HAL_GPIO_WritePin</span>(LED_YELLOW_GPIO_Port, LED_YELLOW_Pin, yellow ? <span class="tk-m">GPIO_PIN_SET</span> : <span class="tk-m">GPIO_PIN_RESET</span>);
+  <span class="tk-h">HAL_GPIO_WritePin</span>(LED_GREEN_GPIO_Port, LED_GREEN_Pin, green ? <span class="tk-m">GPIO_PIN_SET</span> : <span class="tk-m">GPIO_PIN_RESET</span>);
+}
+<span class="tk-c">/* USER CODE END 0 */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    <span class="tk-f">set_lights</span>(<span class="tk-n">0</span>, <span class="tk-n">0</span>, <span class="tk-n">1</span>);   <span class="tk-c">// 초록 3초</span>
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">3000</span>);
+    <span class="tk-f">set_lights</span>(<span class="tk-n">0</span>, <span class="tk-n">1</span>, <span class="tk-n">0</span>);   <span class="tk-c">// 노랑 1초</span>
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">1000</span>);
+    <span class="tk-f">set_lights</span>(<span class="tk-n">1</span>, <span class="tk-n">0</span>, <span class="tk-n">0</span>);   <span class="tk-c">// 빨강 3초</span>
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">3000</span>);
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span></code></pre></div>
+<p>세 핀을 한 번에 다루는 <code>set_lights()</code> 함수를 <code>USER CODE BEGIN 0</code> 에 정의했습니다. main 보다 위에 있으므로 따로 원형(PFP)이 필요 없습니다. 인자 <code>red ? GPIO_PIN_SET : GPIO_PIN_RESET</code> 은 0이 아니면 SET, 0이면 RESET 을 고르는 삼항 연산자입니다.</p>
+<h3 id="led-배선과-전류-제한-저항">LED 배선과 전류 제한 저항<a class="anchor" href="#led-배선과-전류-제한-저항">#</a></h3>
+<p>LED는 켜지는 순간 전압이 거의 일정(빨강 약 2.0 V, 파랑·흰색 약 3.0 V)하기 때문에, <strong>저항 없이 연결하면 전류가 제한되지 않습니다.</strong> 3.3 V 핀에서 빨강 LED에 약 5 mA 를 흘리려면</p>
+<p><span class="math">R = (3.3 - 2.0) / 0.005 ≈ 260 Ω</span></p>
+<p>이므로 220~330 Ω 저항을 씁니다. STM32 핀 하나가 안전하게 내보낼 수 있는 전류는 수 mA ~ 20 mA 정도이고, 칩 전체의 합계 한도도 있습니다(데이터시트의 <em>Absolute maximum ratings</em> 확인).</p>
+<div class="table-wrap"><table><thead><tr><th>연결 방식</th><th>회로</th><th>켜는 값</th></tr></thead><tbody><tr><td><strong>active-high</strong></td><td>핀 → 저항 → LED → GND</td><td><code>GPIO_PIN_SET</code> 에서 켜짐</td></tr><tr><td><strong>active-low</strong></td><td>3.3V → 저항 → LED → 핀</td><td><code>GPIO_PIN_RESET</code> 에서 켜짐 (BluePill 의 PC13 LED)</td></tr></tbody></table></div>
+<p>시뮬레이터의 LED 노드는 Properties 의 <code>active</code> 속성으로 두 방식을 모두 흉내 냅니다.</p>
+<h2 id="레지스터로-직접-쓰기-odr-과-bsrr">레지스터로 직접 쓰기 — ODR 과 BSRR<a class="anchor" href="#레지스터로-직접-쓰기-odr-과-bsrr">#</a></h2>
+<p>HAL 함수는 결국 GPIO 레지스터에 값을 씁니다. 두 레지스터를 알아 두면 HAL 코드가 무엇을 하는지 보입니다.</p>
+<div class="table-wrap regmap"><table><thead><tr><th>레지스터</th><th>비트</th><th>동작</th></tr></thead><tbody><tr><td><code>GPIOx-&gt;ODR</code></td><td>0~15</td><td>출력 데이터. 읽고 쓸 수 있음. <code>ODR ^= (1 &lt;&lt; 5)</code> 로 반전</td></tr><tr><td><code>GPIOx-&gt;IDR</code></td><td>0~15</td><td>입력 데이터(읽기 전용). 핀의 실제 전압 레벨</td></tr><tr><td><code>GPIOx-&gt;BSRR</code></td><td>0~15 (BS)</td><td>1을 쓴 핀을 <strong>HIGH</strong>로 (0을 쓴 비트는 영향 없음)</td></tr><tr><td><code>GPIOx-&gt;BSRR</code></td><td>16~31 (BR)</td><td>1을 쓴 핀을 <strong>LOW</strong>로</td></tr><tr><td><code>GPIOx-&gt;BRR</code></td><td>0~15</td><td>1을 쓴 핀을 LOW로 (F1 등 일부 제품군에만 있음)</td></tr></tbody></table></div>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l03-bsrr" data-sim-src="../sim/index.html?ex=l03-bsrr&amp;embed=1" data-sim-id="l03-bsrr"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">BSRR로 깜빡이기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l03-bsrr" target="_blank" rel="noopener">새 창</a><code class="sim-id">l03-bsrr</code></div>
+<div class="code-block code-example" data-example="l03-bsrr"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c">  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    <span class="tk-m">GPIOA</span>-&gt;<span class="tk-m">BSRR</span> = <span class="tk-m">GPIO_PIN_5</span>;                    <span class="tk-c">// 하위 16비트: 1 을 쓴 핀을 HIGH</span>
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">500</span>);
+    <span class="tk-m">GPIOA</span>-&gt;<span class="tk-m">BSRR</span> = (<span class="tk-t">uint32_t</span>)<span class="tk-m">GPIO_PIN_5</span> &lt;&lt; <span class="tk-n">16</span>;    <span class="tk-c">// 상위 16비트: 1 을 쓴 핀을 LOW</span>
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">500</span>);
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span></code></pre></div>
+<p><code>ODR</code> 로 한 핀만 바꾸려면 <strong>읽고 → 비트 수정하고 → 다시 쓰는</strong> 세 단계가 필요합니다. 그 사이에 인터럽트가 같은 포트의 다른 핀을 바꾸면 그 변경이 덮어써질 수 있습니다. <code>BSRR</code> 은 쓰기 한 번으로 원하는 핀만 바꾸므로 이런 문제가 없습니다(원자적 동작). 실제로 <code>HAL_GPIO_WritePin()</code> 도 내부에서 BSRR 을 씁니다.</p>
+<div class="callout callout-task"><div class="callout-title">실습</div><div class="callout-body"><ol><li>신호등 예제에 <strong>노랑 점멸</strong> 모드를 추가하세요: 초록 → 노랑 → 빨강 순서를 3번 돈 뒤, 노랑만 0.5초 간격으로 5번 깜빡입니다.</li><li>Properties 에서 초록 LED 노드의 <code>active</code> 를 <code>low</code> 로 바꾸고 결과를 관찰하세요. 코드를 어떻게 고쳐야 원래대로 동작할까요?</li><li>BSRR 예제를 <code>GPIOA-&gt;ODR ^= GPIO_PIN_5;</code> 한 줄 + <code>HAL_Delay(500);</code> 으로 바꿔도 같은지 확인하세요.</li></ol></div></div>
+<div class="callout callout-check"><div class="callout-title">스스로 확인</div><div class="callout-body"><ul><li><code>GPIO_PIN_6 | GPIO_PIN_7</code> 의 값은 몇인가요? 이 값을 <code>WritePin</code> 에 넘기면 무슨 일이 일어나나요?</li><li>3.3 V 핀으로 파란 LED(순방향 3.0 V)에 5 mA 를 흘리려면 저항이 얼마여야 하나요?</li></ul></div></div>
+<h2 id="자주-나는-오류와-해결">자주 나는 오류와 해결<a class="anchor" href="#자주-나는-오류와-해결">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>증상·메시지</th><th>원인</th><th>해결</th></tr></thead><tbody><tr><td>외부 LED가 전혀 안 켜짐</td><td>LED 극성 반대(긴 다리가 +), 핀을 출력으로 설정하지 않음, 회로 노드 선 미연결</td><td>극성 확인, 핀아웃에서 <code>GPIO_Output</code>, 회로 노드 탭에서 선 확인</td></tr><tr><td>LED가 켜져야 할 때 꺼지고 반대로 동작</td><td>active-low 배선인데 SET 으로 켬</td><td>배선 방식에 맞춰 SET/RESET 바꾸기</td></tr><tr><td><code>&#x27;LED_RED_Pin&#x27; undeclared</code></td><td>라벨 오타 또는 다시 생성하지 않음</td><td>핀아웃의 라벨과 코드 이름을 똑같이</td></tr><tr><td>LED가 아주 어둡게 켜짐</td><td>저항이 너무 큼(수 kΩ 이상) 또는 핀을 입력으로 둠(내부 풀업 전류만 흐름)</td><td>220~330 Ω, 모드 확인</td></tr><tr><td>실물에서 보드가 리셋되거나 뜨거워짐</td><td>저항 없이 연결, 핀 합계 전류 초과</td><td>즉시 전원 분리 후 저항 추가. 큰 부하는 트랜지스터·드라이버로</td></tr></tbody></table></div>
+<h2 id="과제">과제<a class="anchor" href="#과제">#</a></h2>
+<ol><li>LED 네 개로 <strong>2비트 이진 카운터 두 개</strong>(0~3 반복, 서로 다른 속도)를 만드세요. <code>HAL_Delay</code> 하나로 두 속도를 만들 방법을 생각해 보세요.</li><li><code>HAL_GPIO_WritePin</code> 을 쓰지 않고 BSRR 만으로 신호등 예제를 다시 쓰세요.</li><li>푸시풀과 오픈드레인 출력의 차이를 그림으로 설명하고, 오픈드레인이 필요한 경우 두 가지를 조사하세요.</li></ol>
+<h2 id="참고자료">참고자료<a class="anchor" href="#참고자료">#</a></h2>
+<ul><li>ST, <em>RM0383 — STM32F411 Reference Manual</em>, 8장 GPIO (MODER, ODR, BSRR)</li><li>ST, <em>UM1725 — STM32F4 HAL</em>, GPIO Generic Driver (<code>HAL_GPIO_WritePin</code>, <code>HAL_GPIO_TogglePin</code>)</li><li>ST, <em>DS10314 — STM32F411xC/E datasheet</em>, 전기적 특성 (핀 전류 한도)</li><li>이 사이트의 <a href="hal-reference.html#gpio">HAL 레퍼런스 — GPIO</a>, <a href="hal-reference.html#레지스터-직접-접근">레지스터 직접 접근</a></li></ul>
+      <nav class="pager"><a class="pager-prev" href="l02.html"><span>이전 · L02</span>시뮬레이터 둘러보기와 첫 프로젝트</a><a class="pager-next" href="l04.html"><span>다음 · L04</span>GPIO 입력 — 스위치</a></nav>
+    </div>
+    <aside class="lesson-toc"><div class="toc-title">이 레슨의 내용</div><div class="toc-links"><a class="toc-l2" href="#학습-목표">학습 목표</a><a class="toc-l2" href="#gpio-기초">GPIO 기초</a><a class="toc-l3" href="#출력-설정-항목-cubemx-gpio">출력 설정 항목 (CubeMX → GPIO)</a><a class="toc-l2" href="#hal-함수">HAL 함수</a><a class="toc-l2" href="#예제-1-ld2-깜빡이기">예제 1 — LD2 깜빡이기</a><a class="toc-l2" href="#예제-2-외부-led-신호등">예제 2 — 외부 LED 신호등</a><a class="toc-l3" href="#led-배선과-전류-제한-저항">LED 배선과 전류 제한 저항</a><a class="toc-l2" href="#레지스터로-직접-쓰기-odr-과-bsrr">레지스터로 직접 쓰기 — ODR 과 BSRR</a><a class="toc-l2" href="#자주-나는-오류와-해결">자주 나는 오류와 해결</a><a class="toc-l2" href="#과제">과제</a><a class="toc-l2" href="#참고자료">참고자료</a></div></aside>
+  </div>
+</article>
+
+</main>
+<script src="../assets/js/site.js"></script>
+</body>
+</html>

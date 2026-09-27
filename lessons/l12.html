@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L12. 7세그먼트 FND · studySTM32</title>
+<meta name="description" content="공통 캐소드·애노드와 세그먼트 패턴 표를 만들고, HAL과 BSRR 레지스터 두 방식으로 숫자를 표시합니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
+<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="../assets/css/stm32.css">
+<link rel="stylesheet" href="../assets/css/ml-theme.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
+<script src="../assets/js/theme.js"></script>
+</head>
+<body class="lesson-page track-page-periph">
+<button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
+<aside class="sidebar" id="sidebar">
+<nav class="sidebar-nav">
+<div class="brand-row"><a class="brand" href="../index.html"><span class="brand-mark">32</span><span class="brand-text">studySTM32<small>STM32 HAL 인터랙티브 강좌</small></span></a></div>
+<div class="side-tools"><a class="side-tool" href="../sim/index.html">시뮬레이터</a><a class="side-tool" href="../lessons/hal-reference.html">HAL 레퍼런스</a></div>
+<div class="nav-track" data-track="basics">
+<div class="nav-track-title track-basics"><span class="nav-part-no">PART 1</span>시작하기</div>
+<ul>
+<li><a href="../lessons/l01.html" data-slug="l01"><span class="nav-no">L01</span>STM32 시리즈와 개발 환경</a></li>
+<li><a href="../lessons/l02.html" data-slug="l02"><span class="nav-no">L02</span>시뮬레이터 둘러보기와 첫 프로젝트</a></li>
+<li><a href="../lessons/l03.html" data-slug="l03"><span class="nav-no">L03</span>GPIO 출력 — LED</a></li>
+<li><a href="../lessons/l04.html" data-slug="l04"><span class="nav-no">L04</span>GPIO 입력 — 스위치</a></li>
+<li><a href="../lessons/l05.html" data-slug="l05"><span class="nav-no">L05</span>외부 인터럽트 EXTI</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="comm">
+<div class="nav-track-title track-comm"><span class="nav-part-no">PART 2</span>통신·타이머·아날로그</div>
+<ul>
+<li><a href="../lessons/l06.html" data-slug="l06"><span class="nav-no">L06</span>UART와 printf</a></li>
+<li><a href="../lessons/l07.html" data-slug="l07"><span class="nav-no">L07</span>타이머 인터럽트</a></li>
+<li><a href="../lessons/l08.html" data-slug="l08"><span class="nav-no">L08</span>PWM — LED 밝기와 서보</a></li>
+<li><a href="../lessons/l09.html" data-slug="l09"><span class="nav-no">L09</span>ADC — 가변저항·조도센서</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="periph">
+<div class="nav-track-title track-periph"><span class="nav-part-no">PART 3</span>주변기기</div>
+<ul>
+<li><a href="../lessons/l10.html" data-slug="l10"><span class="nav-no">L10</span>I2C와 LCD1602</a></li>
+<li><a href="../lessons/l11.html" data-slug="l11"><span class="nav-no">L11</span>SPI 기초</a></li>
+<li><a href="../lessons/l12.html" class="active" data-slug="l12"><span class="nav-no">L12</span>7세그먼트 FND</a></li>
+<li><a href="../lessons/l13.html" data-slug="l13"><span class="nav-no">L13</span>DC 모터 드라이버</a></li>
+<li><a href="../lessons/l14.html" data-slug="l14"><span class="nav-no">L14</span>스텝모터</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="project">
+<div class="nav-track-title track-project"><span class="nav-part-no">PART 4</span>프로젝트</div>
+<ul>
+<li><a href="../lessons/l15.html" data-slug="l15"><span class="nav-no">L15</span>미니 프로젝트: 스마트 선풍기</a></li>
+<li><a href="../lessons/l16.html" data-slug="l16"><span class="nav-no">L16</span>실물 보드로 옮기기</a></li>
+</ul>
+</div>
+</nav>
+</aside>
+<div class="sidebar-scrim" id="scrim"></div>
+<main class="main">
+<header class="topbar"><a class="topbar-brand" href="../index.html"><span class="brand-mark">32</span>studySTM32</a><nav class="topnav" aria-label="사이트 메뉴"><a href="../index.html">강의 홈</a><a href="../sim/index.html">시뮬레이터</a><a href="../lessons/hal-reference.html">HAL 레퍼런스</a></nav><button class="theme-icon" type="button" data-theme-toggle data-theme-icon aria-label="테마 전환"></button></header>
+
+<article class="lesson" data-slug="l12" data-track="periph">
+  <div class="lesson-head">
+    <div class="crumbs"><span class="track-pill track-periph">PART 3</span> 주변기기 &middot; 약 50분 &middot; 초급</div>
+    <h1><span class="lesson-no">L12</span>7세그먼트 FND</h1>
+    <p class="lede">공통 캐소드·애노드와 세그먼트 패턴 표를 만들고, HAL과 BSRR 레지스터 두 방식으로 숫자를 표시합니다.</p>
+    <div class="requires">선수 레슨: <a href="l05.html">L05</a></div>
+    <div class="lesson-actions">
+      <label class="done-toggle"><input type="checkbox" id="doneCheck"><span>학습 완료로 표시</span></label>
+      <a class="ghost-btn tool-sim" href="../sim/index.html?ex=l12-fnd" data-sim-src="../sim/index.html?ex=l12-fnd&amp;embed=1">시뮬레이터에서 실습</a>
+    </div>
+  </div>
+  <div class="lesson-grid">
+    <div class="lesson-body">
+<h2 id="학습-목표">학습 목표<a class="anchor" href="#학습-목표">#</a></h2>
+<ul><li>7세그먼트 표시기(FND)의 세그먼트 이름(a~g, dp)과 <strong>공통 캐소드 / 공통 애노드</strong> 구조를 설명합니다.</li><li>숫자 0~9 의 <strong>세그먼트 패턴 표</strong>를 직접 만들고, 비트 연산으로 핀에 출력합니다.</li><li>같은 표시를 <code>HAL_GPIO_WritePin</code> 반복과 **<code>GPIOC-&gt;BSRR</code> 한 번 쓰기** 두 방식으로 구현하고 차이를 설명합니다.</li></ul>
+<h2 id="7세그먼트-구조">7세그먼트 구조<a class="anchor" href="#7세그먼트-구조">#</a></h2>
+<p>FND 는 LED 8개(획 7개 + 소수점)를 숫자 모양으로 배치한 부품입니다. 각 LED 를 세그먼트라 부르고 a ~ g, dp 로 이름 붙입니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">text</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-text">      ─a─
+    │     │
+    f     b
+    │     │
+      ─g─
+    │     │
+    e     c
+    │     │
+      ─d─    ● dp</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>종류</th><th>공통 핀</th><th>세그먼트를 켜려면</th></tr></thead><tbody><tr><td><strong>공통 캐소드</strong> (CC)</td><td>모든 LED 의 캐소드(−)가 GND 로</td><td>세그먼트 핀을 <strong>HIGH</strong></td></tr><tr><td><strong>공통 애노드</strong> (CA)</td><td>모든 LED 의 애노드(+)가 3.3V/5V 로</td><td>세그먼트 핀을 <strong>LOW</strong></td></tr></tbody></table></div>
+<p>세그먼트마다 LED 이므로 <strong>세그먼트마다 저항</strong>(220~470 Ω)을 하나씩 달아야 합니다. 공통 핀에 저항 하나만 달면 켜진 세그먼트 수에 따라 밝기가 달라집니다.</p>
+<h2 id="핀-배치와-패턴-표">핀 배치와 패턴 표<a class="anchor" href="#핀-배치와-패턴-표">#</a></h2>
+<p>세그먼트 a ~ dp 를 <code>PC0</code> ~ <code>PC7</code> 에 차례로 연결합니다. 이렇게 <strong>한 포트의 연속된 비트</strong>에 두면 패턴 바이트를 그대로 포트에 쓸 수 있습니다.</p>
+<div class="table-wrap pinmap"><table><thead><tr><th>핀</th><th>라벨</th><th>세그먼트</th><th>비트</th></tr></thead><tbody><tr><td><code>PC0</code></td><td><code>SEG_A</code></td><td>a</td><td>bit0</td></tr><tr><td><code>PC1</code></td><td><code>SEG_B</code></td><td>b</td><td>bit1</td></tr><tr><td><code>PC2</code></td><td><code>SEG_C</code></td><td>c</td><td>bit2</td></tr><tr><td><code>PC3</code></td><td><code>SEG_D</code></td><td>d</td><td>bit3</td></tr><tr><td><code>PC4</code></td><td><code>SEG_E</code></td><td>e</td><td>bit4</td></tr><tr><td><code>PC5</code></td><td><code>SEG_F</code></td><td>f</td><td>bit5</td></tr><tr><td><code>PC6</code></td><td><code>SEG_G</code></td><td>g</td><td>bit6</td></tr><tr><td><code>PC7</code></td><td><code>SEG_DP</code></td><td>dp</td><td>bit7</td></tr></tbody></table></div>
+<p>숫자마다 켜야 할 세그먼트를 비트로 모으면 패턴 표가 됩니다(공통 캐소드, 1 = 켜짐).</p>
+<div class="table-wrap regmap"><table><thead><tr><th>숫자</th><th>켜는 세그먼트</th><th>dp g f e d c b a</th><th>16진수</th></tr></thead><tbody><tr><td>0</td><td>a b c d e f</td><td>0 0 1 1 1 1 1 1</td><td><code>0x3F</code></td></tr><tr><td>1</td><td>b c</td><td>0 0 0 0 0 1 1 0</td><td><code>0x06</code></td></tr><tr><td>2</td><td>a b d e g</td><td>0 1 0 1 1 0 1 1</td><td><code>0x5B</code></td></tr><tr><td>3</td><td>a b c d g</td><td>0 1 0 0 1 1 1 1</td><td><code>0x4F</code></td></tr><tr><td>4</td><td>b c f g</td><td>0 1 1 0 0 1 1 0</td><td><code>0x66</code></td></tr><tr><td>5</td><td>a c d f g</td><td>0 1 1 0 1 1 0 1</td><td><code>0x6D</code></td></tr><tr><td>6</td><td>a c d e f g</td><td>0 1 1 1 1 1 0 1</td><td><code>0x7D</code></td></tr><tr><td>7</td><td>a b c</td><td>0 0 0 0 0 1 1 1</td><td><code>0x07</code></td></tr><tr><td>8</td><td>모두</td><td>0 1 1 1 1 1 1 1</td><td><code>0x7F</code></td></tr><tr><td>9</td><td>a b c d f g</td><td>0 1 1 0 1 1 1 1</td><td><code>0x6F</code></td></tr></tbody></table></div>
+<p>공통 <strong>애노드</strong>라면 켜는 것이 LOW 이므로 패턴을 반전(<code>~pattern</code>)해서 내보내면 됩니다.</p>
+<h2 id="예제-1-hal-로-0-9-카운터">예제 1 — HAL 로 0~9 카운터<a class="anchor" href="#예제-1-hal-로-0-9-카운터">#</a></h2>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l12-fnd" data-sim-src="../sim/index.html?ex=l12-fnd&amp;embed=1" data-sim-id="l12-fnd"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">FND 카운터 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l12-fnd" target="_blank" rel="noopener">새 창</a><code class="sim-id">l12-fnd</code></div>
+<div class="code-block code-example" data-example="l12-fnd"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN 0 */</span>
+<span class="tk-c">/* 공통 캐소드 FND 숫자 패턴: bit0=a ... bit6=g, bit7=dp (1 = 켜짐) */</span>
+<span class="tk-k">const</span> <span class="tk-t">uint8_t</span> <span class="tk-m">FND_DIGITS</span>[<span class="tk-n">10</span>] = {
+  <span class="tk-n">0x3F</span>, <span class="tk-n">0x06</span>, <span class="tk-n">0x5B</span>, <span class="tk-n">0x4F</span>, <span class="tk-n">0x66</span>,   <span class="tk-c">// 0 1 2 3 4</span>
+  <span class="tk-n">0x6D</span>, <span class="tk-n">0x7D</span>, <span class="tk-n">0x07</span>, <span class="tk-n">0x7F</span>, <span class="tk-n">0x6F</span>    <span class="tk-c">// 5 6 7 8 9</span>
+};
+
+<span class="tk-c">/* n (0~9) 을 표시합니다. PC0~PC7 이 a~dp 이므로 i 번째 비트 = GPIO_PIN_i */</span>
+<span class="tk-t">void</span> <span class="tk-f">fnd_show</span>(<span class="tk-t">uint8_t</span> n)
+{
+  <span class="tk-t">uint8_t</span> pattern = <span class="tk-m">FND_DIGITS</span>[n % <span class="tk-n">10</span>];
+  <span class="tk-k">for</span> (<span class="tk-t">int</span> i = <span class="tk-n">0</span>; i &lt; <span class="tk-n">8</span>; i++) {
+    <span class="tk-h">HAL_GPIO_WritePin</span>(<span class="tk-m">GPIOC</span>, (<span class="tk-t">uint16_t</span>)(<span class="tk-n">1</span> &lt;&lt; i), ((pattern &gt;&gt; i) &amp; <span class="tk-n">1</span>) ? <span class="tk-m">GPIO_PIN_SET</span> : <span class="tk-m">GPIO_PIN_RESET</span>);
+  }
+}
+<span class="tk-c">/* USER CODE END 0 */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    <span class="tk-f">fnd_show</span>(digit);
+    digit = (digit + <span class="tk-n">1</span>) % <span class="tk-n">10</span>;
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">1000</span>);
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span></code></pre></div>
+<ul><li><code>(pattern &gt;&gt; i) &amp; 1</code> 은 패턴의 i 번째 비트를 꺼냅니다.</li><li><code>(uint16_t)(1 &lt;&lt; i)</code> 는 <code>GPIO_PIN_i</code> 와 같은 값입니다(<code>GPIO_PIN_0</code> = 1, <code>GPIO_PIN_1</code> = 2 …). 세그먼트가 PC0 부터 순서대로 있어서 가능한 방법입니다.</li><li>핀 8개를 <strong>한 번에 하나씩</strong> 바꾸므로 아주 짧은 순간 "반쯤 바뀐" 숫자가 존재합니다. 눈에는 안 보이지만, 멀티플렉싱(과제)에서는 잔상이 될 수 있습니다.</li></ul>
+<h2 id="예제-2-bsrr-로-한-번에-쓰기-버튼-카운터">예제 2 — BSRR 로 한 번에 쓰기 + 버튼 카운터<a class="anchor" href="#예제-2-bsrr-로-한-번에-쓰기-버튼-카운터">#</a></h2>
+<p><code>BSRR</code> 은 상위 16비트(리셋)와 하위 16비트(셋)를 <strong>한 번의 쓰기</strong>로 처리합니다. 같은 핀의 셋·리셋 비트가 모두 1이면 <strong>셋이 우선</strong>하므로, "PC0~PC7 모두 리셋 + 패턴 비트만 셋" 을 한 번에 쓰면 8개 세그먼트가 동시에 바뀝니다. 다른 핀(PC8~PC15)에는 영향이 없습니다.</p>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l12-fnd-bsrr" data-sim-src="../sim/index.html?ex=l12-fnd-bsrr&amp;embed=1" data-sim-id="l12-fnd-bsrr"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">버튼 카운터 (BSRR) 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l12-fnd-bsrr" target="_blank" rel="noopener">새 창</a><code class="sim-id">l12-fnd-bsrr</code></div>
+<div class="code-block code-example" data-example="l12-fnd-bsrr"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN 0 */</span>
+<span class="tk-c">/* 공통 캐소드 FND 숫자 패턴: bit0=a ... bit6=g, bit7=dp (1 = 켜짐) */</span>
+<span class="tk-k">const</span> <span class="tk-t">uint8_t</span> <span class="tk-m">FND_DIGITS</span>[<span class="tk-n">10</span>] = {
+  <span class="tk-n">0x3F</span>, <span class="tk-n">0x06</span>, <span class="tk-n">0x5B</span>, <span class="tk-n">0x4F</span>, <span class="tk-n">0x66</span>,   <span class="tk-c">// 0 1 2 3 4</span>
+  <span class="tk-n">0x6D</span>, <span class="tk-n">0x7D</span>, <span class="tk-n">0x07</span>, <span class="tk-n">0x7F</span>, <span class="tk-n">0x6F</span>    <span class="tk-c">// 5 6 7 8 9</span>
+};
+
+<span class="tk-c">/* 상위 16비트(리셋)로 PC0~PC7 을 모두 끄고, 하위 16비트(셋)로 필요한 세그먼트만 켭니다.
+   같은 비트에 셋·리셋이 함께 1 이면 셋이 우선하므로 한 번의 쓰기로 끝납니다. */</span>
+<span class="tk-t">void</span> <span class="tk-f">fnd_show</span>(<span class="tk-t">uint8_t</span> n)
+{
+  <span class="tk-m">GPIOC</span>-&gt;<span class="tk-m">BSRR</span> = <span class="tk-n">0x00FF0000</span> | <span class="tk-m">FND_DIGITS</span>[n % <span class="tk-n">10</span>];
+}
+<span class="tk-c">/* USER CODE END 0 */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    <span class="tk-f">fnd_show</span>(digit);
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">20</span>);
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span>
+
+<span class="tk-c">/* USER CODE BEGIN 4 */</span>
+<span class="tk-t">void</span> <span class="tk-h">HAL_GPIO_EXTI_Callback</span>(<span class="tk-t">uint16_t</span> GPIO_Pin)
+{
+  <span class="tk-k">if</span> (GPIO_Pin == B1_Pin &amp;&amp; <span class="tk-h">HAL_GetTick</span>() - last_press &gt; <span class="tk-n">200</span>) {
+    last_press = <span class="tk-h">HAL_GetTick</span>();
+    digit = (digit + <span class="tk-n">1</span>) % <span class="tk-n">10</span>;
+  }
+}
+<span class="tk-c">/* USER CODE END 4 */</span></code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>방식</th><th>코드</th><th>동시성</th><th>다른 핀 영향</th></tr></thead><tbody><tr><td><code>HAL_GPIO_WritePin</code> × 8</td><td><code>for</code> 반복</td><td>한 핀씩 차례로</td><td>없음</td></tr><tr><td><code>ODR</code> 읽고 쓰기</td><td><code>GPIOC-&gt;ODR = (GPIOC-&gt;ODR &amp; 0xFF00) | pattern;</code></td><td>동시</td><td>읽기와 쓰기 사이 인터럽트가 PC8~15 를 바꾸면 덮어씀</td></tr><tr><td>**<code>BSRR</code> 한 번**</td><td><code>GPIOC-&gt;BSRR = 0x00FF0000 | pattern;</code></td><td>동시</td><td>없음 (원자적)</td></tr></tbody></table></div>
+<div class="callout callout-task"><div class="callout-title">실습</div><div class="callout-body"><ol><li>FND 노드의 <code>common</code> 을 <code>anode</code> 로 바꾸고, 코드를 고쳐 다시 올바르게 표시되게 하세요.</li><li>16진수 A~F 패턴을 추가해 0~F 카운터로 만드세요. (A=<code>0x77</code>, b=<code>0x7C</code>, C=<code>0x39</code>, d=<code>0x5E</code>, E=<code>0x79</code>, F=<code>0x71</code>)</li><li>짝수일 때만 소수점(dp)을 켜 보세요. 패턴에 어떤 비트를 OR 하면 되나요?</li></ol></div></div>
+<div class="callout callout-check"><div class="callout-title">스스로 확인</div><div class="callout-body"><ul><li>숫자 <code>2</code> 에서 켜지지 않는 세그먼트 두 개는?</li><li><code>GPIOC-&gt;BSRR = 0x00FF0000 | 0x06;</code> 을 실행한 직후 PC0~PC7 의 출력은?</li></ul></div></div>
+<h2 id="자주-나는-오류와-해결">자주 나는 오류와 해결<a class="anchor" href="#자주-나는-오류와-해결">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인</th><th>해결</th></tr></thead><tbody><tr><td>숫자가 반전되어 보임(꺼질 곳이 켜짐)</td><td>공통 애노드인데 캐소드용 패턴 사용</td><td><code>~pattern</code> 으로 반전, 공통 핀을 전원 쪽에</td></tr><tr><td>모양이 이상함 (예: 1 이 7 처럼)</td><td>세그먼트 배선 순서가 표와 다름</td><td>핀 ↔ 세그먼트 표대로 다시 연결하거나 패턴 표 수정</td></tr><tr><td>켜진 세그먼트가 많을수록 어두워짐</td><td>공통 핀에만 저항 하나</td><td>세그먼트마다 저항</td></tr><tr><td>다른 기능 핀까지 바뀜</td><td><code>GPIOC-&gt;ODR = pattern;</code> 으로 상위 비트까지 0 으로 씀</td><td>BSRR 사용 또는 마스크</td></tr><tr><td>아무 세그먼트도 안 켜짐(실물)</td><td>FND 핀 배치를 잘못 봄(제품마다 다름)</td><td>데이터시트 핀맵, 멀티미터 다이오드 모드로 확인</td></tr></tbody></table></div>
+<h2 id="과제">과제<a class="anchor" href="#과제">#</a></h2>
+<ol><li><strong>2자리 멀티플렉싱</strong>: FND 두 개의 세그먼트 선을 공유하고, 각 공통 핀을 트랜지스터로 번갈아 켜서 00~99 를 표시하세요. 자리 전환은 TIM 인터럽트(L07, 2~5 ms 주기)로 합니다.</li><li>가변저항(L09) 값을 0~9 로 나눠 FND 에 표시하세요.</li><li>예제 2의 <code>HAL_Delay(20)</code> 루프 대신, 값이 바뀔 때만 <code>fnd_show()</code> 를 부르도록 바꾸세요.</li></ol>
+<h2 id="참고자료">참고자료<a class="anchor" href="#참고자료">#</a></h2>
+<ul><li>일반 7세그먼트 표시기 데이터시트 (예: Kingbright SC56-11 / SA56-11 시리즈 — 공통 캐소드 / 애노드)</li><li>ST, <em>RM0383</em>, 8.4.7 GPIO BSRR</li><li>이 사이트의 <a href="hal-reference.html#레지스터-직접-접근">HAL 레퍼런스 — 레지스터 직접 접근</a></li></ul>
+      <nav class="pager"><a class="pager-prev" href="l11.html"><span>이전 · L11</span>SPI 기초</a><a class="pager-next" href="l13.html"><span>다음 · L13</span>DC 모터 드라이버</a></nav>
+    </div>
+    <aside class="lesson-toc"><div class="toc-title">이 레슨의 내용</div><div class="toc-links"><a class="toc-l2" href="#학습-목표">학습 목표</a><a class="toc-l2" href="#7세그먼트-구조">7세그먼트 구조</a><a class="toc-l2" href="#핀-배치와-패턴-표">핀 배치와 패턴 표</a><a class="toc-l2" href="#예제-1-hal-로-0-9-카운터">예제 1 — HAL 로 0~9 카운터</a><a class="toc-l2" href="#예제-2-bsrr-로-한-번에-쓰기-버튼-카운터">예제 2 — BSRR 로 한 번에 쓰기 + 버튼 카운터</a><a class="toc-l2" href="#자주-나는-오류와-해결">자주 나는 오류와 해결</a><a class="toc-l2" href="#과제">과제</a><a class="toc-l2" href="#참고자료">참고자료</a></div></aside>
+  </div>
+</article>
+
+</main>
+<script src="../assets/js/site.js"></script>
+</body>
+</html>

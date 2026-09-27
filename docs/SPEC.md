@@ -66,7 +66,7 @@ STM32_EXAMPLES['l03-blink'] = {
     USART2: { mode: 'async', baud: 115200 },
     TIM2:   { psc: 83, arr: 999, ch: { 1: 'pwm' }, pulse: { 1: 0 } },   // ch: 'pwm' | 'disable'
     TIM3:   { psc: 8399, arr: 9999 },                                    // 기본 타이머(인터럽트용)
-    ADC1:   { channels: [0] },            // 켤 채널 번호(rank 순서)
+    ADC1:   { channels: [0], continuous: false, dma: 'circular' },   // 켤 채널(rank 순서); dma 를 주면 MX_DMA_Init + DMAContinuousRequests
     I2C1:   { mode: 'i2c', speed: 100000 },
     SPI1:   { mode: 'master', prescaler: 16 }
   },
@@ -104,10 +104,10 @@ STM32_EXAMPLES['l03-blink'] = {
 | `ldr` | 조도센서(CDS) | `out`(아날로그) | `lux`: 0–1000 |
 | `buzzer` | 부저 | `in` | `kind`: active/passive, `sound`: true/false |
 | `fnd` | 7세그먼트 1자리 | `a` `b` `c` `d` `e` `f` `g` `dp` | `common`: cathode/anode |
-| `lcd1602` | I2C LCD 16x2 (PCF8574) | `scl` `sda` | `addr`: 0x27 |
+| `lcd1602` | I2C LCD 16x2 (PCF8574) | `scl` `sda` | `addr`: '0x27' (문자열 또는 숫자) |
 | `motor` | DC모터 + 드라이버(L298N) | `in1` `in2` `en` | `maxRpm`: 200 (`en` 에 PWM 또는 HIGH) |
 | `servo` | 서보(SG90) | `sig` | `minUs`: 500, `maxUs`: 2500 (50 Hz PWM) |
-| `stepper` | 스텝모터 28BYJ-48 + ULN2003 | `in1`–`in4` | `stepsPerRev`: 2048 |
+| `stepper` | 스텝모터 28BYJ-48 + ULN2003 | `in1`–`in4` | `stepsPerRev`: 4096 (하프스텝 기준) |
 | `uart` | UART 터미널 | `tx`(장치→MCU RX) `rx`(MCU TX→장치) | `baud`: 115200, `name` |
 | `i2cdev` | 범용 I2C 장치 | `scl` `sda` | `addr`: 0x48, `regs`: 16바이트 hex 문자열 |
 | `spidev` | 범용 SPI 장치 | `sck` `mosi` `miso` `cs` | `reply`: 응답 바이트 hex 문자열 |

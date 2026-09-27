@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L11. SPI 기초 · studySTM32</title>
+<meta name="description" content="SCK·MOSI·MISO·CS 네 선과 모드, CS를 GPIO로 제어하는 법, HAL_SPI_TransmitReceive로 장치 ID를 읽습니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
+<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="../assets/css/stm32.css">
+<link rel="stylesheet" href="../assets/css/ml-theme.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
+<script src="../assets/js/theme.js"></script>
+</head>
+<body class="lesson-page track-page-periph">
+<button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
+<aside class="sidebar" id="sidebar">
+<nav class="sidebar-nav">
+<div class="brand-row"><a class="brand" href="../index.html"><span class="brand-mark">32</span><span class="brand-text">studySTM32<small>STM32 HAL 인터랙티브 강좌</small></span></a></div>
+<div class="side-tools"><a class="side-tool" href="../sim/index.html">시뮬레이터</a><a class="side-tool" href="../lessons/hal-reference.html">HAL 레퍼런스</a></div>
+<div class="nav-track" data-track="basics">
+<div class="nav-track-title track-basics"><span class="nav-part-no">PART 1</span>시작하기</div>
+<ul>
+<li><a href="../lessons/l01.html" data-slug="l01"><span class="nav-no">L01</span>STM32 시리즈와 개발 환경</a></li>
+<li><a href="../lessons/l02.html" data-slug="l02"><span class="nav-no">L02</span>시뮬레이터 둘러보기와 첫 프로젝트</a></li>
+<li><a href="../lessons/l03.html" data-slug="l03"><span class="nav-no">L03</span>GPIO 출력 — LED</a></li>
+<li><a href="../lessons/l04.html" data-slug="l04"><span class="nav-no">L04</span>GPIO 입력 — 스위치</a></li>
+<li><a href="../lessons/l05.html" data-slug="l05"><span class="nav-no">L05</span>외부 인터럽트 EXTI</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="comm">
+<div class="nav-track-title track-comm"><span class="nav-part-no">PART 2</span>통신·타이머·아날로그</div>
+<ul>
+<li><a href="../lessons/l06.html" data-slug="l06"><span class="nav-no">L06</span>UART와 printf</a></li>
+<li><a href="../lessons/l07.html" data-slug="l07"><span class="nav-no">L07</span>타이머 인터럽트</a></li>
+<li><a href="../lessons/l08.html" data-slug="l08"><span class="nav-no">L08</span>PWM — LED 밝기와 서보</a></li>
+<li><a href="../lessons/l09.html" data-slug="l09"><span class="nav-no">L09</span>ADC — 가변저항·조도센서</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="periph">
+<div class="nav-track-title track-periph"><span class="nav-part-no">PART 3</span>주변기기</div>
+<ul>
+<li><a href="../lessons/l10.html" data-slug="l10"><span class="nav-no">L10</span>I2C와 LCD1602</a></li>
+<li><a href="../lessons/l11.html" class="active" data-slug="l11"><span class="nav-no">L11</span>SPI 기초</a></li>
+<li><a href="../lessons/l12.html" data-slug="l12"><span class="nav-no">L12</span>7세그먼트 FND</a></li>
+<li><a href="../lessons/l13.html" data-slug="l13"><span class="nav-no">L13</span>DC 모터 드라이버</a></li>
+<li><a href="../lessons/l14.html" data-slug="l14"><span class="nav-no">L14</span>스텝모터</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="project">
+<div class="nav-track-title track-project"><span class="nav-part-no">PART 4</span>프로젝트</div>
+<ul>
+<li><a href="../lessons/l15.html" data-slug="l15"><span class="nav-no">L15</span>미니 프로젝트: 스마트 선풍기</a></li>
+<li><a href="../lessons/l16.html" data-slug="l16"><span class="nav-no">L16</span>실물 보드로 옮기기</a></li>
+</ul>
+</div>
+</nav>
+</aside>
+<div class="sidebar-scrim" id="scrim"></div>
+<main class="main">
+<header class="topbar"><a class="topbar-brand" href="../index.html"><span class="brand-mark">32</span>studySTM32</a><nav class="topnav" aria-label="사이트 메뉴"><a href="../index.html">강의 홈</a><a href="../sim/index.html">시뮬레이터</a><a href="../lessons/hal-reference.html">HAL 레퍼런스</a></nav><button class="theme-icon" type="button" data-theme-toggle data-theme-icon aria-label="테마 전환"></button></header>
+
+<article class="lesson" data-slug="l11" data-track="periph">
+  <div class="lesson-head">
+    <div class="crumbs"><span class="track-pill track-periph">PART 3</span> 주변기기 &middot; 약 60분 &middot; 중급</div>
+    <h1><span class="lesson-no">L11</span>SPI 기초</h1>
+    <p class="lede">SCK·MOSI·MISO·CS 네 선과 모드, CS를 GPIO로 제어하는 법, HAL_SPI_TransmitReceive로 장치 ID를 읽습니다.</p>
+    <div class="requires">선수 레슨: <a href="l06.html">L06</a></div>
+    <div class="lesson-actions">
+      <label class="done-toggle"><input type="checkbox" id="doneCheck"><span>학습 완료로 표시</span></label>
+      <a class="ghost-btn tool-sim" href="../sim/index.html?ex=l11-spi-id" data-sim-src="../sim/index.html?ex=l11-spi-id&amp;embed=1">시뮬레이터에서 실습</a><a class="ghost-btn" href="hal-reference.html">HAL 레퍼런스</a>
+    </div>
+  </div>
+  <div class="lesson-grid">
+    <div class="lesson-body">
+<h2 id="학습-목표">학습 목표<a class="anchor" href="#학습-목표">#</a></h2>
+<ul><li>SPI 의 네 신호(SCK · MOSI · MISO · CS)와 전이중(full-duplex) 통신, 모드 0~3(CPOL/CPHA)을 설명합니다.</li><li>CS 를 <strong>GPIO 출력으로 직접 제어</strong>하는 방식(Software NSS)을 이해하고 올바른 순서로 씁니다.</li><li><code>HAL_SPI_TransmitReceive</code> 로 명령을 보내며 동시에 응답을 받고, <code>Transmit</code> + <code>Receive</code> 로 나눠 쓰는 방법과 비교합니다.</li><li>핀 충돌(SPI1 SCK 와 LD2 가 같은 <code>PA5</code>)을 알아보고 다른 SPI 로 옮길 수 있습니다.</li></ul>
+<h2 id="spi-기초">SPI 기초<a class="anchor" href="#spi-기초">#</a></h2>
+<p>SPI 는 마스터가 만드는 클럭(SCK)에 맞춰 <strong>보내는 선(MOSI)과 받는 선(MISO)이 동시에</strong> 1비트씩 움직이는 동기식 직렬 통신입니다. I2C 보다 선이 많지만 훨씬 빠르고(수 ~ 수십 MHz) 프로토콜이 단순해서 플래시 메모리, 디스플레이, ADC, 무선 모듈 등에 쓰입니다.</p>
+<div class="table-wrap"><table><thead><tr><th>신호</th><th>방향</th><th>역할</th></tr></thead><tbody><tr><td><strong>SCK</strong></td><td>마스터 → 장치</td><td>클럭</td></tr><tr><td><strong>MOSI</strong></td><td>마스터 → 장치</td><td>Master Out, Slave In (보내는 데이터)</td></tr><tr><td><strong>MISO</strong></td><td>장치 → 마스터</td><td>Master In, Slave Out (받는 데이터)</td></tr><tr><td><strong>CS</strong> (NSS)</td><td>마스터 → 장치</td><td>Chip Select, <strong>LOW 일 때 그 장치가 선택됨</strong>. 장치마다 하나씩</td></tr></tbody></table></div>
+<p>핵심은 <strong>"보내는 만큼 받는다"</strong> 입니다. 8클럭 동안 1바이트를 내보내면 같은 8클럭 동안 1바이트가 들어옵니다. 그래서 읽기만 하고 싶을 때도 마스터는 의미 없는 <strong>더미 바이트</strong>(0x00 또는 0xFF)를 보내 클럭을 만들어야 합니다.</p>
+<h3 id="모드-cpol-cpha">모드 (CPOL · CPHA)<a class="anchor" href="#모드-cpol-cpha">#</a></h3>
+<div class="table-wrap"><table><thead><tr><th>모드</th><th>CPOL (쉴 때 SCK)</th><th>CPHA (샘플링 에지)</th><th>CubeMX</th></tr></thead><tbody><tr><td>0</td><td>LOW</td><td>첫 번째 에지(상승)</td><td>Clock Polarity Low, Clock Phase 1 Edge</td></tr><tr><td>1</td><td>LOW</td><td>두 번째 에지(하강)</td><td>Low, 2 Edge</td></tr><tr><td>2</td><td>HIGH</td><td>첫 번째 에지(하강)</td><td>High, 1 Edge</td></tr><tr><td>3</td><td>HIGH</td><td>두 번째 에지(상승)</td><td>High, 2 Edge</td></tr></tbody></table></div>
+<p>장치 데이터시트에 적힌 모드와 맞춰야 합니다. 대부분의 플래시 메모리·센서는 <strong>모드 0</strong>(또는 0과 3 모두 지원)입니다.</p>
+<h2 id="핀-선택-spi1-대신-spi2">핀 선택: SPI1 대신 SPI2<a class="anchor" href="#핀-선택-spi1-대신-spi2">#</a></h2>
+<p>NUCLEO-F411RE 에서 SPI1 의 기본 핀은 <code>PA5</code>(SCK) / <code>PA6</code>(MISO) / <code>PA7</code>(MOSI) 입니다. 그런데 **<code>PA5</code> 는 LD2<strong> 와 연결되어 있어, SPI1 을 쓰면 클럭이 나갈 때마다 LD2 가 깜빡이고 LD2 를 GPIO 로 쓸 수 없습니다. 이 강좌는 </strong>SPI2** 를 씁니다.</p>
+<div class="table-wrap pinmap"><table><thead><tr><th>핀</th><th>신호</th><th>Nucleo 헤더 (모포)</th><th>연결</th></tr></thead><tbody><tr><td><code>PB13</code></td><td><code>SPI2_SCK</code></td><td>CN10-30</td><td>장치 SCK (CLK)</td></tr><tr><td><code>PB15</code></td><td><code>SPI2_MOSI</code></td><td>CN10-26</td><td>장치 DI (SI, SDI)</td></tr><tr><td><code>PB14</code></td><td><code>SPI2_MISO</code></td><td>CN10-28</td><td>장치 DO (SO, SDO)</td></tr><tr><td><code>PB12</code></td><td><code>GPIO_Output</code>, 라벨 <code>FLASH_CS</code>, <strong>초기 레벨 High</strong></td><td>CN10-16</td><td>장치 CS</td></tr></tbody></table></div>
+<h3 id="cubemx-설정">CubeMX 설정<a class="anchor" href="#cubemx-설정">#</a></h3>
+<ol><li><strong>Connectivity → SPI2 → Mode: Full-Duplex Master</strong>, <strong>Hardware NSS Signal: Disable</strong> (CS 는 GPIO 로 직접)</li><li>Parameter Settings: Data Size 8 Bits, First Bit MSB First, <strong>Prescaler 16</strong> (APB1 42 MHz / 16 = 2.625 MHz), CPOL Low, CPHA 1 Edge</li><li><code>PB12</code> 를 <code>GPIO_Output</code> 으로, <strong>GPIO output level: High</strong> — 시작하자마자 장치가 선택되지 않도록</li></ol>
+<h2 id="예제-1-장치-id-읽기-transmitreceive">예제 1 — 장치 ID 읽기 (TransmitReceive)<a class="anchor" href="#예제-1-장치-id-읽기-transmitreceive">#</a></h2>
+<p>W25Q 계열 SPI 플래시는 명령 <code>0x9F</code>(Read JEDEC ID)를 받으면 제조사·메모리 종류·용량 3바이트를 돌려줍니다. 예제 회로의 범용 SPI 장치 노드는 <code>reply</code> 속성(<code>FF EF 40 18</code>)의 바이트를 순서대로 돌려주도록 설정되어, W25Q128 처럼 동작합니다.</p>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l11-spi-id" data-sim-src="../sim/index.html?ex=l11-spi-id&amp;embed=1" data-sim-id="l11-spi-id"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">SPI ID 읽기 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l11-spi-id" target="_blank" rel="noopener">새 창</a><code class="sim-id">l11-spi-id</code></div>
+<div class="code-block code-example" data-example="l11-spi-id"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN PV */</span>
+<span class="tk-t">uint8_t</span> tx[<span class="tk-n">4</span>] = {<span class="tk-n">0x9F</span>, <span class="tk-n">0x00</span>, <span class="tk-n">0x00</span>, <span class="tk-n">0x00</span>};   <span class="tk-c">// 0x9F = Read JEDEC ID, 나머지는 클럭을 만들기 위한 더미</span>
+<span class="tk-t">uint8_t</span> rx[<span class="tk-n">4</span>];
+<span class="tk-c">/* USER CODE END PV */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    <span class="tk-h">HAL_GPIO_WritePin</span>(FLASH_CS_GPIO_Port, FLASH_CS_Pin, <span class="tk-m">GPIO_PIN_RESET</span>);   <span class="tk-c">// CS LOW: 통신 시작</span>
+    <span class="tk-k">if</span> (<span class="tk-h">HAL_SPI_TransmitReceive</span>(&amp;hspi2, tx, rx, <span class="tk-n">4</span>, <span class="tk-n">100</span>) == <span class="tk-m">HAL_OK</span>) {
+      <span class="tk-f">printf</span>(<span class="tk-s">"JEDEC ID: %02X %02X %02X\r\n"</span>, rx[<span class="tk-n">1</span>], rx[<span class="tk-n">2</span>], rx[<span class="tk-n">3</span>]);
+    } <span class="tk-k">else</span> {
+      <span class="tk-f">printf</span>(<span class="tk-s">"SPI error\r\n"</span>);
+    }
+    <span class="tk-h">HAL_GPIO_WritePin</span>(FLASH_CS_GPIO_Port, FLASH_CS_Pin, <span class="tk-m">GPIO_PIN_SET</span>);     <span class="tk-c">// CS HIGH: 통신 끝</span>
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">1000</span>);
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span></code></pre></div>
+<div class="code-block"><div class="code-head"><span class="code-lang">text</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-text">MOSI(보냄) :  9F    00    00    00
+MISO(받음) :  FF    EF    40    18      ← rx[0] 은 명령을 보내는 동안 들어온 의미 없는 값</code></pre></div>
+<ul><li><code>tx</code> 4바이트를 보내는 동안 <code>rx</code> 4바이트가 채워집니다. 명령을 보내는 첫 바이트 동안 장치는 아직 할 말이 없으므로 <code>rx[0]</code> 은 버리고 <code>rx[1]~rx[3]</code> 을 씁니다.</li><li><strong>CS 를 LOW 로 내리고 → 통신하고 → HIGH 로 올리는</strong> 순서가 한 "명령" 입니다. 많은 장치가 CS 가 올라가는 순간 명령을 끝냅니다.</li></ul>
+<h2 id="예제-2-보내고-받기를-나눠서-transmit-receive">예제 2 — 보내고 받기를 나눠서 (Transmit + Receive)<a class="anchor" href="#예제-2-보내고-받기를-나눠서-transmit-receive">#</a></h2>
+<p>같은 일을 <code>HAL_SPI_Transmit</code> 으로 명령 1바이트, <code>HAL_SPI_Receive</code> 로 3바이트를 받아서 할 수도 있습니다. <strong>CS 는 두 호출 내내 LOW</strong> 로 유지해야 장치가 한 명령으로 인식합니다.</p>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l11-spi-split" data-sim-src="../sim/index.html?ex=l11-spi-split&amp;embed=1" data-sim-id="l11-spi-split"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">Transmit + Receive 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l11-spi-split" target="_blank" rel="noopener">새 창</a><code class="sim-id">l11-spi-split</code></div>
+<div class="code-block code-example" data-example="l11-spi-split"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN PV */</span>
+<span class="tk-t">uint8_t</span> cmd = <span class="tk-n">0x9F</span>;
+<span class="tk-t">uint8_t</span> id[<span class="tk-n">3</span>];
+<span class="tk-c">/* USER CODE END PV */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    <span class="tk-h">HAL_GPIO_WritePin</span>(FLASH_CS_GPIO_Port, FLASH_CS_Pin, <span class="tk-m">GPIO_PIN_RESET</span>);
+    <span class="tk-h">HAL_SPI_Transmit</span>(&amp;hspi2, &amp;cmd, <span class="tk-n">1</span>, <span class="tk-n">100</span>);     <span class="tk-c">// 명령 전송 (이때 들어온 바이트는 버림)</span>
+    <span class="tk-h">HAL_SPI_Receive</span>(&amp;hspi2, id, <span class="tk-n">3</span>, <span class="tk-n">100</span>);        <span class="tk-c">// 더미를 보내며 3바이트 수신</span>
+    <span class="tk-h">HAL_GPIO_WritePin</span>(FLASH_CS_GPIO_Port, FLASH_CS_Pin, <span class="tk-m">GPIO_PIN_SET</span>);
+    <span class="tk-f">printf</span>(<span class="tk-s">"ID = %02X %02X %02X\r\n"</span>, id[<span class="tk-n">0</span>], id[<span class="tk-n">1</span>], id[<span class="tk-n">2</span>]);
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">1000</span>);
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span></code></pre></div>
+<p><code>HAL_SPI_Receive</code> 도 속으로는 더미 바이트를 보내며 클럭을 만듭니다. 받을 바이트 위치를 계산하지 않아도 되어 코드가 읽기 쉽습니다.</p>
+<div class="callout callout-task"><div class="callout-title">실습</div><div class="callout-body"><ol><li>예제 1에서 CS 를 내리는 줄을 주석 처리하면 결과가 어떻게 되나요? 이유를 설명하세요.</li><li>SPI 장치 노드의 <code>reply</code> 를 <code>FF C2 20 17</code> 로 바꾸고 결과를 확인하세요. 이 값은 어느 제조사 칩일까요? (JEDEC 제조사 코드 조사)</li><li>로직 분석기 노드를 SCK · MOSI · MISO · CS 에 연결해 한 명령의 파형을 관찰하고, CS 가 LOW 인 구간의 클럭 수를 세어 보세요.</li></ol></div></div>
+<div class="callout callout-check"><div class="callout-title">스스로 확인</div><div class="callout-body"><ul><li>SPI 로 3바이트를 <strong>읽기만</strong> 하려면 마스터는 몇 바이트를 보내야 하나요?</li><li>장치 두 개(플래시, 디스플레이)를 같은 SPI2 에 연결하려면 어떤 선을 공유하고 어떤 선을 따로 두나요?</li></ul></div></div>
+<h2 id="자주-나는-오류와-해결">자주 나는 오류와 해결<a class="anchor" href="#자주-나는-오류와-해결">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인</th><th>해결</th></tr></thead><tbody><tr><td>받은 값이 모두 <code>FF</code></td><td>MISO 미연결, CS 가 LOW 로 내려가지 않음, 장치 전원 없음</td><td>배선, CS 코드, 전원 확인</td></tr><tr><td>받은 값이 모두 <code>00</code></td><td>MISO 가 GND 로 붙음, 장치가 리셋 상태</td><td>배선 확인</td></tr><tr><td>값이 한 비트씩 밀려 있음 (예: <code>EF</code> 대신 <code>77</code> / <code>DE</code>)</td><td>SPI 모드(CPOL/CPHA) 불일치</td><td>데이터시트의 모드로 맞추기</td></tr><tr><td>전원 켜자마자 장치가 이상 동작</td><td>CS 초기 레벨이 Low</td><td>CubeMX 에서 CS 핀 초기 레벨 High</td></tr><tr><td>SPI1 을 켰더니 LD2 가 깜빡임</td><td><code>PA5</code> 공유</td><td>SPI2 사용 또는 SPI1 을 <code>PB3</code>/<code>PB4</code>/<code>PB5</code> 로 재배치</td></tr><tr><td>속도를 올렸더니 가끔 틀린 값</td><td>긴 점퍼선, 장치 최대 클럭 초과</td><td>Prescaler 를 키워 속도 낮추기, 배선 짧게</td></tr></tbody></table></div>
+<h2 id="과제">과제<a class="anchor" href="#과제">#</a></h2>
+<ol><li>명령 <code>0x05</code>(Read Status Register-1)를 보내고 1바이트를 받아 출력하는 함수 <code>uint8_t flash_read_status(void)</code> 를 만드세요.</li><li>CS 제어를 <code>spi_select()</code> / <code>spi_deselect()</code> 함수로 묶고, 장치가 두 개일 때를 대비해 CS 핀을 인자로 받도록 확장하세요.</li><li>I2C(L10)와 SPI 를 선 수, 속도, 장치 선택 방법, 확인 응답(ACK) 유무로 비교하는 표를 만드세요.</li></ol>
+<h2 id="참고자료">참고자료<a class="anchor" href="#참고자료">#</a></h2>
+<ul><li>ST, <em>RM0383</em>, 20장 SPI</li><li>Winbond, <em>W25Q128JV datasheet</em> — Read JEDEC ID (9Fh), Status Register</li><li>ST, <em>UM1725 — STM32F4 HAL</em>, SPI Generic Driver (<code>HAL_SPI_TransmitReceive</code>, <code>HAL_SPI_Transmit</code>, <code>HAL_SPI_Receive</code>)</li><li>이 사이트의 <a href="hal-reference.html#spi">HAL 레퍼런스 — SPI</a></li></ul>
+      <nav class="pager"><a class="pager-prev" href="l10.html"><span>이전 · L10</span>I2C와 LCD1602</a><a class="pager-next" href="l12.html"><span>다음 · L12</span>7세그먼트 FND</a></nav>
+    </div>
+    <aside class="lesson-toc"><div class="toc-title">이 레슨의 내용</div><div class="toc-links"><a class="toc-l2" href="#학습-목표">학습 목표</a><a class="toc-l2" href="#spi-기초">SPI 기초</a><a class="toc-l3" href="#모드-cpol-cpha">모드 (CPOL · CPHA)</a><a class="toc-l2" href="#핀-선택-spi1-대신-spi2">핀 선택: SPI1 대신 SPI2</a><a class="toc-l3" href="#cubemx-설정">CubeMX 설정</a><a class="toc-l2" href="#예제-1-장치-id-읽기-transmitreceive">예제 1 — 장치 ID 읽기 (TransmitReceive)</a><a class="toc-l2" href="#예제-2-보내고-받기를-나눠서-transmit-receive">예제 2 — 보내고 받기를 나눠서 (Transmit + Receive)</a><a class="toc-l2" href="#자주-나는-오류와-해결">자주 나는 오류와 해결</a><a class="toc-l2" href="#과제">과제</a><a class="toc-l2" href="#참고자료">참고자료</a></div></aside>
+  </div>
+</article>
+
+</main>
+<script src="../assets/js/site.js"></script>
+</body>
+</html>

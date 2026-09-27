@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L16. 실물 보드로 옮기기 · studySTM32</title>
+<meta name="description" content="STM32CubeIDE 설치, .ioc 설정, 빌드와 ST-Link 플래시·디버그, 시뮬레이터와 실물의 차이와 안전한 배선을 정리합니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
+<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="../assets/css/stm32.css">
+<link rel="stylesheet" href="../assets/css/ml-theme.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
+<script src="../assets/js/theme.js"></script>
+</head>
+<body class="lesson-page track-page-project">
+<button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
+<aside class="sidebar" id="sidebar">
+<nav class="sidebar-nav">
+<div class="brand-row"><a class="brand" href="../index.html"><span class="brand-mark">32</span><span class="brand-text">studySTM32<small>STM32 HAL 인터랙티브 강좌</small></span></a></div>
+<div class="side-tools"><a class="side-tool" href="../sim/index.html">시뮬레이터</a><a class="side-tool" href="../lessons/hal-reference.html">HAL 레퍼런스</a></div>
+<div class="nav-track" data-track="basics">
+<div class="nav-track-title track-basics"><span class="nav-part-no">PART 1</span>시작하기</div>
+<ul>
+<li><a href="../lessons/l01.html" data-slug="l01"><span class="nav-no">L01</span>STM32 시리즈와 개발 환경</a></li>
+<li><a href="../lessons/l02.html" data-slug="l02"><span class="nav-no">L02</span>시뮬레이터 둘러보기와 첫 프로젝트</a></li>
+<li><a href="../lessons/l03.html" data-slug="l03"><span class="nav-no">L03</span>GPIO 출력 — LED</a></li>
+<li><a href="../lessons/l04.html" data-slug="l04"><span class="nav-no">L04</span>GPIO 입력 — 스위치</a></li>
+<li><a href="../lessons/l05.html" data-slug="l05"><span class="nav-no">L05</span>외부 인터럽트 EXTI</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="comm">
+<div class="nav-track-title track-comm"><span class="nav-part-no">PART 2</span>통신·타이머·아날로그</div>
+<ul>
+<li><a href="../lessons/l06.html" data-slug="l06"><span class="nav-no">L06</span>UART와 printf</a></li>
+<li><a href="../lessons/l07.html" data-slug="l07"><span class="nav-no">L07</span>타이머 인터럽트</a></li>
+<li><a href="../lessons/l08.html" data-slug="l08"><span class="nav-no">L08</span>PWM — LED 밝기와 서보</a></li>
+<li><a href="../lessons/l09.html" data-slug="l09"><span class="nav-no">L09</span>ADC — 가변저항·조도센서</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="periph">
+<div class="nav-track-title track-periph"><span class="nav-part-no">PART 3</span>주변기기</div>
+<ul>
+<li><a href="../lessons/l10.html" data-slug="l10"><span class="nav-no">L10</span>I2C와 LCD1602</a></li>
+<li><a href="../lessons/l11.html" data-slug="l11"><span class="nav-no">L11</span>SPI 기초</a></li>
+<li><a href="../lessons/l12.html" data-slug="l12"><span class="nav-no">L12</span>7세그먼트 FND</a></li>
+<li><a href="../lessons/l13.html" data-slug="l13"><span class="nav-no">L13</span>DC 모터 드라이버</a></li>
+<li><a href="../lessons/l14.html" data-slug="l14"><span class="nav-no">L14</span>스텝모터</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="project">
+<div class="nav-track-title track-project"><span class="nav-part-no">PART 4</span>프로젝트</div>
+<ul>
+<li><a href="../lessons/l15.html" data-slug="l15"><span class="nav-no">L15</span>미니 프로젝트: 스마트 선풍기</a></li>
+<li><a href="../lessons/l16.html" class="active" data-slug="l16"><span class="nav-no">L16</span>실물 보드로 옮기기</a></li>
+</ul>
+</div>
+</nav>
+</aside>
+<div class="sidebar-scrim" id="scrim"></div>
+<main class="main">
+<header class="topbar"><a class="topbar-brand" href="../index.html"><span class="brand-mark">32</span>studySTM32</a><nav class="topnav" aria-label="사이트 메뉴"><a href="../index.html">강의 홈</a><a href="../sim/index.html">시뮬레이터</a><a href="../lessons/hal-reference.html">HAL 레퍼런스</a></nav><button class="theme-icon" type="button" data-theme-toggle data-theme-icon aria-label="테마 전환"></button></header>
+
+<article class="lesson" data-slug="l16" data-track="project">
+  <div class="lesson-head">
+    <div class="crumbs"><span class="track-pill track-project">PART 4</span> 프로젝트 &middot; 약 90분 &middot; 중급</div>
+    <h1><span class="lesson-no">L16</span>실물 보드로 옮기기</h1>
+    <p class="lede">STM32CubeIDE 설치, .ioc 설정, 빌드와 ST-Link 플래시·디버그, 시뮬레이터와 실물의 차이와 안전한 배선을 정리합니다.</p>
+    <div class="requires">선수 레슨: <a href="l15.html">L15</a></div>
+    <div class="lesson-actions">
+      <label class="done-toggle"><input type="checkbox" id="doneCheck"><span>학습 완료로 표시</span></label>
+      <a class="ghost-btn tool-sim" href="../sim/index.html?ex=l16-bluepill" data-sim-src="../sim/index.html?ex=l16-bluepill&amp;embed=1">시뮬레이터에서 실습</a><a class="ghost-btn" href="hal-reference.html">HAL 레퍼런스</a>
+    </div>
+  </div>
+  <div class="lesson-grid">
+    <div class="lesson-body">
+<h2 id="학습-목표">학습 목표<a class="anchor" href="#학습-목표">#</a></h2>
+<ul><li>STM32CubeIDE 를 설치하고 <strong>Board Selector</strong> 로 NUCLEO-F411RE 프로젝트를 만듭니다.</li><li>시뮬레이터 예제의 핀·주변장치 설정을 <code>.ioc</code> 로 옮기고, USER CODE 를 붙여 넣어 빌드합니다.</li><li>ST-Link 로 <strong>플래시(Run)</strong> 와 <strong>디버그(중단점, 한 줄 실행, Live Expressions)</strong> 를 합니다.</li><li>시뮬레이터와 실물의 차이를 알고, <strong>안전한 배선·전원 규칙</strong>을 지킵니다.</li><li>BluePill 처럼 별도 ST-Link 가 필요한 보드에서 주의할 점(SWD 설정, active-low LED)을 압니다.</li></ul>
+<h2 id="cubeide-설치">CubeIDE 설치<a class="anchor" href="#cubeide-설치">#</a></h2>
+<ol><li>ST 홈페이지의 <strong>STM32CubeIDE</strong> 페이지에서 운영체제에 맞는 설치 파일을 내려받습니다(ST 계정 로그인이 필요할 수 있습니다).</li><li>설치 중 <strong>ST-LINK 드라이버</strong> 설치 항목을 꼭 켭니다(Windows).</li><li>처음 실행하면 작업 폴더(workspace)를 고릅니다. 경로에 한글·공백이 없는 폴더(예: <code>C:\stm32\ws</code>)를 권합니다.</li><li>사용하는 버전에 따라 CubeMX 가 IDE 에 들어 있거나(1.x), 따로 설치해야 합니다(2.x). L01 의 안내를 참고하세요.</li></ol>
+<h2 id="프로젝트-만들기와-ioc-설정">프로젝트 만들기와 .ioc 설정<a class="anchor" href="#프로젝트-만들기와-ioc-설정">#</a></h2>
+<ol><li><strong>File → New → STM32 Project → Board Selector</strong> 에서 <code>NUCLEO-F411RE</code> 를 고릅니다.</li><li>프로젝트 이름(영문)을 적고 Targeted Language <strong>C</strong>, Binary Type <strong>Executable</strong> 로 만듭니다.</li><li>"Initialize all peripherals with their default Mode?" 에 <strong>Yes</strong> — LD2(PA5), B1(PC13), USART2(PA2/PA3)가 자동으로 설정됩니다.</li><li><code>.ioc</code> 화면(핀아웃)에서 시뮬레이터 예제와 <strong>똑같이</strong> 핀·주변장치·NVIC 를 설정합니다. 예를 들어 L15 스마트 선풍기라면 L15 의 핀 배치표·설정표를 그대로 따릅니다.</li><li><strong>Clock Configuration</strong> 탭에서 HCLK 가 84 MHz 인지 확인합니다(이 강좌의 PSC/ARR 계산 기준).</li><li>저장(Ctrl+S)하거나 <strong>Generate Code</strong> 를 누르면 <code>Core/Src/main.c</code>, <code>Core/Inc/main.h</code> 등이 생성됩니다.</li></ol>
+<div class="callout callout-info"><div class="callout-title">주변장치별 파일로 생성되는 경우</div><div class="callout-body"><p><em>Project Manager → Code Generator → Generate peripheral initialization as a pair of '.c/.h' files per peripheral</em> 을 켜면 <code>usart.c</code>, <code>tim.c</code> 처럼 파일이 나뉘고 핸들(<code>huart2</code>, <code>htim3</code>)은 각 헤더에 <code>extern</code> 으로 선언됩니다. <code>main.c</code> 가 그 헤더들을 포함하므로 USER CODE 는 그대로 동작합니다. 시뮬레이터는 모두 <code>main.c</code> 에 생성하는 방식입니다.</p></div></div>
+<h2 id="코드-옮기기">코드 옮기기<a class="anchor" href="#코드-옮기기">#</a></h2>
+<p>시뮬레이터 <strong>코드</strong> 탭의 USER CODE 구역 내용을 CubeIDE 의 <code>main.c</code> 에서 <strong>같은 이름의 구역</strong>에 붙여 넣습니다.</p>
+<div class="table-wrap"><table><thead><tr><th>시뮬레이터 구역</th><th>CubeIDE <code>main.c</code> 위치</th></tr></thead><tbody><tr><td><code>USER CODE BEGIN Includes</code></td><td>파일 위쪽 <code>#include &quot;main.h&quot;</code> 아래</td></tr><tr><td><code>USER CODE BEGIN PV</code></td><td>전역 변수</td></tr><tr><td><code>USER CODE BEGIN PFP</code></td><td>함수 원형</td></tr><tr><td><code>USER CODE BEGIN 0</code></td><td>main 위 사용자 함수</td></tr><tr><td><code>USER CODE BEGIN 2</code></td><td>초기화 호출(<code>MX_..._Init</code>) 뒤</td></tr><tr><td><code>USER CODE BEGIN 3</code></td><td><code>while (1)</code> 안</td></tr><tr><td><code>USER CODE BEGIN 4</code></td><td>main 아래 (콜백, <code>__io_putchar</code>)</td></tr></tbody></table></div>
+<p>printf 로 <code>%f</code> 를 쓰는 예제(L09)는 <em>Project Properties → C/C++ Build → Settings → MCU Settings → Use float with printf from newlib-nano</em> 를 켭니다.</p>
+<h2 id="빌드-플래시-디버그">빌드 · 플래시 · 디버그<a class="anchor" href="#빌드-플래시-디버그">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>작업</th><th>메뉴 / 단축키</th><th>결과</th></tr></thead><tbody><tr><td>빌드</td><td>망치 아이콘, <strong>Ctrl+B</strong></td><td><code>Debug/프로젝트.elf</code>, 콘솔에 <code>text data bss</code> 크기</td></tr><tr><td>실행(플래시)</td><td><strong>Run → Run As → STM32 C/C++ Application</strong> (처음 한 번 설정 창 → OK)</td><td>ST-Link 가 프로그램을 쓰고 바로 실행</td></tr><tr><td>디버그</td><td>벌레 아이콘, <strong>F11</strong></td><td>Debug 화면으로 바뀌고 <code>main()</code> 첫 줄에서 멈춤</td></tr><tr><td>계속 실행 / 한 줄 실행 / 들어가기</td><td><strong>F8</strong> / <strong>F6</strong> / <strong>F5</strong></td><td>중단점까지 실행, 한 줄씩</td></tr><tr><td>변수 보기</td><td><strong>Live Expressions</strong> 탭에 변수 이름 추가</td><td>실행 중에도 값이 갱신됨 (<code>press_count</code>, <code>adc_value</code> …)</td></tr></tbody></table></div>
+<p>처음 연결하면 "ST-Link 펌웨어를 업그레이드하라" 는 창이 뜰 수 있습니다. 안내대로 업그레이드하면 됩니다.</p>
+<h3 id="터미널-연결">터미널 연결<a class="anchor" href="#터미널-연결">#</a></h3>
+<p>UART 예제는 PC 의 터미널 프로그램으로 봅니다. Windows 장치 관리자에서 <em>STMicroelectronics STLink Virtual COM Port (COMx)</em> 번호를 확인하고, Tera Term · PuTTY(또는 CubeIDE 의 <em>Console → Command Shell Console → Serial Port</em>)에서 <strong>COMx, 115200, 8N1</strong> 로 엽니다.</p>
+<h2 id="시뮬레이터와-실물의-차이">시뮬레이터와 실물의 차이<a class="anchor" href="#시뮬레이터와-실물의-차이">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>항목</th><th>시뮬레이터</th><th>실물</th></tr></thead><tbody><tr><td>타이밍</td><td>HAL 동작을 흉내 낸 근사 시간</td><td>클럭 정확도·인터럽트 지연·최적화 수준에 따라 달라짐</td></tr><tr><td>버튼</td><td>채터링 시뮬레이션을 끄면 깨끗한 신호</td><td>항상 <strong>채터링</strong> 있음 — 디바운스 필수</td></tr><tr><td>ADC</td><td>설정한 값 그대로</td><td>잡음 ±몇 칸, 기준 전압 오차 — 평균 필터</td></tr><tr><td>전기</td><td>과전류·단락·전압 강하 없음</td><td>핀 전류 한도, 모터 노이즈로 <strong>리셋</strong>, 5 V 입력 주의</td></tr><tr><td>I2C · SPI</td><td>장치 노드가 정해진 규칙대로 응답</td><td>풀업·배선 길이·장치 타이밍에 민감, 주소가 제품마다 다름</td></tr><tr><td>컴파일러</td><td>C 서브셋, 일부 기능 미지원 (함수 포인터, union …)</td><td>완전한 C (GCC), 최적화로 <code>volatile</code> 누락 버그가 드러남</td></tr><tr><td>오류</td><td>친절한 한국어 메시지</td><td>HardFault 로 멈추면 디버거로 원인 추적</td></tr></tbody></table></div>
+<h2 id="bluepill-로-옮기기">BluePill 로 옮기기<a class="anchor" href="#bluepill-로-옮기기">#</a></h2>
+<p>BluePill(STM32F103C8T6)은 ST-Link 가 내장되어 있지 않아 <strong>별도 ST-Link V2(동글)</strong> 를 SWD 로 연결합니다.</p>
+<div class="table-wrap pinmap"><table><thead><tr><th>ST-Link V2</th><th>BluePill (디버그 헤더)</th></tr></thead><tbody><tr><td>SWDIO</td><td>DIO (<code>PA13</code>)</td></tr><tr><td>SWCLK</td><td>CLK (<code>PA14</code>)</td></tr><tr><td>GND</td><td>GND</td></tr><tr><td>3.3V</td><td>3.3 (USB 로 전원을 줄 때는 연결하지 않음)</td></tr></tbody></table></div>
+<ul><li>CubeMX 에서 <strong>System Core → SYS → Debug: Serial Wire</strong> 를 반드시 켭니다. 꺼 두고 플래시하면 PA13/PA14 가 일반 GPIO 가 되어</li></ul>
+<p><strong>다음부터 디버거가 연결되지 않습니다.</strong> 이때는 ST-Link 설정의 <em>Connect under reset</em>(또는 BOOT0 을 1로 두고 전원 인가)으로 복구합니다.</p>
+<ul><li><strong>RCC → HSE: Crystal/Ceramic Resonator</strong> 를 켜고 클럭 트리에서 8 MHz × 9 = <strong>72 MHz</strong> 로 설정합니다. 타이머 계산은 72 MHz 기준(L07 표).</li><li>보드 LED 는 <code>PC13</code> 이고 <strong>LOW 일 때 켜집니다</strong>(active-low). PC13 은 전류를 조금밖에 못 내므로 LED 표시 용도로만 씁니다.</li></ul>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l16-bluepill" data-sim-src="../sim/index.html?ex=l16-bluepill&amp;embed=1" data-sim-id="l16-bluepill"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">BluePill 깜빡이기 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l16-bluepill" target="_blank" rel="noopener">새 창</a><code class="sim-id">l16-bluepill</code></div>
+<div class="code-block code-example" data-example="l16-bluepill"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c">  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    <span class="tk-h">HAL_GPIO_WritePin</span>(LED_GPIO_Port, LED_Pin, <span class="tk-m">GPIO_PIN_RESET</span>);   <span class="tk-c">// LOW = 켜짐</span>
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">200</span>);
+    <span class="tk-h">HAL_GPIO_WritePin</span>(LED_GPIO_Port, LED_Pin, <span class="tk-m">GPIO_PIN_SET</span>);     <span class="tk-c">// HIGH = 꺼짐</span>
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">800</span>);
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span></code></pre></div>
+<h2 id="실습-실물">실습 (실물)<a class="anchor" href="#실습-실물">#</a></h2>
+<div class="callout callout-safety"><div class="callout-title">배선·전원 안전 수칙</div><div class="callout-body"><ul><li><strong>배선은 전원을 끈 상태에서</strong> 합니다. USB 를 뽑고 연결을 마친 뒤, 한 번 더 확인하고 전원을 넣습니다.</li><li><strong>3.3V · 5V · GND 를 서로 직접 연결하지 마세요.</strong> 점퍼선 하나 잘못 꽂으면 보드와 PC USB 포트가 손상될 수 있습니다.</li><li>STM32 핀은 <strong>3.3 V</strong> 입니다. 5 V 신호는 데이터시트에서 5V 허용(FT) 핀인지 확인하고, <strong>아날로그(ADC) 핀에는 절대 5 V 를 넣지 마세요.</strong></li><li>핀 하나의 전류는 수 mA ~ 20 mA 정도로 제한됩니다. LED 에는 저항을, 모터·릴레이·부저에는 드라이버(트랜지스터, L298N, ULN2003)를 씁니다.</li><li><strong>모터·서보는 별도 전원</strong>을 쓰고 GND 만 보드와 공통으로 묶습니다. 돌아가는 모터·기어에 손가락이나 머리카락이 닿지 않게 합니다.</li><li>Nucleo 에 USB 와 외부 전원을 <strong>동시에</strong> 넣지 마세요(점퍼 설정에 따라 역전류). 외부 전원을 쓸 때는 보드 매뉴얼(UM1724)의 전원 선택 점퍼를 확인합니다.</li><li>부품이 <strong>뜨거워지거나 냄새·연기</strong>가 나면 즉시 USB 를 뽑습니다. 원인을 찾기 전에는 다시 켜지 않습니다.</li><li>L298N 방열판, 레귤레이터는 동작 중 뜨거울 수 있으니 만지지 마세요. 실습은 반드시 강사 확인 후 전원을 넣습니다.</li></ul></div></div>
+<div class="callout callout-task"><div class="callout-title">실습 — 스마트 선풍기를 실물로</div><div class="callout-body"><ol><li>CubeIDE 에서 NUCLEO-F411RE 프로젝트를 만들고 L15 의 핀·설정표대로 <code>.ioc</code> 를 설정합니다.</li><li>시뮬레이터 <code>l15-fan</code> 예제의 USER CODE 를 구역별로 옮겨 붙이고 빌드합니다(오류 0, 경고 확인).</li><li>모터 전원을 <strong>연결하지 않은 채</strong> 먼저 실행해 LCD·UART 로그·LD2 가 요구사항대로 동작하는지 봅니다.</li><li>전원을 끄고 L298N 과 모터 전원을 연결한 뒤, 강사 확인을 받고 전원을 넣어 모터 동작을 시험합니다.</li><li>디버그 모드로 <code>HAL_GPIO_EXTI_Callback</code> 에 중단점을 걸고, B1 을 누를 때 멈추는지와 <code>mode</code> 값을 확인합니다.</li></ol></div></div>
+<div class="callout callout-check"><div class="callout-title">스스로 확인</div><div class="callout-body"><ul><li>BluePill 에서 SYS → Debug 를 켜지 않고 플래시하면 무슨 일이 생기나요? 어떻게 복구하나요?</li><li>시뮬레이터에서는 잘 되던 버튼 토글이 실물에서 가끔 두 번 토글된다면 원인은?</li></ul></div></div>
+<h2 id="자주-나는-오류와-해결">자주 나는 오류와 해결<a class="anchor" href="#자주-나는-오류와-해결">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>증상·메시지</th><th>원인</th><th>해결</th></tr></thead><tbody><tr><td><code>No ST-LINK detected</code> / <code>Target not found</code></td><td>케이블(충전 전용), 드라이버, BluePill SWD 배선·전원</td><td>데이터 케이블, 드라이버 재설치, SWDIO/SWCLK/GND 확인</td></tr><tr><td><code>Could not verify ST device!</code></td><td>호환 칩(정품 아님) BluePill</td><td>정품 보드 사용 (Nucleo 권장)</td></tr><tr><td>한 번 플래시한 뒤 다시 연결 안 됨</td><td>SYS → Debug 가 꺼져 SWD 핀이 GPIO 로 바뀜</td><td><em>Connect under reset</em> 또는 BOOT0 = 1 로 부팅 후 지우기, Debug: Serial Wire 켜기</td></tr><tr><td><code>undefined reference to &#x27;huart2&#x27;</code></td><td>해당 주변장치를 <code>.ioc</code> 에서 켜지 않음</td><td>시뮬레이터 설정표와 같게 <code>.ioc</code> 설정 후 다시 생성</td></tr><tr><td>빌드는 되는데 printf 가 안 나옴</td><td><code>__io_putchar</code> 누락, COM 포트·보레이트 불일치</td><td>리타깃 확인, 터미널 115200 8N1</td></tr><tr><td>타이머 주기가 시뮬레이터와 다름</td><td>클럭 설정이 84 MHz 가 아님</td><td>Clock Configuration 에서 HCLK / APB Timer clocks 확인</td></tr><tr><td>모터가 돌면 보드가 리셋</td><td>전원 강하·노이즈</td><td>모터 전원 분리, 콘덴서, 공통 GND 한 점 연결</td></tr><tr><td>디버거가 <code>HardFault_Handler</code> 에서 멈춤</td><td>잘못된 포인터, 배열 범위 초과, 0 으로 나누기</td><td>Call Stack(디버그 창)으로 직전 함수 확인</td></tr></tbody></table></div>
+<h2 id="과제">과제<a class="anchor" href="#과제">#</a></h2>
+<ol><li>L03 ~ L14 중 두 개의 예제를 골라 실물 보드로 옮기고, 시뮬레이터 결과와 다른 점을 사진·로그와 함께 정리하세요.</li><li>CubeIDE 디버거의 <strong>SFRs</strong> 창에서 <code>GPIOA → ODR</code> 를 열어 두고 LD2 가 토글될 때 5번 비트가 바뀌는 것을 확인하세요.</li><li>같은 L15 코드를 NUCLEO-F103RB(72 MHz)로 옮기려면 무엇을 바꿔야 하는지 목록을 만드세요. (타이머 PSC, ADC 설정, 헤더 이름 등)</li></ol>
+<h2 id="참고자료">참고자료<a class="anchor" href="#참고자료">#</a></h2>
+<ul><li>ST, <em>UM2609 — STM32CubeIDE user guide</em> (빌드, 디버그, Live Expressions, SWV)</li><li>ST, <em>UM2553 — STM32CubeIDE quick start guide</em></li><li>ST, <em>UM1724 — STM32 Nucleo-64 boards user manual</em> (전원 선택, ST-Link, 솔더 브리지)</li><li>ST, <em>RM0008 — STM32F101xx/F103xx Reference Manual</em> (BluePill 의 F103)</li><li>이 사이트의 <a href="hal-reference.html">HAL 레퍼런스</a></li></ul>
+      <nav class="pager"><a class="pager-prev" href="l15.html"><span>이전 · L15</span>미니 프로젝트: 스마트 선풍기</a><span class="pager-next disabled"></span></nav>
+    </div>
+    <aside class="lesson-toc"><div class="toc-title">이 레슨의 내용</div><div class="toc-links"><a class="toc-l2" href="#학습-목표">학습 목표</a><a class="toc-l2" href="#cubeide-설치">CubeIDE 설치</a><a class="toc-l2" href="#프로젝트-만들기와-ioc-설정">프로젝트 만들기와 .ioc 설정</a><a class="toc-l2" href="#코드-옮기기">코드 옮기기</a><a class="toc-l2" href="#빌드-플래시-디버그">빌드 · 플래시 · 디버그</a><a class="toc-l3" href="#터미널-연결">터미널 연결</a><a class="toc-l2" href="#시뮬레이터와-실물의-차이">시뮬레이터와 실물의 차이</a><a class="toc-l2" href="#bluepill-로-옮기기">BluePill 로 옮기기</a><a class="toc-l2" href="#실습-실물">실습 (실물)</a><a class="toc-l2" href="#자주-나는-오류와-해결">자주 나는 오류와 해결</a><a class="toc-l2" href="#과제">과제</a><a class="toc-l2" href="#참고자료">참고자료</a></div></aside>
+  </div>
+</article>
+
+</main>
+<script src="../assets/js/site.js"></script>
+</body>
+</html>

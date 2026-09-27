@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L01. STM32 시리즈와 개발 환경 · studySTM32</title>
+<meta name="description" content="Cortex-M 코어와 F0·F1·F4·L4·H7 제품군, CubeIDE·CubeMX, HAL·LL·레지스터의 차이, Nucleo와 BluePill 보드를 정리합니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
+<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="../assets/css/stm32.css">
+<link rel="stylesheet" href="../assets/css/ml-theme.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
+<script src="../assets/js/theme.js"></script>
+</head>
+<body class="lesson-page track-page-basics">
+<button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
+<aside class="sidebar" id="sidebar">
+<nav class="sidebar-nav">
+<div class="brand-row"><a class="brand" href="../index.html"><span class="brand-mark">32</span><span class="brand-text">studySTM32<small>STM32 HAL 인터랙티브 강좌</small></span></a></div>
+<div class="side-tools"><a class="side-tool" href="../sim/index.html">시뮬레이터</a><a class="side-tool" href="../lessons/hal-reference.html">HAL 레퍼런스</a></div>
+<div class="nav-track" data-track="basics">
+<div class="nav-track-title track-basics"><span class="nav-part-no">PART 1</span>시작하기</div>
+<ul>
+<li><a href="../lessons/l01.html" class="active" data-slug="l01"><span class="nav-no">L01</span>STM32 시리즈와 개발 환경</a></li>
+<li><a href="../lessons/l02.html" data-slug="l02"><span class="nav-no">L02</span>시뮬레이터 둘러보기와 첫 프로젝트</a></li>
+<li><a href="../lessons/l03.html" data-slug="l03"><span class="nav-no">L03</span>GPIO 출력 — LED</a></li>
+<li><a href="../lessons/l04.html" data-slug="l04"><span class="nav-no">L04</span>GPIO 입력 — 스위치</a></li>
+<li><a href="../lessons/l05.html" data-slug="l05"><span class="nav-no">L05</span>외부 인터럽트 EXTI</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="comm">
+<div class="nav-track-title track-comm"><span class="nav-part-no">PART 2</span>통신·타이머·아날로그</div>
+<ul>
+<li><a href="../lessons/l06.html" data-slug="l06"><span class="nav-no">L06</span>UART와 printf</a></li>
+<li><a href="../lessons/l07.html" data-slug="l07"><span class="nav-no">L07</span>타이머 인터럽트</a></li>
+<li><a href="../lessons/l08.html" data-slug="l08"><span class="nav-no">L08</span>PWM — LED 밝기와 서보</a></li>
+<li><a href="../lessons/l09.html" data-slug="l09"><span class="nav-no">L09</span>ADC — 가변저항·조도센서</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="periph">
+<div class="nav-track-title track-periph"><span class="nav-part-no">PART 3</span>주변기기</div>
+<ul>
+<li><a href="../lessons/l10.html" data-slug="l10"><span class="nav-no">L10</span>I2C와 LCD1602</a></li>
+<li><a href="../lessons/l11.html" data-slug="l11"><span class="nav-no">L11</span>SPI 기초</a></li>
+<li><a href="../lessons/l12.html" data-slug="l12"><span class="nav-no">L12</span>7세그먼트 FND</a></li>
+<li><a href="../lessons/l13.html" data-slug="l13"><span class="nav-no">L13</span>DC 모터 드라이버</a></li>
+<li><a href="../lessons/l14.html" data-slug="l14"><span class="nav-no">L14</span>스텝모터</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="project">
+<div class="nav-track-title track-project"><span class="nav-part-no">PART 4</span>프로젝트</div>
+<ul>
+<li><a href="../lessons/l15.html" data-slug="l15"><span class="nav-no">L15</span>미니 프로젝트: 스마트 선풍기</a></li>
+<li><a href="../lessons/l16.html" data-slug="l16"><span class="nav-no">L16</span>실물 보드로 옮기기</a></li>
+</ul>
+</div>
+</nav>
+</aside>
+<div class="sidebar-scrim" id="scrim"></div>
+<main class="main">
+<header class="topbar"><a class="topbar-brand" href="../index.html"><span class="brand-mark">32</span>studySTM32</a><nav class="topnav" aria-label="사이트 메뉴"><a href="../index.html">강의 홈</a><a href="../sim/index.html">시뮬레이터</a><a href="../lessons/hal-reference.html">HAL 레퍼런스</a></nav><button class="theme-icon" type="button" data-theme-toggle data-theme-icon aria-label="테마 전환"></button></header>
+
+<article class="lesson" data-slug="l01" data-track="basics">
+  <div class="lesson-head">
+    <div class="crumbs"><span class="track-pill track-basics">PART 1</span> 시작하기 &middot; 약 40분 &middot; 입문</div>
+    <h1><span class="lesson-no">L01</span>STM32 시리즈와 개발 환경</h1>
+    <p class="lede">Cortex-M 코어와 F0·F1·F4·L4·H7 제품군, CubeIDE·CubeMX, HAL·LL·레지스터의 차이, Nucleo와 BluePill 보드를 정리합니다.</p>
+    
+    <div class="lesson-actions">
+      <label class="done-toggle"><input type="checkbox" id="doneCheck"><span>학습 완료로 표시</span></label>
+      <a class="ghost-btn" href="hal-reference.html">HAL 레퍼런스</a>
+    </div>
+  </div>
+  <div class="lesson-grid">
+    <div class="lesson-body">
+<h2 id="학습-목표">학습 목표<a class="anchor" href="#학습-목표">#</a></h2>
+<ul><li>STM32가 <strong>Arm Cortex-M 코어 + ST의 주변장치</strong>로 이루어진 MCU 제품군이라는 것을 설명할 수 있습니다.</li><li>F0 · F1 · F4 · L4 · H7 제품군의 차이(코어, 클럭, 용도)를 표로 비교하고, 칩 이름(<code>STM32F411RET6</code>)을 읽을 수 있습니다.</li><li>STM32CubeMX · STM32CubeIDE가 각각 무엇을 하는지, <strong>HAL · LL · 레지스터</strong> 방식이 어떻게 다른지 말할 수 있습니다.</li><li>이 강좌에서 쓰는 보드(NUCLEO-F411RE, NUCLEO-F103RB, BluePill)의 내장 LED·버튼·가상 COM 포트를 알고 있습니다.</li></ul>
+<h2 id="stm32는-무엇인가">STM32는 무엇인가<a class="anchor" href="#stm32는-무엇인가">#</a></h2>
+<p>STM32는 ST마이크로일렉트로닉스(ST)가 만드는 32비트 마이크로컨트롤러(MCU) 제품군입니다. CPU 코어는 Arm이 설계한 <strong>Cortex-M</strong> 시리즈를 라이선스해 쓰고, 그 둘레에 ST가 만든 GPIO · 타이머 · UART · ADC · I2C · SPI 같은 <strong>주변장치(peripheral)</strong>, 플래시 메모리, SRAM, 클럭 회로를 붙여 한 칩으로 만듭니다.</p>
+<div class="table-wrap"><table><thead><tr><th>코어</th><th>특징</th><th>주로 쓰는 STM32</th></tr></thead><tbody><tr><td>Cortex-M0 / M0+</td><td>가장 작고 저렴, 저전력</td><td>F0, G0, L0, C0</td></tr><tr><td>Cortex-M3</td><td>32비트 기본형, 하드웨어 나눗셈</td><td>F1, F2, L1</td></tr><tr><td>Cortex-M4F</td><td>M3 + <strong>DSP 명령 + 단정밀도 FPU</strong></td><td>F3, F4, G4, L4, WB</td></tr><tr><td>Cortex-M7</td><td>고성능, 캐시, (일부) 배정밀도 FPU</td><td>F7, H7</td></tr><tr><td>Cortex-M33</td><td>M4급 성능 + TrustZone 보안</td><td>L5, U5, H5</td></tr></tbody></table></div>
+<p>같은 Cortex-M이라도 <strong>주변장치의 레지스터 구조는 ST가 정한 것</strong>이라서, STM32끼리는 제품군이 달라도 코드가 비슷합니다. 그리고 ST가 제공하는 <strong>HAL 라이브러리</strong>가 이 차이를 한 번 더 감춰 주기 때문에, F1에서 쓰던 코드를 F4로 옮기기가 쉽습니다.</p>
+<h2 id="제품군-비교">제품군 비교<a class="anchor" href="#제품군-비교">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>제품군</th><th>코어</th><th>최대 클럭</th><th>특징</th><th>대표 칩 · 보드</th></tr></thead><tbody><tr><td><strong>F0</strong></td><td>M0</td><td>48 MHz</td><td>저가형 입문 제품군</td><td>STM32F030, NUCLEO-F030R8</td></tr><tr><td><strong>F1</strong></td><td>M3</td><td>72 MHz</td><td>가장 오래되고 자료가 많은 주력 제품군</td><td>STM32F103C8(BluePill), NUCLEO-F103RB</td></tr><tr><td><strong>F4</strong></td><td>M4F</td><td>84~180 MHz</td><td>FPU·DSP, 교육·산업에서 가장 흔한 고성능 범용</td><td>STM32F401/F411(최대 100 MHz), F446(180 MHz)</td></tr><tr><td><strong>L4</strong></td><td>M4F</td><td>80 MHz</td><td>초저전력(배터리 기기), 고성능 ADC</td><td>STM32L476, NUCLEO-L476RG</td></tr><tr><td><strong>H7</strong></td><td>M7 (일부 M7+M4 듀얼)</td><td>480~550 MHz</td><td>최고 성능, 대용량 메모리, 캐시</td><td>STM32H743, NUCLEO-H743ZI</td></tr></tbody></table></div>
+<p>이 밖에 G0/G4(F0/F3 후속), U5(초저전력 + 보안), WB/WL(블루투스·LoRa 무선) 등이 있습니다. 처음 배울 때는 <strong>F4(특히 F411/F401) 또는 F1</strong> 중 하나로 시작하면 자료를 찾기 쉽습니다.</p>
+<h3 id="칩-이름-읽기">칩 이름 읽기<a class="anchor" href="#칩-이름-읽기">#</a></h3>
+<p><code>STM32F411RET6</code> 을 한 글자씩 나눠 보면 칩의 사양이 보입니다.</p>
+<div class="table-wrap pinmap"><table><thead><tr><th>부분</th><th>값</th><th>뜻</th></tr></thead><tbody><tr><td><code>STM32</code></td><td>—</td><td>ST의 32비트 Arm MCU</td></tr><tr><td><code>F</code></td><td>제품 종류</td><td>F = 범용(Foundation/Mainstream), L = 저전력, H = 고성능, G = 차세대 범용</td></tr><tr><td><code>4</code></td><td>시리즈</td><td>F4 시리즈 (Cortex-M4F)</td></tr><tr><td><code>11</code></td><td>라인</td><td>F411 라인 (최대 100 MHz)</td></tr><tr><td><code>R</code></td><td>핀 수</td><td>C = 48핀, R = 64핀, V = 100핀, Z = 144핀</td></tr><tr><td><code>E</code></td><td>플래시 크기</td><td>8 = 64 KB, B = 128 KB, C = 256 KB, E = 512 KB</td></tr><tr><td><code>T</code></td><td>패키지</td><td>T = LQFP, U = QFN, H = BGA</td></tr><tr><td><code>6</code></td><td>온도 범위</td><td>6 = −40~85 °C, 7 = −40~105 °C</td></tr></tbody></table></div>
+<p>그래서 BluePill의 <code>STM32F103C8T6</code> 은 "F1 시리즈 103 라인, <strong>48핀</strong>, <strong>64 KB 플래시</strong>, LQFP, 산업용 온도" 입니다.</p>
+<h2 id="개발-도구-cubemx와-cubeide">개발 도구: CubeMX와 CubeIDE<a class="anchor" href="#개발-도구-cubemx와-cubeide">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>도구</th><th>하는 일</th><th>이 강좌에서</th></tr></thead><tbody><tr><td><strong>STM32CubeMX</strong></td><td>칩 그림에서 핀 기능을 고르고(핀아웃), 클럭 트리와 주변장치(UART 보레이트, 타이머 분주 …)를 설정한 뒤 <strong>초기화 C 코드를 생성</strong>. 설정은 <code>.ioc</code> 파일에 저장</td><td>시뮬레이터의 <strong>핀아웃·설정</strong> 탭이 같은 역할</td></tr><tr><td><strong>STM32CubeIDE</strong></td><td>Eclipse 기반 통합 개발 환경. GCC 컴파일러, 빌드, ST-Link로 플래시·디버그(중단점, 변수 보기)</td><td>시뮬레이터의 <strong>코드</strong> 탭과 빌드·실행 버튼, 실물은 L16</td></tr><tr><td><strong>STM32CubeProgrammer</strong></td><td>이미 만든 <code>.hex</code>/<code>.bin</code>/<code>.elf</code> 를 보드에 쓰거나 지우기, 옵션 바이트 설정</td><td>L16에서 참고</td></tr></tbody></table></div>
+<div class="callout callout-info"><div class="callout-title">버전에 따라 설치 방식이 다릅니다</div><div class="callout-body"><p>CubeIDE 1.x는 <code>.ioc</code> 를 IDE 안에서 바로 열어 CubeMX 화면을 씁니다. 최근 2.x 버전부터는 CubeMX를 <strong>별도 프로그램으로 설치</strong>해 코드를 생성하고, CubeIDE는 편집·빌드·디버그에 집중하도록 바뀌었습니다. 어느 쪽이든 "CubeMX에서 설정 → 코드 생성 → IDE에서 USER CODE 작성 → 빌드·플래시" 흐름은 같습니다.</p></div></div>
+<p>Keil MDK, IAR EWARM 같은 상용 IDE나 VS Code + CMake 조합도 쓰이지만, 이 강좌는 무료이고 ST가 직접 지원하는 CubeIDE를 기준으로 합니다.</p>
+<h2 id="hal-ll-레지스터">HAL · LL · 레지스터<a class="anchor" href="#hal-ll-레지스터">#</a></h2>
+<p>STM32 코드를 쓰는 방법은 크게 세 가지입니다. 같은 일 — PA5 핀(LD2)을 반전 — 을 세 방식으로 써 보면 차이가 보입니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* 1) 레지스터 직접 접근: 데이터시트의 레지스터 비트를 그대로 씀 */</span>
+<span class="tk-m">GPIOA</span>-&gt;<span class="tk-m">ODR</span> ^= (<span class="tk-n">1</span> &lt;&lt; <span class="tk-n">5</span>);
+
+<span class="tk-c">/* 2) LL (Low-Layer) 드라이버: 레지스터를 얇게 감싼 인라인 함수 (시뮬레이터 미지원) */</span>
+<span class="tk-f">LL_GPIO_TogglePin</span>(<span class="tk-m">GPIOA</span>, <span class="tk-m">LL_GPIO_PIN_5</span>);
+
+<span class="tk-c">/* 3) HAL (Hardware Abstraction Layer): 제품군이 달라도 같은 이름·같은 사용법 */</span>
+<span class="tk-h">HAL_GPIO_TogglePin</span>(<span class="tk-m">GPIOA</span>, <span class="tk-m">GPIO_PIN_5</span>);</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>방식</th><th>장점</th><th>단점</th></tr></thead><tbody><tr><td>레지스터</td><td>가장 빠르고 작음, 동작 원리를 정확히 이해</td><td>레퍼런스 매뉴얼을 계속 봐야 함, 제품군마다 다를 수 있음</td></tr><tr><td>LL</td><td>레지스터에 가까운 속도, 이름이 읽기 쉬움</td><td>초기화 코드가 길고 제품군 차이가 조금 드러남</td></tr><tr><td><strong>HAL</strong></td><td>CubeMX가 초기화 코드를 만들어 줌, 인터럽트·DMA 처리까지 포함, 제품군 간 이식 쉬움</td><td>코드 크기가 크고 호출 오버헤드가 있음</td></tr></tbody></table></div>
+<p>이 강좌는 <strong>HAL</strong>을 기본으로 하고, 필요한 곳(L03 BSRR, L12 FND)에서 레지스터 직접 접근을 함께 보여 줍니다. 시뮬레이터가 지원하는 HAL 함수 목록은 <a href="hal-reference.html">HAL 레퍼런스</a>에 정리되어 있습니다.</p>
+<h2 id="이-강좌의-보드">이 강좌의 보드<a class="anchor" href="#이-강좌의-보드">#</a></h2>
+<div class="table-wrap pinmap"><table><thead><tr><th>보드</th><th>MCU</th><th>클럭(기본)</th><th>내장 장치</th><th>연결</th></tr></thead><tbody><tr><td><strong>NUCLEO-F411RE</strong></td><td>STM32F411RET6 (M4F)</td><td>84 MHz</td><td>LD2 = <code>PA5</code>, B1 = <code>PC13</code>(누르면 LOW), VCP = USART2(<code>PA2</code> TX / <code>PA3</code> RX)</td><td>USB 하나로 전원 + ST-Link 디버거 + 가상 COM</td></tr><tr><td><strong>NUCLEO-F103RB</strong></td><td>STM32F103RBT6 (M3)</td><td>72 MHz</td><td>위와 같은 배치</td><td>위와 같음</td></tr><tr><td><strong>BluePill</strong></td><td>STM32F103C8T6 (M3)</td><td>72 MHz</td><td>LED = <code>PC13</code> (<strong>LOW일 때 켜짐</strong>)</td><td>별도 ST-Link(SWD) 필요, USB는 전원/USB 장치용</td></tr></tbody></table></div>
+<p>Nucleo-64 보드는 윗부분에 <strong>ST-Link가 내장</strong>되어 있어 USB 케이블 하나로 전원, 프로그램 쓰기, 디버그, 시리얼 통신(가상 COM 포트)이 모두 됩니다. 아두이노 우노와 같은 모양의 헤더(A0~A5, D0~D15)와 모든 핀이 나오는 모포(morpho) 헤더가 있어 브레드보드 실습에 편합니다. 그래서 이 강좌의 예제는 대부분 <strong>NUCLEO-F411RE</strong>를 기준으로 합니다.</p>
+<div class="callout callout-warn"><div class="callout-title">BluePill 구입 시 주의</div><div class="callout-body"><p>값싼 BluePill 중에는 STM32가 아닌 호환 칩(CKS32, CS32 등)이 달린 제품이 있습니다. CubeIDE가 "ST 정품이 아닌 장치"라며 디버그를 거부하거나 동작이 조금 다를 수 있으니, 수업용으로는 Nucleo 보드를 권합니다.</p></div></div>
+<h2 id="이-강좌의-학습-흐름">이 강좌의 학습 흐름<a class="anchor" href="#이-강좌의-학습-흐름">#</a></h2>
+<ol><li><strong>CubeMX 핀 설정</strong> — 시뮬레이터의 핀아웃·설정 탭에서 핀 기능과 주변장치를 정합니다.</li><li><strong>HAL 코드</strong> — 생성된 <code>main.c</code> 의 <code>USER CODE</code> 구역에 코드를 씁니다.</li><li><strong>시뮬레이터</strong> — 회로 노드(LED, 버튼, LCD, 모터 …)를 연결하고 빌드·실행해 결과를 확인합니다.</li><li><strong>실물 보드</strong> — 같은 <code>.ioc</code> 설정과 같은 코드를 STM32CubeIDE로 옮겨 Nucleo 보드에서 실행합니다(L16).</li></ol>
+<p>다음 레슨(L02)에서 시뮬레이터 화면을 둘러보고 첫 프로젝트를 만들어 봅니다.</p>
+<div class="callout callout-check"><div class="callout-title">스스로 확인</div><div class="callout-body"><ul><li><code>STM32F103C8T6</code> 의 핀 수와 플래시 크기는?</li><li>F4 제품군이 F1보다 부동소수점 계산에 유리한 이유는?</li><li>CubeMX가 만들어 주는 것과 여러분이 직접 써야 하는 것은 각각 무엇인가요?</li></ul></div></div>
+<h2 id="자주-나는-오류와-해결">자주 나는 오류와 해결<a class="anchor" href="#자주-나는-오류와-해결">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인</th><th>해결</th></tr></thead><tbody><tr><td>CubeIDE에서 보드를 골랐는데 칩 이름이 다름</td><td>Board Selector 대신 MCU Selector에서 비슷한 칩을 고름</td><td>새 프로젝트를 <strong>Board Selector → NUCLEO-F411RE</strong> 로 다시 만들기 (LD2·B1·USART2가 자동 설정됨)</td></tr><tr><td>PC에서 보드가 인식되지 않음 (<code>No ST-LINK detected</code>)</td><td>충전 전용 USB 케이블, ST-Link 드라이버 미설치</td><td>데이터 케이블로 교체, CubeIDE/CubeProgrammer 설치 시 ST-Link 드라이버 포함 여부 확인</td></tr><tr><td>BluePill이 디버거에 연결되지 않음</td><td>정품이 아닌 호환 칩, SWD 배선 오류, 3.3V 미공급</td><td>SWDIO·SWCLK·GND·3.3V 네 선 확인, 가능하면 Nucleo로 실습</td></tr><tr><td>인터넷 예제 코드가 컴파일되지 않음</td><td>다른 제품군(F1 ↔ F4) 헤더·클럭 설정 차이, LL/레지스터 코드 혼용</td><td>예제가 어느 보드·HAL 기준인지 확인하고 CubeMX 설정부터 맞추기</td></tr></tbody></table></div>
+<h2 id="과제">과제<a class="anchor" href="#과제">#</a></h2>
+<ol><li>여러분이 가진(또는 사고 싶은) STM32 보드의 칩 이름을 적고, 위의 "칩 이름 읽기" 표로 사양을 풀어 쓰세요.</li><li>NUCLEO-F411RE 의 LD2, B1, 가상 COM 포트가 연결된 핀을 외우고, 왜 PA5를 다른 용도로 쓰면 LED가 같이 반응하는지 설명하세요.</li><li>HAL · LL · 레지스터 방식을 쓰기 쉬움 / 실행 속도 / 이식성 기준으로 비교한 표를 직접 만들어 보세요.</li></ol>
+<h2 id="참고자료">참고자료<a class="anchor" href="#참고자료">#</a></h2>
+<ul><li>ST, <em>STM32 32-bit Arm Cortex MCUs</em> 제품군 소개 — https://www.st.com/en/microcontrollers-microprocessors/stm32-32-bit-arm-cortex-mcus.html</li><li>ST, <em>NUCLEO-F411RE</em> 보드 페이지와 사용자 매뉴얼 UM1724 (STM32 Nucleo-64 boards)</li><li>ST, <em>STM32CubeIDE</em> / <em>STM32CubeMX</em> 제품 페이지</li><li>ST, <em>RM0383 — STM32F411xC/E Reference Manual</em> (레지스터 설명), <em>DS10314</em> (F411 데이터시트)</li><li>이 사이트의 <a href="hal-reference.html">HAL 레퍼런스</a></li></ul>
+      <nav class="pager"><span class="pager-prev disabled"></span><a class="pager-next" href="l02.html"><span>다음 · L02</span>시뮬레이터 둘러보기와 첫 프로젝트</a></nav>
+    </div>
+    <aside class="lesson-toc"><div class="toc-title">이 레슨의 내용</div><div class="toc-links"><a class="toc-l2" href="#학습-목표">학습 목표</a><a class="toc-l2" href="#stm32는-무엇인가">STM32는 무엇인가</a><a class="toc-l2" href="#제품군-비교">제품군 비교</a><a class="toc-l3" href="#칩-이름-읽기">칩 이름 읽기</a><a class="toc-l2" href="#개발-도구-cubemx와-cubeide">개발 도구: CubeMX와 CubeIDE</a><a class="toc-l2" href="#hal-ll-레지스터">HAL · LL · 레지스터</a><a class="toc-l2" href="#이-강좌의-보드">이 강좌의 보드</a><a class="toc-l2" href="#이-강좌의-학습-흐름">이 강좌의 학습 흐름</a><a class="toc-l2" href="#자주-나는-오류와-해결">자주 나는 오류와 해결</a><a class="toc-l2" href="#과제">과제</a><a class="toc-l2" href="#참고자료">참고자료</a></div></aside>
+  </div>
+</article>
+
+</main>
+<script src="../assets/js/site.js"></script>
+</body>
+</html>

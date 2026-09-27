@@ -747,7 +747,7 @@ void lcd_print(const char *s)
     periph: { I2C1: { mode: 'i2c', speed: 100000 } },
     nvic: {},
     nodes: [
-      { id: 'lcd', type: 'lcd1602', x: 520, y: 120, props: { addr: 0x27 } }
+      { id: 'lcd', type: 'lcd1602', x: 520, y: 120, props: { addr: '0x27' } }
     ],
     wires: [['PB8', 'lcd.scl'], ['PB9', 'lcd.sda']],
     user: {
@@ -795,8 +795,8 @@ char buf[17];               // LCD 한 줄 16글자 + '\0'
     },
     nvic: {},
     nodes: [
-      { id: 'lcd', type: 'lcd1602', x: 520, y: 80, props: { addr: 0x27 } },
-      { id: 'temp', type: 'i2cdev', x: 520, y: 260, props: { addr: 0x48, regs: '19 80 00 4B 00 50 00 00 00 00 00 00 00 00 00 00' } }
+      { id: 'lcd', type: 'lcd1602', x: 520, y: 80, props: { addr: '0x27' } },
+      { id: 'temp', type: 'i2cdev', x: 520, y: 260, props: { addr: '0x48', regs: '19 80 00 4B 00 50 00 00 00 00 00 00 00 00 00 00' } }
     ],
     wires: [['PB8', 'lcd.scl'], ['PB9', 'lcd.sda'], ['PB8', 'temp.scl'], ['PB9', 'temp.sda']],
     user: {
@@ -1185,7 +1185,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     PC3: { signal: 'GPIO_Output', label: 'ST_IN4', level: 0 }
   };
   var STEP_NODES = [
-    { id: 'st1', type: 'stepper', x: 540, y: 130, props: { stepsPerRev: 2048 } }
+    { id: 'st1', type: 'stepper', x: 540, y: 130, props: {} }   // 기본값: 출력축 1회전 = 하프스텝 4096 (풀스텝 2048)
   ];
   var STEP_WIRES = [['PC0', 'st1.in1'], ['PC1', 'st1.in2'], ['PC2', 'st1.in3'], ['PC3', 'st1.in4']];
   var STEP_OUT = C`
@@ -1317,7 +1317,7 @@ void stepper_move_half(int steps, uint32_t delay_ms)
     nodes: [
       { id: 'm1', type: 'motor', x: 560, y: 60, props: { maxRpm: 200 } },
       { id: 'pot1', type: 'pot', x: 540, y: 200, props: { value: 3000 } },
-      { id: 'lcd', type: 'lcd1602', x: 520, y: 320, props: { addr: 0x27 } }
+      { id: 'lcd', type: 'lcd1602', x: 520, y: 320, props: { addr: '0x27' } }
     ],
     wires: [['PB4', 'm1.in1'], ['PB5', 'm1.in2'], ['PA6', 'm1.en'], ['PA0', 'pot1.out'],
             ['PB8', 'lcd.scl'], ['PB9', 'lcd.sda']],

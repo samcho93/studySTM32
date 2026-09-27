@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L15. 미니 프로젝트: 스마트 선풍기 · studySTM32</title>
+<meta name="description" content="가변저항 → PWM 모터 속도, 버튼 모드 전환, LCD 표시, UART 로그를 하나의 프로그램으로 묶습니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
+<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="../assets/css/stm32.css">
+<link rel="stylesheet" href="../assets/css/ml-theme.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
+<script src="../assets/js/theme.js"></script>
+</head>
+<body class="lesson-page track-page-project">
+<button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
+<aside class="sidebar" id="sidebar">
+<nav class="sidebar-nav">
+<div class="brand-row"><a class="brand" href="../index.html"><span class="brand-mark">32</span><span class="brand-text">studySTM32<small>STM32 HAL 인터랙티브 강좌</small></span></a></div>
+<div class="side-tools"><a class="side-tool" href="../sim/index.html">시뮬레이터</a><a class="side-tool" href="../lessons/hal-reference.html">HAL 레퍼런스</a></div>
+<div class="nav-track" data-track="basics">
+<div class="nav-track-title track-basics"><span class="nav-part-no">PART 1</span>시작하기</div>
+<ul>
+<li><a href="../lessons/l01.html" data-slug="l01"><span class="nav-no">L01</span>STM32 시리즈와 개발 환경</a></li>
+<li><a href="../lessons/l02.html" data-slug="l02"><span class="nav-no">L02</span>시뮬레이터 둘러보기와 첫 프로젝트</a></li>
+<li><a href="../lessons/l03.html" data-slug="l03"><span class="nav-no">L03</span>GPIO 출력 — LED</a></li>
+<li><a href="../lessons/l04.html" data-slug="l04"><span class="nav-no">L04</span>GPIO 입력 — 스위치</a></li>
+<li><a href="../lessons/l05.html" data-slug="l05"><span class="nav-no">L05</span>외부 인터럽트 EXTI</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="comm">
+<div class="nav-track-title track-comm"><span class="nav-part-no">PART 2</span>통신·타이머·아날로그</div>
+<ul>
+<li><a href="../lessons/l06.html" data-slug="l06"><span class="nav-no">L06</span>UART와 printf</a></li>
+<li><a href="../lessons/l07.html" data-slug="l07"><span class="nav-no">L07</span>타이머 인터럽트</a></li>
+<li><a href="../lessons/l08.html" data-slug="l08"><span class="nav-no">L08</span>PWM — LED 밝기와 서보</a></li>
+<li><a href="../lessons/l09.html" data-slug="l09"><span class="nav-no">L09</span>ADC — 가변저항·조도센서</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="periph">
+<div class="nav-track-title track-periph"><span class="nav-part-no">PART 3</span>주변기기</div>
+<ul>
+<li><a href="../lessons/l10.html" data-slug="l10"><span class="nav-no">L10</span>I2C와 LCD1602</a></li>
+<li><a href="../lessons/l11.html" data-slug="l11"><span class="nav-no">L11</span>SPI 기초</a></li>
+<li><a href="../lessons/l12.html" data-slug="l12"><span class="nav-no">L12</span>7세그먼트 FND</a></li>
+<li><a href="../lessons/l13.html" data-slug="l13"><span class="nav-no">L13</span>DC 모터 드라이버</a></li>
+<li><a href="../lessons/l14.html" data-slug="l14"><span class="nav-no">L14</span>스텝모터</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="project">
+<div class="nav-track-title track-project"><span class="nav-part-no">PART 4</span>프로젝트</div>
+<ul>
+<li><a href="../lessons/l15.html" class="active" data-slug="l15"><span class="nav-no">L15</span>미니 프로젝트: 스마트 선풍기</a></li>
+<li><a href="../lessons/l16.html" data-slug="l16"><span class="nav-no">L16</span>실물 보드로 옮기기</a></li>
+</ul>
+</div>
+</nav>
+</aside>
+<div class="sidebar-scrim" id="scrim"></div>
+<main class="main">
+<header class="topbar"><a class="topbar-brand" href="../index.html"><span class="brand-mark">32</span>studySTM32</a><nav class="topnav" aria-label="사이트 메뉴"><a href="../index.html">강의 홈</a><a href="../sim/index.html">시뮬레이터</a><a href="../lessons/hal-reference.html">HAL 레퍼런스</a></nav><button class="theme-icon" type="button" data-theme-toggle data-theme-icon aria-label="테마 전환"></button></header>
+
+<article class="lesson" data-slug="l15" data-track="project">
+  <div class="lesson-head">
+    <div class="crumbs"><span class="track-pill track-project">PART 4</span> 프로젝트 &middot; 약 120분 &middot; 중급</div>
+    <h1><span class="lesson-no">L15</span>미니 프로젝트: 스마트 선풍기</h1>
+    <p class="lede">가변저항 → PWM 모터 속도, 버튼 모드 전환, LCD 표시, UART 로그를 하나의 프로그램으로 묶습니다.</p>
+    <div class="requires">선수 레슨: <a href="l09.html">L09</a> <a href="l10.html">L10</a> <a href="l13.html">L13</a></div>
+    <div class="lesson-actions">
+      <label class="done-toggle"><input type="checkbox" id="doneCheck"><span>학습 완료로 표시</span></label>
+      <a class="ghost-btn tool-sim" href="../sim/index.html?ex=l15-fan" data-sim-src="../sim/index.html?ex=l15-fan&amp;embed=1">시뮬레이터에서 실습</a><a class="ghost-btn" href="hal-reference.html">HAL 레퍼런스</a>
+    </div>
+  </div>
+  <div class="lesson-grid">
+    <div class="lesson-body">
+<h2 id="학습-목표">학습 목표<a class="anchor" href="#학습-목표">#</a></h2>
+<ul><li>요구사항을 <strong>입력 · 출력 · 상태(모드)</strong> 로 나누고, 핀 배치와 CubeMX 설정표로 옮깁니다.</li><li>ADC · PWM · EXTI · I2C LCD · UART 를 <strong>하나의 프로그램</strong>으로 묶고, <code>HAL_GetTick()</code> 으로 작업 주기를 나눕니다.</li><li>인터럽트(버튼)와 메인 루프 사이에서 <code>volatile</code> 플래그로 상태를 안전하게 주고받습니다.</li><li>동작 시험 체크리스트로 스스로 검증합니다.</li></ul>
+<h2 id="요구사항">요구사항<a class="anchor" href="#요구사항">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>번호</th><th>요구사항</th></tr></thead><tbody><tr><td>R1</td><td>가변저항을 돌리면 선풍기(DC 모터) 속도가 0 ~ 100 % 로 바뀐다 (MANUAL 모드)</td></tr><tr><td>R2</td><td>B1 버튼을 누를 때마다 모드가 <strong>OFF → MANUAL → BREEZE(자연풍) → OFF</strong> 순서로 바뀐다</td></tr><tr><td>R3</td><td>BREEZE 모드는 8초 주기로 30 % ~ 80 % 사이를 부드럽게 오르내린다</td></tr><tr><td>R4</td><td>LCD 1행에 모드, 2행에 현재 속도(%)를 표시한다 (0.2초마다 갱신)</td></tr><tr><td>R5</td><td>UART 로 1초마다 <code>[시간] mode=… pot=… duty=…%</code> 로그를 보낸다</td></tr><tr><td>R6</td><td>모드가 OFF 가 아니면 LD2 가 켜진다</td></tr></tbody></table></div>
+<h2 id="설계">설계<a class="anchor" href="#설계">#</a></h2>
+<h3 id="핀-배치">핀 배치<a class="anchor" href="#핀-배치">#</a></h3>
+<div class="table-wrap pinmap"><table><thead><tr><th>핀</th><th>CubeMX 신호</th><th>라벨</th><th>연결</th></tr></thead><tbody><tr><td><code>PA0</code></td><td><code>ADC1_IN0</code></td><td>—</td><td>가변저항 와이퍼</td></tr><tr><td><code>PA2</code> / <code>PA3</code></td><td><code>USART2_TX</code> / <code>USART2_RX</code></td><td>—</td><td>ST-Link 가상 COM (115200)</td></tr><tr><td><code>PA5</code></td><td><code>GPIO_Output</code></td><td><code>LD2</code></td><td>보드 LED</td></tr><tr><td><code>PA6</code></td><td><code>TIM3_CH1</code></td><td>—</td><td>L298N ENA (PWM 21 kHz)</td></tr><tr><td><code>PB4</code> / <code>PB5</code></td><td><code>GPIO_Output</code></td><td><code>MOTOR_IN1</code> / <code>MOTOR_IN2</code></td><td>L298N IN1 / IN2</td></tr><tr><td><code>PB8</code> / <code>PB9</code></td><td><code>I2C1_SCL</code> / <code>I2C1_SDA</code></td><td>—</td><td>LCD1602 (PCF8574, 0x27)</td></tr><tr><td><code>PC13</code></td><td><code>GPIO_EXTI13</code> (하강 에지)</td><td><code>B1</code></td><td>보드 버튼</td></tr></tbody></table></div>
+<h3 id="주변장치-설정">주변장치 설정<a class="anchor" href="#주변장치-설정">#</a></h3>
+<div class="table-wrap"><table><thead><tr><th>주변장치</th><th>설정</th></tr></thead><tbody><tr><td>USART2</td><td>Asynchronous, 115200 8N1</td></tr><tr><td>ADC1</td><td>IN0, 12비트, 단일 변환(폴링)</td></tr><tr><td>TIM3</td><td>PSC <code>3</code>, ARR <code>999</code>, CH1 PWM Generation, Pulse <code>0</code></td></tr><tr><td>I2C1</td><td>Standard mode 100 kHz</td></tr><tr><td>NVIC</td><td>EXTI line[15:10] Enabled</td></tr></tbody></table></div>
+<h3 id="프로그램-구조">프로그램 구조<a class="anchor" href="#프로그램-구조">#</a></h3>
+<div class="code-block"><div class="code-head"><span class="code-lang">text</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-text">            ┌────────── B1 인터럽트 (EXTI) ───────────┐
+            │  mode = (mode + 1) % 3,  mode_changed = 1 │
+            └──────────────────────────────────────────┘
+main 루프 (20 ms 마다)
+  1. pot  = read_pot()                 ← ADC
+  2. duty = compute_duty()             ← 모드별 계산
+  3. motor_set(duty), LD2              ← PWM / GPIO
+  4. 0.2초마다(또는 모드 변경 시) LCD 갱신   ← I2C
+  5. 1초마다 UART 로그                    ← printf</code></pre></div>
+<p><strong>느린 일(LCD, UART)은 주기를 길게, 빠른 일(모터 갱신)은 매번</strong> 하는 것이 핵심입니다. LCD 를 20 ms 마다 쓰면 I2C 전송에 시간이 많이 들어 루프가 느려집니다. 각 작업의 "마지막 실행 시각" 을 저장해 두고 <code>HAL_GetTick()</code> 과 비교합니다(L06, L07).</p>
+<h2 id="구현">구현<a class="anchor" href="#구현">#</a></h2>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l15-fan" data-sim-src="../sim/index.html?ex=l15-fan&amp;embed=1" data-sim-id="l15-fan"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">스마트 선풍기 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l15-fan" target="_blank" rel="noopener">새 창</a><code class="sim-id">l15-fan</code></div>
+<p>전체 코드입니다. LCD 드라이버(L10)와 <code>motor_set</code>(L13)은 앞 레슨의 것을 그대로 가져왔습니다.</p>
+<div class="code-block code-example" data-example="l15-fan"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN Includes */</span>
+<span class="tk-p">#include &lt;stdio.h&gt;</span>
+<span class="tk-c">/* USER CODE END Includes */</span>
+
+<span class="tk-c">/* USER CODE BEGIN PV */</span>
+<span class="tk-p">#define</span> <span class="tk-m">MODE_OFF</span>     <span class="tk-n">0</span>
+<span class="tk-p">#define</span> <span class="tk-m">MODE_MANUAL</span>  <span class="tk-n">1</span>
+<span class="tk-p">#define</span> <span class="tk-m">MODE_BREEZE</span>  <span class="tk-n">2</span>
+
+<span class="tk-k">const</span> <span class="tk-t">char</span> *<span class="tk-m">MODE_NAME</span>[<span class="tk-n">3</span>] = {<span class="tk-s">"OFF"</span>, <span class="tk-s">"MANUAL"</span>, <span class="tk-s">"BREEZE"</span>};
+<span class="tk-k">volatile</span> <span class="tk-t">uint8_t</span> mode = <span class="tk-m">MODE_OFF</span>;
+<span class="tk-k">volatile</span> <span class="tk-t">uint8_t</span> mode_changed = <span class="tk-n">1</span>;
+<span class="tk-k">volatile</span> <span class="tk-t">uint32_t</span> last_press = <span class="tk-n">0</span>;
+<span class="tk-t">uint32_t</span> pot = <span class="tk-n">0</span>;
+<span class="tk-t">int</span> duty = <span class="tk-n">0</span>;                        <span class="tk-c">// 0 ~ 999</span>
+<span class="tk-t">uint32_t</span> last_lcd = <span class="tk-n">0</span>;
+<span class="tk-t">uint32_t</span> last_log = <span class="tk-n">0</span>;
+<span class="tk-t">char</span> line[<span class="tk-n">17</span>];
+<span class="tk-c">/* USER CODE END PV */</span>
+
+<span class="tk-c">/* USER CODE BEGIN PFP */</span>
+<span class="tk-t">int</span> <span class="tk-f">__io_putchar</span>(<span class="tk-t">int</span> ch);
+<span class="tk-c">/* USER CODE END PFP */</span>
+
+<span class="tk-c">/* USER CODE BEGIN 0 */</span>
+<span class="tk-c">/* ---- I2C LCD1602 (PCF8574 백팩) 드라이버 ----
+ * PCF8574 비트: P0=RS, P1=RW, P2=EN, P3=백라이트, P4~P7=D4~D7 (4비트 모드) */</span>
+<span class="tk-p">#define</span> <span class="tk-f">LCD_ADDR</span>  (<span class="tk-n">0x27</span> &lt;&lt; <span class="tk-n">1</span>)   <span class="tk-c">// HAL 은 7비트 주소를 왼쪽으로 1비트 민 값을 받습니다</span>
+<span class="tk-p">#define</span> <span class="tk-m">LCD_RS</span>    <span class="tk-n">0x01</span>
+<span class="tk-p">#define</span> <span class="tk-m">LCD_EN</span>    <span class="tk-n">0x04</span>
+<span class="tk-p">#define</span> <span class="tk-m">LCD_BL</span>    <span class="tk-n">0x08</span>
+
+<span class="tk-c">/* 상위 4비트(nibble)를 EN 펄스와 함께 보냅니다. */</span>
+<span class="tk-t">void</span> <span class="tk-f">lcd_send4</span>(<span class="tk-t">uint8_t</span> nibble, <span class="tk-t">uint8_t</span> rs)
+{
+  <span class="tk-t">uint8_t</span> data[<span class="tk-n">2</span>];
+  data[<span class="tk-n">0</span>] = nibble | <span class="tk-m">LCD_BL</span> | <span class="tk-m">LCD_EN</span> | rs;   <span class="tk-c">// EN = 1</span>
+  data[<span class="tk-n">1</span>] = nibble | <span class="tk-m">LCD_BL</span> | rs;            <span class="tk-c">// EN = 0 (하강 에지에서 LCD 가 읽음)</span>
+  <span class="tk-h">HAL_I2C_Master_Transmit</span>(&amp;hi2c1, <span class="tk-m">LCD_ADDR</span>, data, <span class="tk-n">2</span>, <span class="tk-n">10</span>);
+}
+
+<span class="tk-c">/* 8비트 값을 상위 -&gt; 하위 4비트 순서로 두 번 나눠 보냅니다. */</span>
+<span class="tk-t">void</span> <span class="tk-f">lcd_send</span>(<span class="tk-t">uint8_t</span> value, <span class="tk-t">uint8_t</span> rs)
+{
+  <span class="tk-f">lcd_send4</span>(value &amp; <span class="tk-n">0xF0</span>, rs);
+  <span class="tk-f">lcd_send4</span>((value &lt;&lt; <span class="tk-n">4</span>) &amp; <span class="tk-n">0xF0</span>, rs);
+}
+
+<span class="tk-t">void</span> <span class="tk-f">lcd_cmd</span>(<span class="tk-t">uint8_t</span> cmd)
+{
+  <span class="tk-f">lcd_send</span>(cmd, <span class="tk-n">0</span>);
+  <span class="tk-k">if</span> (cmd == <span class="tk-n">0x01</span> || cmd == <span class="tk-n">0x02</span>) <span class="tk-h">HAL_Delay</span>(<span class="tk-n">2</span>);   <span class="tk-c">// Clear / Home 은 1.5 ms 이상 걸림</span>
+}
+
+<span class="tk-t">void</span> <span class="tk-f">lcd_data</span>(<span class="tk-t">uint8_t</span> ch)
+{
+  <span class="tk-f">lcd_send</span>(ch, <span class="tk-m">LCD_RS</span>);
+}
+
+<span class="tk-t">void</span> <span class="tk-f">lcd_init</span>(<span class="tk-t">void</span>)
+{
+  <span class="tk-h">HAL_Delay</span>(<span class="tk-n">50</span>);                 <span class="tk-c">// 전원 인가 후 안정화</span>
+  <span class="tk-f">lcd_send4</span>(<span class="tk-n">0x30</span>, <span class="tk-n">0</span>); <span class="tk-h">HAL_Delay</span>(<span class="tk-n">5</span>);
+  <span class="tk-f">lcd_send4</span>(<span class="tk-n">0x30</span>, <span class="tk-n">0</span>); <span class="tk-h">HAL_Delay</span>(<span class="tk-n">1</span>);
+  <span class="tk-f">lcd_send4</span>(<span class="tk-n">0x30</span>, <span class="tk-n">0</span>); <span class="tk-h">HAL_Delay</span>(<span class="tk-n">1</span>);
+  <span class="tk-f">lcd_send4</span>(<span class="tk-n">0x20</span>, <span class="tk-n">0</span>); <span class="tk-h">HAL_Delay</span>(<span class="tk-n">1</span>);   <span class="tk-c">// 4비트 모드로 전환</span>
+  <span class="tk-f">lcd_cmd</span>(<span class="tk-n">0x28</span>);                 <span class="tk-c">// 4비트, 2줄, 5x8 글꼴</span>
+  <span class="tk-f">lcd_cmd</span>(<span class="tk-n">0x08</span>);                 <span class="tk-c">// 표시 끔</span>
+  <span class="tk-f">lcd_cmd</span>(<span class="tk-n">0x01</span>);                 <span class="tk-c">// 화면 지우기</span>
+  <span class="tk-f">lcd_cmd</span>(<span class="tk-n">0x06</span>);                 <span class="tk-c">// 글자 쓰면 커서 오른쪽으로</span>
+  <span class="tk-f">lcd_cmd</span>(<span class="tk-n">0x0C</span>);                 <span class="tk-c">// 표시 켬, 커서 숨김</span>
+}
+
+<span class="tk-t">void</span> <span class="tk-f">lcd_set_cursor</span>(<span class="tk-t">uint8_t</span> row, <span class="tk-t">uint8_t</span> col)
+{
+  <span class="tk-t">uint8_t</span> addr = (row == <span class="tk-n">0</span> ? <span class="tk-n">0x00</span> : <span class="tk-n">0x40</span>) + col;   <span class="tk-c">// 1행 DDRAM 0x00, 2행 0x40</span>
+  <span class="tk-f">lcd_cmd</span>(<span class="tk-n">0x80</span> | addr);
+}
+
+<span class="tk-t">void</span> <span class="tk-f">lcd_print</span>(<span class="tk-k">const</span> <span class="tk-t">char</span> *s)
+{
+  <span class="tk-k">while</span> (*s) {
+    <span class="tk-f">lcd_data</span>((<span class="tk-t">uint8_t</span>)*s++);
+  }
+}
+
+<span class="tk-c">/* speed: -999 ~ +999. 부호가 방향, 크기가 PWM 듀티(ARR=999 기준)입니다. */</span>
+<span class="tk-t">void</span> <span class="tk-f">motor_set</span>(<span class="tk-t">int</span> speed)
+{
+  <span class="tk-k">if</span> (speed &gt; <span class="tk-n">999</span>) speed = <span class="tk-n">999</span>;
+  <span class="tk-k">if</span> (speed &lt; -<span class="tk-n">999</span>) speed = -<span class="tk-n">999</span>;
+
+  <span class="tk-k">if</span> (speed &gt; <span class="tk-n">0</span>) {                 <span class="tk-c">// 정방향: IN1=1, IN2=0</span>
+    <span class="tk-h">HAL_GPIO_WritePin</span>(MOTOR_IN1_GPIO_Port, MOTOR_IN1_Pin, <span class="tk-m">GPIO_PIN_SET</span>);
+    <span class="tk-h">HAL_GPIO_WritePin</span>(MOTOR_IN2_GPIO_Port, MOTOR_IN2_Pin, <span class="tk-m">GPIO_PIN_RESET</span>);
+  } <span class="tk-k">else</span> <span class="tk-k">if</span> (speed &lt; <span class="tk-n">0</span>) {          <span class="tk-c">// 역방향: IN1=0, IN2=1</span>
+    <span class="tk-h">HAL_GPIO_WritePin</span>(MOTOR_IN1_GPIO_Port, MOTOR_IN1_Pin, <span class="tk-m">GPIO_PIN_RESET</span>);
+    <span class="tk-h">HAL_GPIO_WritePin</span>(MOTOR_IN2_GPIO_Port, MOTOR_IN2_Pin, <span class="tk-m">GPIO_PIN_SET</span>);
+    speed = -speed;
+  } <span class="tk-k">else</span> {                         <span class="tk-c">// 정지: EN=0 이면 자유 회전으로 멈춤</span>
+    <span class="tk-h">HAL_GPIO_WritePin</span>(MOTOR_IN1_GPIO_Port, MOTOR_IN1_Pin, <span class="tk-m">GPIO_PIN_RESET</span>);
+    <span class="tk-h">HAL_GPIO_WritePin</span>(MOTOR_IN2_GPIO_Port, MOTOR_IN2_Pin, <span class="tk-m">GPIO_PIN_RESET</span>);
+  }
+  <span class="tk-h">__HAL_TIM_SET_COMPARE</span>(&amp;htim3, <span class="tk-m">TIM_CHANNEL_1</span>, speed);   <span class="tk-c">// ENA 에 PWM</span>
+}
+
+<span class="tk-t">uint32_t</span> <span class="tk-f">read_pot</span>(<span class="tk-t">void</span>)
+{
+  <span class="tk-t">uint32_t</span> v = <span class="tk-n">0</span>;
+  <span class="tk-h">HAL_ADC_Start</span>(&amp;hadc1);
+  <span class="tk-k">if</span> (<span class="tk-h">HAL_ADC_PollForConversion</span>(&amp;hadc1, <span class="tk-n">10</span>) == <span class="tk-m">HAL_OK</span>) {
+    v = <span class="tk-h">HAL_ADC_GetValue</span>(&amp;hadc1);
+  }
+  <span class="tk-h">HAL_ADC_Stop</span>(&amp;hadc1);
+  <span class="tk-k">return</span> v;
+}
+
+<span class="tk-c">/* 모드에 따라 목표 듀티(0~999)를 계산합니다. */</span>
+<span class="tk-t">int</span> <span class="tk-f">compute_duty</span>(<span class="tk-t">void</span>)
+{
+  <span class="tk-k">if</span> (mode == <span class="tk-m">MODE_MANUAL</span>) {
+    <span class="tk-k">return</span> (<span class="tk-t">int</span>)(pot * <span class="tk-n">999</span> / <span class="tk-n">4095</span>);
+  }
+  <span class="tk-k">if</span> (mode == <span class="tk-m">MODE_BREEZE</span>) {                    <span class="tk-c">// 자연풍: 8초 주기로 30 % ~ 80 % 오르내림</span>
+    <span class="tk-t">uint32_t</span> t = <span class="tk-h">HAL_GetTick</span>() % <span class="tk-n">8000</span>;
+    <span class="tk-t">uint32_t</span> tri = (t &lt; <span class="tk-n">4000</span>) ? t : <span class="tk-n">8000</span> - t;   <span class="tk-c">// 0 -&gt; 4000 -&gt; 0 삼각파</span>
+    <span class="tk-k">return</span> <span class="tk-n">300</span> + (<span class="tk-t">int</span>)(tri * <span class="tk-n">500</span> / <span class="tk-n">4000</span>);
+  }
+  <span class="tk-k">return</span> <span class="tk-n">0</span>;                                     <span class="tk-c">// MODE_OFF</span>
+}
+<span class="tk-c">/* USER CODE END 0 */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN 2 */</span>
+  <span class="tk-h">HAL_TIM_PWM_Start</span>(&amp;htim3, <span class="tk-m">TIM_CHANNEL_1</span>);
+  <span class="tk-f">lcd_init</span>();
+  <span class="tk-f">printf</span>(<span class="tk-s">"\r\nSmart fan ready. B1 = mode\r\n"</span>);
+  <span class="tk-c">/* USER CODE END 2 */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    pot = <span class="tk-f">read_pot</span>();
+    duty = <span class="tk-f">compute_duty</span>();
+    <span class="tk-f">motor_set</span>(duty);
+    <span class="tk-h">HAL_GPIO_WritePin</span>(LD2_GPIO_Port, LD2_Pin, mode != <span class="tk-m">MODE_OFF</span> ? <span class="tk-m">GPIO_PIN_SET</span> : <span class="tk-m">GPIO_PIN_RESET</span>);
+
+    <span class="tk-k">if</span> (mode_changed || <span class="tk-h">HAL_GetTick</span>() - last_lcd &gt;= <span class="tk-n">200</span>) {   <span class="tk-c">// LCD 는 0.2초마다만 갱신</span>
+      mode_changed = <span class="tk-n">0</span>;
+      last_lcd = <span class="tk-h">HAL_GetTick</span>();
+      <span class="tk-f">sprintf</span>(line, <span class="tk-s">"Mode: %-10s"</span>, <span class="tk-m">MODE_NAME</span>[mode]);
+      <span class="tk-f">lcd_set_cursor</span>(<span class="tk-n">0</span>, <span class="tk-n">0</span>);
+      <span class="tk-f">lcd_print</span>(line);
+      <span class="tk-f">sprintf</span>(line, <span class="tk-s">"Speed: %3d %%    "</span>, duty * <span class="tk-n">100</span> / <span class="tk-n">999</span>);
+      <span class="tk-f">lcd_set_cursor</span>(<span class="tk-n">1</span>, <span class="tk-n">0</span>);
+      <span class="tk-f">lcd_print</span>(line);
+    }
+
+    <span class="tk-k">if</span> (<span class="tk-h">HAL_GetTick</span>() - last_log &gt;= <span class="tk-n">1000</span>) {                  <span class="tk-c">// UART 로그는 1초마다</span>
+      last_log = <span class="tk-h">HAL_GetTick</span>();
+      <span class="tk-f">printf</span>(<span class="tk-s">"[%6lu] mode=%-6s pot=%4lu duty=%3d%%\r\n"</span>,
+             last_log, <span class="tk-m">MODE_NAME</span>[mode], pot, duty * <span class="tk-n">100</span> / <span class="tk-n">999</span>);
+    }
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">20</span>);
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span>
+
+<span class="tk-c">/* USER CODE BEGIN 4 */</span>
+<span class="tk-c">/* printf 리타깃: syscalls.c 의 _write() 가 글자마다 이 함수를 부릅니다. */</span>
+<span class="tk-t">int</span> <span class="tk-f">__io_putchar</span>(<span class="tk-t">int</span> ch)
+{
+  <span class="tk-h">HAL_UART_Transmit</span>(&amp;huart2, (<span class="tk-t">uint8_t</span> *)&amp;ch, <span class="tk-n">1</span>, <span class="tk-m">HAL_MAX_DELAY</span>);
+  <span class="tk-k">return</span> ch;
+}
+
+<span class="tk-t">void</span> <span class="tk-h">HAL_GPIO_EXTI_Callback</span>(<span class="tk-t">uint16_t</span> GPIO_Pin)
+{
+  <span class="tk-k">if</span> (GPIO_Pin == B1_Pin &amp;&amp; <span class="tk-h">HAL_GetTick</span>() - last_press &gt; <span class="tk-n">200</span>) {
+    last_press = <span class="tk-h">HAL_GetTick</span>();
+    mode = (mode + <span class="tk-n">1</span>) % <span class="tk-n">3</span>;           <span class="tk-c">// OFF -&gt; MANUAL -&gt; BREEZE -&gt; OFF</span>
+    mode_changed = <span class="tk-n">1</span>;
+  }
+}
+<span class="tk-c">/* USER CODE END 4 */</span></code></pre></div>
+<h3 id="코드-읽기">코드 읽기<a class="anchor" href="#코드-읽기">#</a></h3>
+<ul><li><strong>모드 상수</strong> — <code>#define MODE_OFF 0</code> 처럼 이름을 붙이면 <code>if (mode == 1)</code> 보다 읽기 쉽고 실수가 줄어듭니다.</li><li>**<code>const char *MODE_NAME[3]</code>** — 모드 번호를 인덱스로 문자열을 꺼냅니다. LCD 와 UART 가 같은 이름을 씁니다.</li><li>**<code>compute_duty()</code>** — 모드별 계산을 한 함수로 모아, 새 모드를 추가할 때 이 함수만 고치면 됩니다.</li></ul>
+<p>BREEZE 모드의 삼각파는 <code>HAL_GetTick() % 8000</code> 으로 8초 주기 시간을 만들고, 앞 4초는 증가, 뒤 4초는 감소하게 했습니다.</p>
+<ul><li>**<code>&quot;Mode: %-10s&quot;</code>** — 6글자 + 10칸 = 16글자로 LCD 한 줄을 꽉 채워 이전 글자를 지웁니다. <code>&quot;Speed: %3d %%    &quot;</code> 도 16글자입니다.</li><li>**<code>%%</code>** — printf 에서 <code>%</code> 글자 자체를 출력합니다.</li><li><strong>인터럽트는 짧게</strong> — 콜백은 디바운스 후 <code>mode</code> 와 <code>mode_changed</code> 만 바꾸고, LCD 갱신은 메인 루프가 합니다.</li></ul>
+<h2 id="시험">시험<a class="anchor" href="#시험">#</a></h2>
+<div class="callout callout-task"><div class="callout-title">동작 시험 체크리스트</div><div class="callout-body"><ul><li><label class="check-item"><input type="checkbox"> 시작 직후 LCD 에 <code>Mode: OFF</code>, <code>Speed:   0 %</code> 가 보이고 모터가 멈춰 있다 (R2, R4)</label></li><li><label class="check-item"><input type="checkbox"> B1 을 한 번 누르면 <code>MANUAL</code> 로 바뀌고 LD2 가 켜진다 (R2, R6)</label></li><li><label class="check-item"><input type="checkbox"> MANUAL 에서 가변저항 <code>value</code> 를 0 / 2048 / 4095 로 바꾸면 속도가 0 / 약 50 / 100 % 가 된다 (R1)</label></li><li><label class="check-item"><input type="checkbox"> B1 을 한 번 더 누르면 <code>BREEZE</code> — 가변저항과 상관없이 30 ~ 80 % 를 8초 주기로 오르내린다 (R3)</label></li><li><label class="check-item"><input type="checkbox"> 한 번 더 누르면 <code>OFF</code> 로 돌아가 모터가 멈추고 LD2 가 꺼진다 (R2, R6)</label></li><li><label class="check-item"><input type="checkbox"> UART 터미널에 1초마다 로그가 한 줄씩 나온다 (R5)</label></li><li><label class="check-item"><input type="checkbox"> 버튼을 빠르게 연타해도 모드가 한 번에 두 칸씩 건너뛰지 않는다 (디바운스)</label></li></ul></div></div>
+<div class="callout callout-check"><div class="callout-title">스스로 확인</div><div class="callout-body"><ul><li>LCD 갱신을 매 루프(20 ms)마다 하면 무엇이 나빠질까요? 대략 몇 ms 가 걸리는지 계산해 보세요(100 kHz I2C, 글자당 4바이트 + 주소).</li><li><code>mode</code> 에 <code>volatile</code> 이 없으면 실물에서 어떤 증상이 생길 수 있나요?</li></ul></div></div>
+<h2 id="자주-나는-오류와-해결">자주 나는 오류와 해결<a class="anchor" href="#자주-나는-오류와-해결">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인</th><th>해결</th></tr></thead><tbody><tr><td>LCD 가 깜빡이거나 글자가 겹침</td><td>매 루프 Clear(<code>0x01</code>) 사용, 16칸을 다 채우지 않음</td><td>Clear 대신 16칸 덮어쓰기</td></tr><tr><td>버튼 반응이 한 박자 늦음</td><td>루프 안의 긴 작업(LCD 를 매번 갱신)</td><td>LCD·UART 주기 분리, <code>mode_changed</code> 로 즉시 갱신</td></tr><tr><td>MANUAL 에서 가변저항을 0 으로 해도 모터가 윙윙거림</td><td>낮은 듀티에서 기동하지 못함</td><td>데드존(L13) 또는 최소 듀티</td></tr><tr><td>모드가 두 칸씩 넘어감</td><td>디바운스 없음</td><td>콜백의 200 ms 시간 비교</td></tr><tr><td>빌드 오류 <code>MODE_NAME</code> 관련 경고</td><td>문자열 배열 선언 위치</td><td>PV 구역에 <code>const char *MODE_NAME[3]</code></td></tr><tr><td>실물에서 모터가 돌면 LCD 가 깨짐</td><td>모터 노이즈·전원 강하가 I2C 에 영향</td><td>모터 전원 분리, 콘덴서, 배선 분리</td></tr></tbody></table></div>
+<h2 id="과제">과제<a class="anchor" href="#과제">#</a></h2>
+<ol><li><strong>자동 모드(AUTO)</strong> 를 추가하세요: 조도센서(CDS, <code>PA1</code> ADC1_IN1, L09) 값이 어두우면 약하게, 밝으면 강하게. <code>compute_duty()</code> 와 <code>MODE_NAME</code> 만 고치면 되도록 설계합니다.</li><li><strong>꺼짐 예약</strong>: UART 명령 <code>timer 10</code> 을 받으면 10초 뒤 OFF 로 바뀌고, LCD 2행 오른쪽에 남은 초를 표시하세요.</li><li>모드가 바뀔 때 속도가 갑자기 변하지 않도록, 목표 듀티까지 초당 30 % 씩 천천히 따라가는 <strong>램프</strong> 기능을 넣으세요.</li><li>설계 문서를 작성하세요: 요구사항표, 핀표, 설정표, 구조도, 시험 결과(체크리스트 캡처).</li></ol>
+<h2 id="참고자료">참고자료<a class="anchor" href="#참고자료">#</a></h2>
+<ul><li>이 강좌의 L06 UART, L09 ADC, L10 I2C LCD, L13 DC 모터</li><li>ST, <em>UM1725 — STM32F4 HAL</em> 해당 모듈</li><li>이 사이트의 <a href="hal-reference.html">HAL 레퍼런스</a></li></ul>
+      <nav class="pager"><a class="pager-prev" href="l14.html"><span>이전 · L14</span>스텝모터</a><a class="pager-next" href="l16.html"><span>다음 · L16</span>실물 보드로 옮기기</a></nav>
+    </div>
+    <aside class="lesson-toc"><div class="toc-title">이 레슨의 내용</div><div class="toc-links"><a class="toc-l2" href="#학습-목표">학습 목표</a><a class="toc-l2" href="#요구사항">요구사항</a><a class="toc-l2" href="#설계">설계</a><a class="toc-l3" href="#핀-배치">핀 배치</a><a class="toc-l3" href="#주변장치-설정">주변장치 설정</a><a class="toc-l3" href="#프로그램-구조">프로그램 구조</a><a class="toc-l2" href="#구현">구현</a><a class="toc-l3" href="#코드-읽기">코드 읽기</a><a class="toc-l2" href="#시험">시험</a><a class="toc-l2" href="#자주-나는-오류와-해결">자주 나는 오류와 해결</a><a class="toc-l2" href="#과제">과제</a><a class="toc-l2" href="#참고자료">참고자료</a></div></aside>
+  </div>
+</article>
+
+</main>
+<script src="../assets/js/site.js"></script>
+</body>
+</html>

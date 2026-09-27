@@ -134,7 +134,8 @@
     act.forEach(function (p) { pv += handleType(p) + ' ' + handleName(p) + ';\n'; });
     if (act.length) pv += '\n';
     out.push(pv + sec(user, 'PV') + '/* USER CODE END PV */\n');
-    var pfp = '/* Private function prototypes -----------------------------------------------*/\nvoid SystemClock_Config(void);\nstatic void MX_GPIO_Init(void);\n';
+    var dma = !!(P.ADC1 && P.ADC1.dma);
+    var pfp = '/* Private function prototypes -----------------------------------------------*/\nvoid SystemClock_Config(void);\nstatic void MX_GPIO_Init(void);\n' + (dma ? 'static void MX_DMA_Init(void);\n' : '');
     act.forEach(function (p) { pfp += 'static void ' + initName(p) + '(void);\n'; });
     out.push(pfp + sec(user, 'PFP') + '/* USER CODE END PFP */\n');
     out.push('/* Private user code ---------------------------------------------------------*/\n' + sec(user, '0') + '/* USER CODE END 0 */\n');
@@ -146,7 +147,7 @@
       secIndented(user, 'Init', '  ') + '\n' +
       '  /* Configure the system clock */\n  SystemClock_Config();\n\n' +
       secIndented(user, 'SysInit', '  ') + '\n' +
-      '  /* Initialize all configured peripherals */\n  MX_GPIO_Init();\n';
+      '  /* Initialize all configured peripherals */\n  MX_GPIO_Init();\n' + (dma ? '  MX_DMA_Init();\n' : '');
     act.forEach(function (p) { m += '  ' + initName(p) + '();\n'; });
     m += secIndented(user, '2', '  ') + '\n' +
       '  /* Infinite loop */\n  /* USER CODE BEGIN WHILE */\n' + (user.WHILE != null ? user.WHILE : '  while (1)\n  {\n') +
@@ -156,6 +157,10 @@
     out.push(m);
 
     out.push(genClock(project, chip));
+    if (dma) out.push(['/**', '  * Enable DMA controller clock', '  */', 'static void MX_DMA_Init(void)', '{', '',
+      '  /* DMA controller clock enable */', '  __HAL_RCC_DMA2_CLK_ENABLE();', '', '  /* DMA interrupt init */',
+      '  /* DMA2_Stream0_IRQn interrupt configuration */', '  HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 0, 0);',
+      '  HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);', '', '}', ''].join('\n'));
     act.forEach(function (p) { out.push(genInit(p, project, chip)); });
     out.push(genGpio(project, chip));
     out.push(sec(user, '4') + '/* USER CODE END 4 */\n');
@@ -279,7 +284,7 @@
         (f4 ? '  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;\n' : '') +
         '  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;\n  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;\n' +
         '  hadc1.Init.NbrOfConversion = ' + chans.length + ';\n' +
-        (f4 ? '  hadc1.Init.DMAContinuousRequests = DISABLE;\n  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;\n' : '') +
+        (f4 ? '  hadc1.Init.DMAContinuousRequests = ' + (c.dma ? 'ENABLE' : 'DISABLE') + ';\n  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;\n' : '') +
         errChk('HAL_ADC_Init(&hadc1)') + '\n';
       chans.forEach(function (ch, i) {
         s += '  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.\n  */\n' +

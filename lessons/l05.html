@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L05. 외부 인터럽트 EXTI · studySTM32</title>
+<meta name="description" content="폴링과 인터럽트의 차이, EXTI 라인과 NVIC, HAL_GPIO_EXTI_Callback과 volatile, 인터럽트 안 디바운스를 익힙니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
+<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="../assets/css/stm32.css">
+<link rel="stylesheet" href="../assets/css/ml-theme.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
+<script src="../assets/js/theme.js"></script>
+</head>
+<body class="lesson-page track-page-basics">
+<button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
+<aside class="sidebar" id="sidebar">
+<nav class="sidebar-nav">
+<div class="brand-row"><a class="brand" href="../index.html"><span class="brand-mark">32</span><span class="brand-text">studySTM32<small>STM32 HAL 인터랙티브 강좌</small></span></a></div>
+<div class="side-tools"><a class="side-tool" href="../sim/index.html">시뮬레이터</a><a class="side-tool" href="../lessons/hal-reference.html">HAL 레퍼런스</a></div>
+<div class="nav-track" data-track="basics">
+<div class="nav-track-title track-basics"><span class="nav-part-no">PART 1</span>시작하기</div>
+<ul>
+<li><a href="../lessons/l01.html" data-slug="l01"><span class="nav-no">L01</span>STM32 시리즈와 개발 환경</a></li>
+<li><a href="../lessons/l02.html" data-slug="l02"><span class="nav-no">L02</span>시뮬레이터 둘러보기와 첫 프로젝트</a></li>
+<li><a href="../lessons/l03.html" data-slug="l03"><span class="nav-no">L03</span>GPIO 출력 — LED</a></li>
+<li><a href="../lessons/l04.html" data-slug="l04"><span class="nav-no">L04</span>GPIO 입력 — 스위치</a></li>
+<li><a href="../lessons/l05.html" class="active" data-slug="l05"><span class="nav-no">L05</span>외부 인터럽트 EXTI</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="comm">
+<div class="nav-track-title track-comm"><span class="nav-part-no">PART 2</span>통신·타이머·아날로그</div>
+<ul>
+<li><a href="../lessons/l06.html" data-slug="l06"><span class="nav-no">L06</span>UART와 printf</a></li>
+<li><a href="../lessons/l07.html" data-slug="l07"><span class="nav-no">L07</span>타이머 인터럽트</a></li>
+<li><a href="../lessons/l08.html" data-slug="l08"><span class="nav-no">L08</span>PWM — LED 밝기와 서보</a></li>
+<li><a href="../lessons/l09.html" data-slug="l09"><span class="nav-no">L09</span>ADC — 가변저항·조도센서</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="periph">
+<div class="nav-track-title track-periph"><span class="nav-part-no">PART 3</span>주변기기</div>
+<ul>
+<li><a href="../lessons/l10.html" data-slug="l10"><span class="nav-no">L10</span>I2C와 LCD1602</a></li>
+<li><a href="../lessons/l11.html" data-slug="l11"><span class="nav-no">L11</span>SPI 기초</a></li>
+<li><a href="../lessons/l12.html" data-slug="l12"><span class="nav-no">L12</span>7세그먼트 FND</a></li>
+<li><a href="../lessons/l13.html" data-slug="l13"><span class="nav-no">L13</span>DC 모터 드라이버</a></li>
+<li><a href="../lessons/l14.html" data-slug="l14"><span class="nav-no">L14</span>스텝모터</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="project">
+<div class="nav-track-title track-project"><span class="nav-part-no">PART 4</span>프로젝트</div>
+<ul>
+<li><a href="../lessons/l15.html" data-slug="l15"><span class="nav-no">L15</span>미니 프로젝트: 스마트 선풍기</a></li>
+<li><a href="../lessons/l16.html" data-slug="l16"><span class="nav-no">L16</span>실물 보드로 옮기기</a></li>
+</ul>
+</div>
+</nav>
+</aside>
+<div class="sidebar-scrim" id="scrim"></div>
+<main class="main">
+<header class="topbar"><a class="topbar-brand" href="../index.html"><span class="brand-mark">32</span>studySTM32</a><nav class="topnav" aria-label="사이트 메뉴"><a href="../index.html">강의 홈</a><a href="../sim/index.html">시뮬레이터</a><a href="../lessons/hal-reference.html">HAL 레퍼런스</a></nav><button class="theme-icon" type="button" data-theme-toggle data-theme-icon aria-label="테마 전환"></button></header>
+
+<article class="lesson" data-slug="l05" data-track="basics">
+  <div class="lesson-head">
+    <div class="crumbs"><span class="track-pill track-basics">PART 1</span> 시작하기 &middot; 약 60분 &middot; 초급</div>
+    <h1><span class="lesson-no">L05</span>외부 인터럽트 EXTI</h1>
+    <p class="lede">폴링과 인터럽트의 차이, EXTI 라인과 NVIC, HAL_GPIO_EXTI_Callback과 volatile, 인터럽트 안 디바운스를 익힙니다.</p>
+    <div class="requires">선수 레슨: <a href="l04.html">L04</a></div>
+    <div class="lesson-actions">
+      <label class="done-toggle"><input type="checkbox" id="doneCheck"><span>학습 완료로 표시</span></label>
+      <a class="ghost-btn tool-sim" href="../sim/index.html?ex=l05-exti" data-sim-src="../sim/index.html?ex=l05-exti&amp;embed=1">시뮬레이터에서 실습</a><a class="ghost-btn" href="hal-reference.html">HAL 레퍼런스</a>
+    </div>
+  </div>
+  <div class="lesson-grid">
+    <div class="lesson-body">
+<h2 id="학습-목표">학습 목표<a class="anchor" href="#학습-목표">#</a></h2>
+<ul><li>폴링과 인터럽트의 차이를 알고, 인터럽트가 필요한 상황을 판단합니다.</li><li>EXTI 라인(0~15)과 포트의 관계, NVIC 인터럽트 채널(<code>EXTI0</code> … <code>EXTI15_10</code>)을 이해합니다.</li><li>CubeMX에서 <code>GPIO_EXTI</code> 핀과 NVIC 를 설정하고, <code>HAL_GPIO_EXTI_Callback</code> 을 올바르게 작성합니다.</li><li>인터럽트 코드의 규칙 — **짧게, <code>volatile</code>, 안에서 <code>HAL_Delay</code> 금지** — 을 지킵니다.</li></ul>
+<h2 id="폴링-vs-인터럽트">폴링 vs 인터럽트<a class="anchor" href="#폴링-vs-인터럽트">#</a></h2>
+<p>L04에서는 <code>while (1)</code> 안에서 버튼을 계속 읽었습니다(폴링). 루프에 1초짜리 <code>HAL_Delay</code> 가 있다면 버튼을 눌러도 최대 1초 뒤에야 알아챕니다. <strong>인터럽트</strong>는 하드웨어가 신호 변화를 감지하는 즉시 CPU가 하던 일을 잠시 멈추고 정해진 함수(인터럽트 핸들러)를 실행한 뒤 돌아오는 방식입니다.</p>
+<div class="table-wrap"><table><thead><tr><th></th><th>폴링</th><th>인터럽트</th></tr></thead><tbody><tr><td>반응 시간</td><td>루프 한 바퀴만큼 늦을 수 있음</td><td>수 µs 이내</td></tr><tr><td>CPU 사용</td><td>계속 확인하느라 바쁨</td><td>일이 있을 때만</td></tr><tr><td>코드 난이도</td><td>쉬움</td><td>공유 변수·우선순위를 신경 써야 함</td></tr><tr><td>알맞은 곳</td><td>느린 입력, 단순한 프로그램</td><td>버튼, 엔코더, 통신 수신, 정확한 타이밍</td></tr></tbody></table></div>
+<h2 id="exti-와-nvic">EXTI 와 NVIC<a class="anchor" href="#exti-와-nvic">#</a></h2>
+<p><strong>EXTI(External Interrupt/Event Controller)</strong> 는 GPIO 핀의 상승·하강 에지를 감지하는 블록입니다. 라인이 0~15 까지 있고, <strong>라인 번호 = 핀 번호</strong> 입니다. <code>PA0</code>, <code>PB0</code>, <code>PC0</code> 은 모두 EXTI0 라인을 공유하므로 <strong>같은 번호의 핀은 한 포트만</strong> 인터럽트로 쓸 수 있습니다.</p>
+<p>EXTI 라인은 NVIC(중첩 벡터 인터럽트 컨트롤러)의 인터럽트 채널에 이렇게 묶입니다.</p>
+<div class="table-wrap regmap"><table><thead><tr><th>NVIC 채널</th><th>EXTI 라인</th><th>핸들러 함수 (<code>stm32f4xx_it.c</code>)</th></tr></thead><tbody><tr><td><code>EXTI0_IRQn</code> ~ <code>EXTI4_IRQn</code></td><td>0 ~ 4 (각각 따로)</td><td><code>EXTI0_IRQHandler</code> … <code>EXTI4_IRQHandler</code></td></tr><tr><td><code>EXTI9_5_IRQn</code></td><td>5 ~ 9 공유</td><td><code>EXTI9_5_IRQHandler</code></td></tr><tr><td><code>EXTI15_10_IRQn</code></td><td>10 ~ 15 공유</td><td><code>EXTI15_10_IRQHandler</code> — <strong>B1(PC13)</strong> 이 여기</td></tr></tbody></table></div>
+<h3 id="cubemx-설정">CubeMX 설정<a class="anchor" href="#cubemx-설정">#</a></h3>
+<ol><li><code>PC13</code> 을 눌러 <code>GPIO_EXTI13</code> 을 고르고 라벨을 <code>B1</code> 로 둡니다.</li><li>GPIO 설정에서 <strong>GPIO mode</strong> 를 <code>External Interrupt Mode with Falling edge trigger detection</code> 으로 — B1 은 누르면 LOW 이므로 <strong>하강 에지</strong>.</li><li><strong>NVIC</strong> 탭에서 <code>EXTI line[15:10] interrupts</code> 를 <strong>Enabled</strong> 로 켭니다. 이걸 빼먹으면 콜백이 절대 불리지 않습니다.</li></ol>
+<h2 id="hal-인터럽트-호출-흐름">HAL 인터럽트 호출 흐름<a class="anchor" href="#hal-인터럽트-호출-흐름">#</a></h2>
+<p>코드를 생성하면 인터럽트 한 번에 다음 순서로 함수가 불립니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">text</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-text">PC13 하강 에지
+  → EXTI15_10_IRQHandler()                 (stm32f4xx_it.c, 자동 생성)
+    → HAL_GPIO_EXTI_IRQHandler(B1_Pin)     (HAL: 대기 플래그 확인 후 지움)
+      → HAL_GPIO_EXTI_Callback(B1_Pin)     ← 여러분이 USER CODE 4 에 작성</code></pre></div>
+<p><code>HAL_GPIO_EXTI_Callback</code> 은 HAL 안에 <strong>weak(약한) 함수</strong>로 비어 있게 정의되어 있고, 같은 이름의 함수를 여러분이 정의하면 그것이 대신 쓰입니다. 여러 핀이 같은 콜백을 부르므로 인자 <code>GPIO_Pin</code> 으로 어느 핀인지 구분합니다.</p>
+<div class="callout callout-info"><div class="callout-title">일부 새 제품군은 이름이 다릅니다</div><div class="callout-body"><p>G0 · L5 · U5 · H5 같은 제품군은 콜백이 <code>HAL_GPIO_EXTI_Rising_Callback</code> / <code>HAL_GPIO_EXTI_Falling_Callback</code> 으로 나뉘어 있습니다. 이 강좌의 F4 · F1 은 하나의 <code>HAL_GPIO_EXTI_Callback</code> 을 씁니다.</p></div></div>
+<h2 id="예제-인터럽트로-ld2-토글">예제 — 인터럽트로 LD2 토글<a class="anchor" href="#예제-인터럽트로-ld2-토글">#</a></h2>
+<p>메인 루프는 일부러 1초씩 멈추며(<code>HAL_Delay(1000)</code>) 외부 LED 를 깜빡입니다. 그래도 B1 을 누르면 LD2 는 <strong>즉시</strong> 바뀝니다.</p>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l05-exti" data-sim-src="../sim/index.html?ex=l05-exti&amp;embed=1" data-sim-id="l05-exti"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">EXTI 토글 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l05-exti" target="_blank" rel="noopener">새 창</a><code class="sim-id">l05-exti</code></div>
+<div class="code-block code-example" data-example="l05-exti"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN PV */</span>
+<span class="tk-k">volatile</span> <span class="tk-t">uint32_t</span> press_count = <span class="tk-n">0</span>;   <span class="tk-c">// 인터럽트에서 바꾸는 변수는 volatile</span>
+<span class="tk-k">volatile</span> <span class="tk-t">uint32_t</span> last_press = <span class="tk-n">0</span>;    <span class="tk-c">// 마지막으로 인정한 눌림 시각 [ms]</span>
+<span class="tk-c">/* USER CODE END PV */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    <span class="tk-h">HAL_GPIO_TogglePin</span>(LED_GPIO_Port, LED_Pin);   <span class="tk-c">// 느린 작업 흉내: 1초마다 깜빡임</span>
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">1000</span>);
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span>
+
+<span class="tk-c">/* USER CODE BEGIN 4 */</span>
+<span class="tk-c">/* EXTI 인터럽트가 걸리면 HAL 이 이 함수를 불러 줍니다 (weak 함수 재정의). */</span>
+<span class="tk-t">void</span> <span class="tk-h">HAL_GPIO_EXTI_Callback</span>(<span class="tk-t">uint16_t</span> GPIO_Pin)
+{
+  <span class="tk-k">if</span> (GPIO_Pin == B1_Pin) {
+    <span class="tk-t">uint32_t</span> now = <span class="tk-h">HAL_GetTick</span>();
+    <span class="tk-k">if</span> (now - last_press &gt; <span class="tk-n">200</span>) {              <span class="tk-c">// 200 ms 안에 다시 들어온 채터링은 무시</span>
+      last_press = now;
+      press_count++;
+      <span class="tk-h">HAL_GPIO_TogglePin</span>(LD2_GPIO_Port, LD2_Pin);
+    }
+  }
+}
+<span class="tk-c">/* USER CODE END 4 */</span></code></pre></div>
+<h3 id="코드-읽기">코드 읽기<a class="anchor" href="#코드-읽기">#</a></h3>
+<ul><li>**<code>volatile</code>** — <code>press_count</code> 는 인터럽트에서 바뀌고 메인 코드에서 읽힙니다. 컴파일러 최적화가 "이 변수는 루프 안에서 안 바뀐다" 고 판단해</li></ul>
+<p>값을 레지스터에 담아 두면 변화가 보이지 않습니다. <code>volatile</code> 은 "매번 메모리에서 다시 읽어라" 는 표시입니다.</p>
+<ul><li><strong>시간 비교 디바운스</strong> — 인터럽트 안에서는 기다릴 수 없으므로, 마지막으로 인정한 시각(<code>last_press</code>)에서 200 ms 가 지나지 않았으면 무시합니다.</li></ul>
+<p><code>now - last_press</code> 처럼 <strong>뺄셈으로 비교</strong>하면 <code>HAL_GetTick()</code> 이 약 49.7일 뒤 0으로 돌아가도(unsigned 오버플로) 올바르게 동작합니다.</p>
+<ul><li><strong>짧게</strong> — 콜백에서는 플래그·카운터만 바꾸고, 긴 작업(printf, LCD 출력)은 메인 루프에서 처리하는 것이 원칙입니다.</li></ul>
+<div class="callout callout-danger"><div class="callout-title">인터럽트 안에서 HAL_Delay 금지</div><div class="callout-body"><p><code>HAL_Delay()</code> 는 SysTick 인터럽트가 올려 주는 틱 카운터를 기다립니다. CubeMX 기본 설정에서 SysTick 의 우선순위(TICK_INT_PRIORITY)는 EXTI 와 같거나 낮기 때문에, EXTI 콜백 안에서 <code>HAL_Delay()</code> 를 부르면 <strong>SysTick 이 끼어들지 못해 틱이 멈추고 프로그램이 영원히 멈춥니다.</strong></p></div></div>
+<h2 id="인터럽트-우선순위">인터럽트 우선순위<a class="anchor" href="#인터럽트-우선순위">#</a></h2>
+<p>NVIC 는 우선순위 숫자가 <strong>작을수록 먼저</strong> 처리합니다. 우선순위가 더 높은(숫자가 작은) 인터럽트는 낮은 인터럽트 처리 중에도 끼어들 수 있습니다(선점). CubeMX NVIC 탭의 <em>Preemption Priority</em> 로 정하고, 생성 코드에서는 다음처럼 설정됩니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-h">HAL_NVIC_SetPriority</span>(EXTI15_10_IRQn, <span class="tk-n">0</span>, <span class="tk-n">0</span>);   <span class="tk-c">// (IRQ 번호, 선점 우선순위, 서브 우선순위)</span>
+<span class="tk-h">HAL_NVIC_EnableIRQ</span>(EXTI15_10_IRQn);</code></pre></div>
+<div class="callout callout-task"><div class="callout-title">실습</div><div class="callout-body"><ol><li>NVIC 에서 <code>EXTI line[15:10]</code> 을 끄고 실행해 보세요. 버튼을 눌러도 아무 일이 없는 것을 확인합니다.</li><li>트리거를 <code>rising</code>(상승 에지)으로 바꾸면 LD2 가 언제 바뀌나요? <code>both</code> 로 바꾸면?</li><li>디바운스 시간을 0으로 바꾸고 결과를 관찰한 뒤, 실물 보드에서는 어떻게 될지 설명하세요.</li></ol></div></div>
+<div class="callout callout-check"><div class="callout-title">스스로 확인</div><div class="callout-body"><ul><li><code>PA3</code> 과 <code>PB3</code> 을 동시에 EXTI 로 쓸 수 없는 이유는?</li><li><code>PC13</code> 과 <code>PA10</code> 을 EXTI 로 쓰면 콜백 안에서 어떻게 구분하나요? 두 핀은 같은 NVIC 채널인가요?</li></ul></div></div>
+<h2 id="자주-나는-오류와-해결">자주 나는 오류와 해결<a class="anchor" href="#자주-나는-오류와-해결">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인</th><th>해결</th></tr></thead><tbody><tr><td>콜백이 전혀 불리지 않음</td><td>NVIC 채널을 켜지 않음 / 핀 모드가 <code>GPIO_Input</code> / 함수 이름 오타(<code>HAL_GPIO_EXTI_CallBack</code>)</td><td>NVIC 탭 확인, <code>GPIO_EXTIx</code> 로 설정, 이름은 대소문자까지 정확히 (weak 함수라 오타여도 오류가 안 남)</td></tr><tr><td>한 번 눌렀는데 여러 번 실행</td><td>채터링</td><td>시간 비교 디바운스</td></tr><tr><td>버튼을 누르면 프로그램이 멈춤</td><td>콜백 안 <code>HAL_Delay</code>, 긴 <code>printf</code></td><td>콜백은 플래그만, 작업은 메인 루프에서</td></tr><tr><td>메인에서 변수 변화가 안 보임</td><td><code>volatile</code> 누락 (최적화 켠 실물 빌드에서 특히)</td><td>공유 변수에 <code>volatile</code></td></tr><tr><td>다른 핀 인터럽트에도 LED 가 바뀜</td><td><code>GPIO_Pin</code> 을 확인하지 않음</td><td><code>if (GPIO_Pin == B1_Pin)</code></td></tr></tbody></table></div>
+<h2 id="과제">과제<a class="anchor" href="#과제">#</a></h2>
+<ol><li>B1 로 LD2 깜빡임 속도를 100 / 300 / 1000 ms 세 단계로 바꾸는 프로그램을 만드세요. 속도 변경은 인터럽트, 깜빡임은 메인 루프에서.</li><li>외부 버튼 두 개를 <code>PA1</code>(EXTI1)과 <code>PB4</code>(EXTI4)에 연결하고 하나는 +1, 하나는 −1 을 하도록 만드세요. NVIC 에서 무엇을 켜야 하나요?</li><li><code>volatile</code> 을 빼고 컴파일 최적화(-O2)를 켰을 때 생길 수 있는 문제를 예를 들어 설명하세요.</li></ol>
+<h2 id="참고자료">참고자료<a class="anchor" href="#참고자료">#</a></h2>
+<ul><li>ST, <em>RM0383</em>, 10장 Interrupts and events — EXTI, SYSCFG_EXTICR (포트 선택)</li><li>ST, <em>UM1725 — STM32F4 HAL</em>, <code>HAL_GPIO_EXTI_IRQHandler</code>, <code>HAL_GPIO_EXTI_Callback</code></li><li>Arm, <em>Cortex-M4 Devices Generic User Guide</em> — NVIC 우선순위</li><li>이 사이트의 <a href="hal-reference.html#exti-외부-인터럽트">HAL 레퍼런스 — EXTI</a></li></ul>
+      <nav class="pager"><a class="pager-prev" href="l04.html"><span>이전 · L04</span>GPIO 입력 — 스위치</a><a class="pager-next" href="l06.html"><span>다음 · L06</span>UART와 printf</a></nav>
+    </div>
+    <aside class="lesson-toc"><div class="toc-title">이 레슨의 내용</div><div class="toc-links"><a class="toc-l2" href="#학습-목표">학습 목표</a><a class="toc-l2" href="#폴링-vs-인터럽트">폴링 vs 인터럽트</a><a class="toc-l2" href="#exti-와-nvic">EXTI 와 NVIC</a><a class="toc-l3" href="#cubemx-설정">CubeMX 설정</a><a class="toc-l2" href="#hal-인터럽트-호출-흐름">HAL 인터럽트 호출 흐름</a><a class="toc-l2" href="#예제-인터럽트로-ld2-토글">예제 — 인터럽트로 LD2 토글</a><a class="toc-l3" href="#코드-읽기">코드 읽기</a><a class="toc-l2" href="#인터럽트-우선순위">인터럽트 우선순위</a><a class="toc-l2" href="#자주-나는-오류와-해결">자주 나는 오류와 해결</a><a class="toc-l2" href="#과제">과제</a><a class="toc-l2" href="#참고자료">참고자료</a></div></aside>
+  </div>
+</article>
+
+</main>
+<script src="../assets/js/site.js"></script>
+</body>
+</html>

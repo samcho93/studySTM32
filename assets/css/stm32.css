@@ -1,0 +1,253 @@
+/* ==========================================================================
+   studySTM32 — main.css 위에 얹는 STM32 전용 스타일 (ml-theme.css 보다 먼저 불러옵니다)
+   트랙 색 토큰, 상단 헤더, 홈 흐름도·진입 카드, 시뮬레이터 버튼, 핀/레지스터 표, C 코드 색칠
+   트랙 색 이름 규칙: --track-<트랙 id>  (라이트 / 다크 두 값, 디자인 시스템의 기존 값만 사용)
+   ========================================================================== */
+
+/* ---------------------------------------------------------------- 트랙 색 (라이트 기본) */
+:root {
+  --track-basics:  #4f46e5;   /* PART 1 시작하기            — indigo */
+  --track-comm:    #0e7490;   /* PART 2 통신·타이머·아날로그 — cyan   */
+  --track-periph:  #9333ea;   /* PART 3 주변기기            — purple */
+  --track-project: #a16207;   /* PART 4 프로젝트            — yellow */
+  --track-ref:     #1f9d55;   /* HAL 레퍼런스               — green  */
+  --track-safety:  #be123c;   /* 실물 안전 표시              — rose   */
+  --topbar-h: 56px;
+}
+:root[data-theme="dark"] {
+  --track-basics:  #818cf8;
+  --track-comm:    #22d3ee;
+  --track-periph:  #c084fc;
+  --track-project: #f2c14e;
+  --track-ref:     #4cc983;
+  --track-safety:  #fb7185;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    --track-basics:  #818cf8;
+    --track-comm:    #22d3ee;
+    --track-periph:  #c084fc;
+    --track-project: #f2c14e;
+    --track-ref:     #4cc983;
+    --track-safety:  #fb7185;
+  }
+}
+
+.track-basics  { --tc: var(--track-basics); }
+.track-comm    { --tc: var(--track-comm); }
+.track-periph  { --tc: var(--track-periph); }
+.track-project { --tc: var(--track-project); }
+.track-ref     { --tc: var(--track-ref); }
+
+html { scroll-padding-top: calc(var(--topbar-h) + 16px); }
+
+/* ---------------------------------------------------------------- 상단 헤더 */
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  display: flex; align-items: center; gap: 8px;
+  height: var(--topbar-h); padding: 0 20px 0 28px;
+  background: var(--overlay-strong);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+}
+.topbar-brand {
+  display: none; align-items: center; gap: 8px;
+  font-weight: 800; color: var(--text); letter-spacing: -.01em; white-space: nowrap;
+}
+.topbar-brand:hover { text-decoration: none; }
+.topbar-brand .brand-mark { width: 28px; height: 28px; font-size: 12px; border-radius: 7px; }
+.topnav { display: flex; align-items: center; gap: 2px; margin-left: auto; min-width: 0; overflow-x: auto; }
+.topnav a {
+  padding: 7px 12px; border-radius: 8px; white-space: nowrap;
+  font-size: 14px; font-weight: 600; color: var(--text-dim);
+}
+.topnav a:hover { color: var(--text); background: var(--bg-elev-2); text-decoration: none; }
+.topnav a.active { color: var(--accent); background: var(--accent-soft); }
+.topbar .theme-icon { margin: 0 0 0 4px; }
+
+.brand-mark { font-family: var(--mono); letter-spacing: -.02em; }
+
+/* ---------------------------------------------------------------- 사이드바 */
+.side-tools { display: grid; grid-template-columns: 1fr 1fr; }
+.side-tool.active { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.nav-track { margin-top: 6px; }
+.nav-track-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12.5px; font-weight: 800; letter-spacing: .02em;
+  margin: 16px 0 4px; padding-left: 10px; color: var(--tc, var(--text-dim));
+}
+.nav-track-title .nav-part-no {
+  font: 700 10.5px var(--mono); letter-spacing: .04em; padding: 1px 7px; border-radius: 6px;
+  color: var(--tc); background: color-mix(in srgb, var(--tc) 13%, transparent);
+}
+.nav-track .nav-no { color: var(--tc, var(--accent)); background: color-mix(in srgb, var(--tc, var(--accent)) 12%, transparent); }
+.nav-track[data-track="basics"]  { --tc: var(--track-basics); }
+.nav-track[data-track="comm"]    { --tc: var(--track-comm); }
+.nav-track[data-track="periph"]  { --tc: var(--track-periph); }
+.nav-track[data-track="project"] { --tc: var(--track-project); }
+
+/* ---------------------------------------------------------------- 레슨 머리 */
+.track-pill.track-basics, .track-pill.track-comm, .track-pill.track-periph,
+.track-pill.track-project, .track-pill.track-ref {
+  font-family: var(--mono); font-size: 12px; letter-spacing: .04em;
+  color: var(--tc); background: color-mix(in srgb, var(--tc) 12%, transparent);
+}
+.track-page-basics  .lesson  { --tc: var(--track-basics); }
+.track-page-comm    .lesson  { --tc: var(--track-comm); }
+.track-page-periph  .lesson  { --tc: var(--track-periph); }
+.track-page-project .lesson  { --tc: var(--track-project); }
+.ref-page .lesson            { --tc: var(--track-ref); }
+.lesson .lesson-head .lesson-no { color: var(--tc); background: color-mix(in srgb, var(--tc) 12%, transparent); }
+.requires { margin-top: 10px; font-size: 13px; color: var(--text-faint); }
+.requires a { font-family: var(--mono); font-weight: 700; margin-left: 6px; }
+.lesson-toc { top: calc(var(--topbar-h) + 20px); max-height: calc(100vh - var(--topbar-h) - 40px); }
+.lesson-actions .tool-sim { border-color: var(--accent); color: var(--accent); }
+
+/* ---------------------------------------------------------------- 홈 */
+.home .hero, .home .facts, .entry-grid { width: min(1180px, calc(100% - 48px)); }
+.hero h1 { line-height: 1.15; }
+.hero-flow {
+  display: flex; flex-direction: column; align-items: stretch; gap: 4px;
+  padding: 22px; border-radius: var(--radius); border: 1px solid var(--border-soft); background: var(--bg-elev);
+}
+.flow-step { display: flex; gap: 12px; align-items: center; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--bg-elev-2); border: 1px solid var(--border-soft); }
+.flow-step b { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font: 700 13px var(--mono); flex: none; }
+.flow-step span { display: flex; flex-direction: column; font-weight: 700; font-size: 14.5px; }
+.flow-step small { font-weight: 500; color: var(--text-faint); font-family: var(--mono); font-size: 11.5px; }
+.flow-arrow { text-align: center; color: var(--text-faint); line-height: 1; }
+
+.entry-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  max-width: 1180px; margin: 20px auto 0;
+}
+.entry-card {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 22px 24px; border-radius: 14px; color: var(--text);
+  background: var(--bg-elev); border: 1px solid var(--border); box-shadow: var(--shadow);
+  border-top: 4px solid var(--ec); transition: transform .12s, border-color .12s;
+}
+.entry-card:hover { transform: translateY(-2px); border-color: var(--ec); text-decoration: none; }
+.entry-sim { --ec: var(--accent); }
+.entry-ref { --ec: var(--track-ref); }
+.entry-k { font: 700 11px var(--mono); letter-spacing: .1em; color: var(--ec); }
+.entry-card h3 { margin: 0; font-size: 20px; letter-spacing: -.01em; }
+.entry-card p { margin: 0; color: var(--text-dim); font-size: 14px; }
+.entry-go { margin-top: 6px; font-weight: 700; font-size: 14px; color: var(--ec); }
+
+.track-block .part-no { color: var(--tc); background: color-mix(in srgb, var(--tc) 12%, transparent); border: none; }
+.track-block .lc-no { color: var(--tc); background: color-mix(in srgb, var(--tc) 10%, transparent); min-width: 42px; text-align: center; }
+.track-block .lesson-card:hover { border-color: var(--tc); }
+.track-block[data-track="basics"]  { --tc: var(--track-basics); }
+.track-block[data-track="comm"]    { --tc: var(--track-comm); }
+.track-block[data-track="periph"]  { --tc: var(--track-periph); }
+.track-block[data-track="project"] { --tc: var(--track-project); }
+.track-block .lesson-card.done .lc-no { color: var(--ok); background: var(--ok-soft); }
+
+/* ---------------------------------------------------------------- 콜아웃 추가 */
+.callout-safety { border-left-width: 5px; }
+.callout-safety .callout-title::before { content: "\26A0  "; }
+.callout-mission { border-left-color: var(--task); background: var(--task-soft); }
+.callout-mission .callout-title { color: var(--task); }
+.check-item { display: inline-flex; gap: 8px; align-items: baseline; cursor: pointer; }
+.check-item input { accent-color: var(--accent); }
+.lesson-body li:has(> .check-item) { list-style: none; margin-left: -20px; }
+.math { font-family: "Cambria Math", "STIX Two Math", serif; font-style: italic; white-space: normal; overflow-wrap: anywhere; }
+
+/* ---------------------------------------------------------------- 시뮬레이터에서 열기 (@sim) */
+.sim-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 16px 0 22px; }
+.sim-btn {
+  display: inline-flex; flex-direction: column; gap: 1px;
+  padding: 10px 18px 10px 44px; position: relative;
+  border-radius: var(--radius); background: var(--accent); color: #fff;
+  border: 1px solid var(--accent); box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: filter .12s, transform .12s;
+}
+.sim-btn::before {                       /* 재생 삼각형 */
+  content: ""; position: absolute; left: 17px; top: 50%; margin-top: -8px;
+  border-style: solid; border-width: 8px 0 8px 13px; border-color: transparent transparent transparent currentColor;
+}
+.sim-btn:hover { filter: brightness(1.08); transform: translateY(-1px); text-decoration: none; color: #fff; }
+.sim-btn.is-open { outline: 3px solid color-mix(in srgb, var(--accent) 35%, transparent); outline-offset: 2px; }
+.sim-btn-k { font-size: 11.5px; font-weight: 700; letter-spacing: .02em; opacity: .85; }
+.sim-btn-l { font-size: 15px; font-weight: 800; letter-spacing: -.01em; }
+.sim-newtab {
+  font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 8px;
+  color: var(--text-dim); border: 1px solid var(--border); background: var(--bg-elev);
+}
+.sim-newtab:hover { color: var(--accent); border-color: var(--accent); text-decoration: none; }
+.sim-id { font-size: 12px; color: var(--text-faint); background: none !important; border: none !important; }
+:root[data-theme="dark"] .sim-btn, :root[data-theme="dark"] .sim-btn:hover { color: #0e1116; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .sim-btn, :root:not([data-theme]) .sim-btn:hover { color: #0e1116; }
+}
+
+/* ---------------------------------------------------------------- 표: 핀 배치 / 레지스터 (@table[pinmap] / @table[regmap]) */
+.table-wrap.pinmap td:first-child, .table-wrap.pinmap th:first-child {
+  font-family: var(--mono); font-weight: 700; color: var(--accent); white-space: nowrap;
+}
+.table-wrap.pinmap td code, .table-wrap.regmap td code { white-space: nowrap; }
+.table-wrap.regmap table { font-size: 13px; }
+.table-wrap.regmap th, .table-wrap.regmap td:first-child { font-family: var(--mono); }
+.table-wrap.regmap td:first-child { font-weight: 700; color: var(--info); white-space: nowrap; }
+.table-wrap.api td:first-child { font-family: var(--mono); font-size: 13px; white-space: nowrap; }
+
+/* ---------------------------------------------------------------- 코드 블록 */
+.code-head { gap: 8px; }
+.code-actions { display: inline-flex; gap: 6px; margin-left: auto; }
+.code-file { font: 600 11.5px var(--mono); color: var(--text-faint); }
+.code-example { border-left: 3px solid var(--accent); }
+.lesson-body pre code { tab-size: 4; }
+
+/* C 색칠: 기존 tk-k/s/c/n/f 에 타입(tk-t)·전처리(tk-p)·HAL 함수(tk-h)·매크로 상수(tk-m) 추가 */
+.tk-t { color: #0a7f86; }
+.tk-p { color: #9a3412; }
+.tk-h { color: #4f46e5; font-weight: 600; }
+.tk-m { color: #a16207; }
+:root[data-theme="dark"] .tk-t { color: #56d4dd; }
+:root[data-theme="dark"] .tk-p { color: #ffa657; }
+:root[data-theme="dark"] .tk-h { color: #a5b4fc; }
+:root[data-theme="dark"] .tk-m { color: #f2c14e; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .tk-t { color: #56d4dd; }
+  :root:not([data-theme]) .tk-p { color: #ffa657; }
+  :root:not([data-theme]) .tk-h { color: #a5b4fc; }
+  :root:not([data-theme]) .tk-m { color: #f2c14e; }
+}
+
+/* long URLs / identifiers (HAL_TIM_PeriodElapsedCallback …) must not widen the page on phones */
+.lesson-body p, .lesson-body li, .callout-body, .lc-title, .lc-sum, .part-head p, .entry-card p, .lede { overflow-wrap: anywhere; }
+.topnav { scrollbar-width: none; }
+.topnav::-webkit-scrollbar { display: none; }
+.lesson-head h1 { overflow-wrap: anywhere; flex-wrap: wrap; row-gap: 2px; }
+
+/* ---------------------------------------------------------------- 반응형 */
+@media (max-width: 1000px) {
+  .home .hero-art { order: 0; max-width: none; }     /* 좁은 화면: 제목 먼저, 흐름도는 아래 */
+}
+@media (max-width: 860px) {
+  .main { padding-top: 0; }
+  .nav-toggle { top: 8px; left: 12px; }
+  .topbar { padding-left: 64px; padding-right: 12px; }
+  .topbar-brand { display: inline-flex; }
+  .topnav a { padding: 6px 8px; font-size: 13px; }
+  .entry-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 1599px) and (min-width: 861px) {
+  .dock-open .main { padding-top: 0; }
+  .dock-open .nav-toggle { top: 8px; }
+  .dock-open .topbar { padding-left: 64px; }
+  .dock-open .topbar-brand { display: inline-flex; }
+}
+@media (max-width: 560px) {
+  .home .hero, .home .facts, .entry-grid { width: calc(100% - 24px); }
+  .home .hero { padding: 28px 18px; }
+  .track-block .lc-no { min-width: 0; }
+  .topbar-brand { font-size: 0; gap: 0; }         /* 좁은 폰: 로고만 */
+  .topnav a { padding: 6px 7px; font-size: 12.5px; }
+  .sim-btn { width: 100%; }
+}
+@media (max-width: 400px) {
+  .topbar-brand { display: none; }
+  .topbar { gap: 2px; padding-right: 6px; }
+  .topnav a { padding: 6px 5px; }
+}

@@ -173,7 +173,7 @@
         if (cursor === 0x28) cursor = 0x40; else if (cursor === 0x68) cursor = 0x00;
         if (cursor < 0) cursor = 0x67; cursor &= 0x7F;
       }
-      i.i2cAddr = function () { return parseInt(i.prop('addr'), 16); };
+      i.i2cAddr = function () { var a = i.prop('addr'); return (typeof a === 'number' ? a : parseInt(a, 16)) & 0x7F; };
       i.i2cWrite = function (bytes) {
         bytes.forEach(function (b) {
           backlight = !!(b & 8);
@@ -325,7 +325,7 @@
     create: function (m, n) {
       var i = base(m, n); i.ptr = 0; i.log = [];
       function regs() { return (i.prop('regs') || '').trim().split(/[\s,]+/).filter(Boolean).map(function (h) { return parseInt(h, 16) & 255; }); }
-      i.i2cAddr = function () { return parseInt(i.prop('addr'), 16) & 0x7F; };
+      i.i2cAddr = function () { var a = i.prop('addr'); return (typeof a === 'number' ? a : parseInt(a, 16)) & 0x7F; };
       i.i2cWrite = function (bytes) {
         if (!bytes.length) return;
         var r = regs(); i.ptr = bytes[0];
