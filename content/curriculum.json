@@ -3,6 +3,14 @@
   "subtitle": "STM32 HAL 인터랙티브 강좌 — CubeMX 핀 설정부터 실물 보드까지",
   "tracks": [
     {
+      "id": "theory",
+      "title": "STM32 이해하기",
+      "desc": "손을 움직이기 전에 STM32 가 무엇인지 알아봅니다. 제품군과 이름 규칙, Cortex-M 코어, 메모리 맵과 버스, 클럭·리셋, GPIO 회로, 인터럽트와 NVIC, 타이머, 통신 인터페이스의 원리를 데이터시트 숫자와 함께 정리합니다.",
+      "parts": [
+        { "no": "PART 0", "title": "STM32 이해하기", "chapters": ["t01", "t02", "t03", "t04", "t05", "t06", "t07", "t08"] }
+      ]
+    },
+    {
       "id": "basics",
       "title": "시작하기",
       "desc": "STM32 시리즈와 개발 도구를 알아보고, 시뮬레이터에서 첫 프로젝트를 만든 뒤 GPIO 출력·입력과 외부 인터럽트를 익힙니다.",
@@ -36,6 +44,15 @@
     }
   ],
   "chapters": {
+    "t01": { "title": "STM32 제품군 총람", "summary": "ST 와 STM32 의 역사, F0 부터 U5·WB·C0 까지 제품군 표, STM32F411RET6 이름 해독 규칙, 핀 수·패키지, Nucleo·Discovery·Eval 보드 체계와 제품군 고르는 기준을 정리합니다.", "duration": 45, "level": "입문", "tools": ["ref"] },
+    "t02": { "title": "Cortex-M 코어 구조", "summary": "RISC·하버드·Thumb-2, 코어 레지스터(R0~R15, xPSR), 스레드·핸들러 모드와 특권 레벨, 함수 호출 규약, 예외 진입 스태킹, M0·M3·M4·M7·M33 의 차이와 CMSIS-Core 함수를 익힙니다.", "duration": 55, "level": "기초", "tools": ["ref"] },
+    "t03": { "title": "메모리 맵과 버스", "summary": "4 GB 주소 공간 구획, F411 의 실제 주소, 부트 매핑, AHB·APB 버스 매트릭스와 클럭 게이팅, GPIO_TypeDef 구조체와 GPIOA 매크로, 비트밴딩, DMA, 링커 스크립트와 빌드 로그의 text·data·bss 를 해설합니다.", "duration": 55, "level": "기초", "tools": ["sim"] },
+    "t04": { "title": "클럭과 리셋 시스템", "summary": "HSI·HSE·LSI·LSE 와 PLL(M·N·P·Q) 계산, AHB·APB 프리스케일러와 타이머 ×2 규칙, 플래시 대기 상태, SysTick 과 HAL_Delay, MCO·CSS, 리셋 종류와 RCC->CSR, 저전력 모드를 정리합니다.", "duration": 50, "level": "기초", "tools": ["sim"] },
+    "t05": { "title": "GPIO 내부 구조와 전기 특성", "summary": "핀 한 개의 회로(슈미트 입력, 풀업·풀다운, 푸시풀·오픈드레인 드라이버, AF 멀티플렉서), MODER~AFR 레지스터와 F1 의 CRL·CRH, BSRR 의 원자성, 전기 특성과 시리즈 저항 계산, 외부 회로 연결을 다룹니다.", "duration": 55, "level": "기초", "tools": ["sim"] },
+    "t06": { "title": "인터럽트·예외와 NVIC", "summary": "벡터 테이블과 IRQHandler 이름 규칙, NVIC 우선순위(프리엠션·서브·그룹), 테일체이닝, EXTI 라인 매핑과 SYSCFG, HAL 인터럽트 흐름, ISR 작성 규칙, SysTick 우선순위 함정, 폴링·인터럽트·DMA 비교를 익힙니다.", "duration": 55, "level": "기초", "tools": ["sim"] },
+    "t07": { "title": "타이머 구조", "summary": "고급·범용·기본 타이머와 비트 폭, PSC·CNT·ARR 카운터 블록과 주기 공식, 프리로드·섀도 레지스터, 출력 비교와 PWM 모드, 입력 캡처, 인코더, 원샷, 데드타임, 마스터·슬레이브, 워치독과 RTC 를 정리합니다.", "duration": 55, "level": "기초", "tools": ["sim"] },
+    "t08": { "title": "통신 인터페이스 원리", "summary": "UART 프레임과 보레이트 오차, I2C 의 오픈드레인·주소·ACK·클럭 스트레칭, SPI 의 4 모드와 NSS, 세 인터페이스 비교표, CAN·USB·I2S·SDIO 개요, SWD·JTAG 디버그 인터페이스와 선택 기준을 익힙니다.", "duration": 55, "level": "기초", "tools": ["sim"] },
+
     "l01": { "title": "STM32 시리즈와 개발 환경", "summary": "Cortex-M 코어와 F0·F1·F4·L4·H7 제품군, CubeIDE·CubeMX, HAL·LL·레지스터의 차이, Nucleo와 BluePill 보드를 정리합니다.", "duration": 40, "level": "입문", "tools": ["ref"] },
     "l02": { "title": "시뮬레이터 둘러보기와 첫 프로젝트", "summary": "CubeMX 핀아웃 → Generate Code → USER CODE 구역 → Build → Run 흐름을 시뮬레이터에서 처음부터 끝까지 따라 합니다.", "duration": 50, "level": "입문", "tools": ["sim"] },
     "l03": { "title": "GPIO 출력 — LED", "summary": "GPIO 출력 모드, HAL_GPIO_WritePin·TogglePin, 핀 라벨과 main.h 매크로, BSRR 레지스터 직접 쓰기까지 LED로 익힙니다.", "duration": 60, "level": "입문", "tools": ["sim", "ref"] },

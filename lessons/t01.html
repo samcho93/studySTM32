@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T01. STM32 제품군 총람 · studySTM32</title>
+<meta name="description" content="ST 와 STM32 의 역사, F0 부터 U5·WB·C0 까지 제품군 표, STM32F411RET6 이름 해독 규칙, 핀 수·패키지, Nucleo·Discovery·Eval 보드 체계와 제품군 고르는 기준을 정리합니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
+<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="../assets/css/stm32.css">
+<link rel="stylesheet" href="../assets/css/ml-theme.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
+<script src="../assets/js/theme.js"></script>
+</head>
+<body class="lesson-page track-page-theory">
+<button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
+<aside class="sidebar" id="sidebar">
+<nav class="sidebar-nav">
+<div class="brand-row"><a class="brand" href="../index.html"><span class="brand-mark">32</span><span class="brand-text">studySTM32<small>STM32 HAL 인터랙티브 강좌</small></span></a></div>
+<div class="side-tools"><a class="side-tool" href="../sim/index.html">시뮬레이터</a><a class="side-tool" href="../lessons/hal-reference.html">HAL 레퍼런스</a></div>
+<div class="nav-track" data-track="theory">
+<div class="nav-track-title track-theory"><span class="nav-part-no">PART 0</span>STM32 이해하기</div>
+<ul>
+<li><a href="../lessons/t01.html" class="active" data-slug="t01"><span class="nav-no">T01</span>STM32 제품군 총람</a></li>
+<li><a href="../lessons/t02.html" data-slug="t02"><span class="nav-no">T02</span>Cortex-M 코어 구조</a></li>
+<li><a href="../lessons/t03.html" data-slug="t03"><span class="nav-no">T03</span>메모리 맵과 버스</a></li>
+<li><a href="../lessons/t04.html" data-slug="t04"><span class="nav-no">T04</span>클럭과 리셋 시스템</a></li>
+<li><a href="../lessons/t05.html" data-slug="t05"><span class="nav-no">T05</span>GPIO 내부 구조와 전기 특성</a></li>
+<li><a href="../lessons/t06.html" data-slug="t06"><span class="nav-no">T06</span>인터럽트·예외와 NVIC</a></li>
+<li><a href="../lessons/t07.html" data-slug="t07"><span class="nav-no">T07</span>타이머 구조</a></li>
+<li><a href="../lessons/t08.html" data-slug="t08"><span class="nav-no">T08</span>통신 인터페이스 원리</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="basics">
+<div class="nav-track-title track-basics"><span class="nav-part-no">PART 1</span>시작하기</div>
+<ul>
+<li><a href="../lessons/l01.html" data-slug="l01"><span class="nav-no">L01</span>STM32 시리즈와 개발 환경</a></li>
+<li><a href="../lessons/l02.html" data-slug="l02"><span class="nav-no">L02</span>시뮬레이터 둘러보기와 첫 프로젝트</a></li>
+<li><a href="../lessons/l03.html" data-slug="l03"><span class="nav-no">L03</span>GPIO 출력 — LED</a></li>
+<li><a href="../lessons/l04.html" data-slug="l04"><span class="nav-no">L04</span>GPIO 입력 — 스위치</a></li>
+<li><a href="../lessons/l05.html" data-slug="l05"><span class="nav-no">L05</span>외부 인터럽트 EXTI</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="comm">
+<div class="nav-track-title track-comm"><span class="nav-part-no">PART 2</span>통신·타이머·아날로그</div>
+<ul>
+<li><a href="../lessons/l06.html" data-slug="l06"><span class="nav-no">L06</span>UART와 printf</a></li>
+<li><a href="../lessons/l07.html" data-slug="l07"><span class="nav-no">L07</span>타이머 인터럽트</a></li>
+<li><a href="../lessons/l08.html" data-slug="l08"><span class="nav-no">L08</span>PWM — LED 밝기와 서보</a></li>
+<li><a href="../lessons/l09.html" data-slug="l09"><span class="nav-no">L09</span>ADC — 가변저항·조도센서</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="periph">
+<div class="nav-track-title track-periph"><span class="nav-part-no">PART 3</span>주변기기</div>
+<ul>
+<li><a href="../lessons/l10.html" data-slug="l10"><span class="nav-no">L10</span>I2C와 LCD1602</a></li>
+<li><a href="../lessons/l11.html" data-slug="l11"><span class="nav-no">L11</span>SPI 기초</a></li>
+<li><a href="../lessons/l12.html" data-slug="l12"><span class="nav-no">L12</span>7세그먼트 FND</a></li>
+<li><a href="../lessons/l13.html" data-slug="l13"><span class="nav-no">L13</span>DC 모터 드라이버</a></li>
+<li><a href="../lessons/l14.html" data-slug="l14"><span class="nav-no">L14</span>스텝모터</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="project">
+<div class="nav-track-title track-project"><span class="nav-part-no">PART 4</span>프로젝트</div>
+<ul>
+<li><a href="../lessons/l15.html" data-slug="l15"><span class="nav-no">L15</span>미니 프로젝트: 스마트 선풍기</a></li>
+<li><a href="../lessons/l16.html" data-slug="l16"><span class="nav-no">L16</span>실물 보드로 옮기기</a></li>
+</ul>
+</div>
+</nav>
+</aside>
+<div class="sidebar-scrim" id="scrim"></div>
+<main class="main">
+<header class="topbar"><a class="topbar-brand" href="../index.html"><span class="brand-mark">32</span>studySTM32</a><nav class="topnav" aria-label="사이트 메뉴"><a href="../index.html">강의 홈</a><a href="../sim/index.html">시뮬레이터</a><a href="../lessons/hal-reference.html">HAL 레퍼런스</a></nav><button class="theme-icon" type="button" data-theme-toggle data-theme-icon aria-label="테마 전환"></button></header>
+
+<article class="lesson" data-slug="t01" data-track="theory">
+  <div class="lesson-head">
+    <div class="crumbs"><span class="track-pill track-theory">PART 0</span> STM32 이해하기 &middot; 약 45분 &middot; 입문</div>
+    <h1><span class="lesson-no">T01</span>STM32 제품군 총람</h1>
+    <p class="lede">ST 와 STM32 의 역사, F0 부터 U5·WB·C0 까지 제품군 표, STM32F411RET6 이름 해독 규칙, 핀 수·패키지, Nucleo·Discovery·Eval 보드 체계와 제품군 고르는 기준을 정리합니다.</p>
+    
+    <div class="lesson-actions">
+      <label class="done-toggle"><input type="checkbox" id="doneCheck"><span>학습 완료로 표시</span></label>
+      <a class="ghost-btn" href="hal-reference.html">HAL 레퍼런스</a>
+    </div>
+  </div>
+  <div class="lesson-grid">
+    <div class="lesson-body">
+<h2 id="학습-목표">학습 목표<a class="anchor" href="#학습-목표">#</a></h2>
+<ul><li>ST 가 어떤 회사이고 STM32 가 어떤 흐름으로 만들어져 왔는지 한 문단으로 설명할 수 있습니다.</li><li>F0 · F1 · F2 · F3 · F4 · F7 · G0 · G4 · H5 · H7 · L0 · L1 · L4 · L5 · U5 · WB · WL · C0 제품군을 <strong>코어 · 최대 클럭 · 플래시 · 특징 · 용도</strong> 로 구분할 수 있습니다.</li><li><code>STM32F411RET6</code> 같은 칩 이름을 자리별로 해독하고, 반대로 "64핀 · 512 KB · LQFP" 라는 요구에서 이름을 조립할 수 있습니다.</li><li>핀 수와 패키지(LQFP · UFQFPN · BGA · WLCSP)가 회로 설계와 납땜에 어떤 영향을 주는지 압니다.</li><li>Nucleo · Discovery · Eval 보드 체계의 차이를 알고, 목적에 맞는 제품군과 보드를 고르는 기준을 세울 수 있습니다.</li></ul>
+<div class="callout callout-info"><div class="callout-title">이 레슨의 위치</div><div class="callout-body"><p>PART 0 은 손을 움직이기 전에 STM32 의 구조를 이해하는 이론 트랙입니다. 실습 위주로 빨리 가고 싶다면 <a href="l01.html">L01</a> 로 건너뛰어도 됩니다. PART 0 의 각 레슨은 실습 레슨에서 "왜 그렇게 되는가" 를 설명해야 할 때 돌아와 읽는 참고서로도 쓸 수 있습니다.</p></div></div>
+<h2 id="st-와-stm32-의-역사">ST 와 STM32 의 역사<a class="anchor" href="#st-와-stm32-의-역사">#</a></h2>
+<p>STMicroelectronics(ST)는 1987년 이탈리아의 SGS Microelettronica 와 프랑스의 Thomson Semiconducteurs 가 합쳐져 만들어진 유럽 반도체 회사입니다. 본사는 스위스 제네바에 있고, MCU 외에도 전력 반도체, 센서(MEMS 가속도계·자이로), 자동차용 반도체를 만듭니다.</p>
+<p>STM32 는 2007년 <strong>STM32F1</strong>(Cortex-M3) 으로 시작했습니다. 이전까지 ST 는 자체 8비트 코어(ST7, STM8)를 썼는데, Arm 이 MCU 전용으로 설계한 <strong>Cortex-M</strong> 코어를 라이선스해 32비트 MCU 를 만들면서 컴파일러·디버거·RTOS 같은 생태계를 통째로 가져올 수 있게 되었습니다. 그 뒤 흐름은 대략 다음과 같습니다.</p>
+<div class="table-wrap"><table><thead><tr><th>시기</th><th>출시</th><th>의미</th></tr></thead><tbody><tr><td>2007</td><td>F1 (M3)</td><td>첫 STM32. 지금도 BluePill(F103C8) 로 가장 많이 팔리는 라인</td></tr><tr><td>2010~2011</td><td>F2, F4 (M3 / M4F), L1</td><td>고성능 라인과 첫 저전력 라인. F4 는 FPU·DSP 명령을 얹어 교육·산업 표준이 됨</td></tr><tr><td>2012~2014</td><td>F0 (M0), F3 (M4F 아날로그), L0 (M0+), F7 (M7)</td><td>저가형과 고성능 양 끝으로 확장</td></tr><tr><td>2015~2017</td><td>L4, L4+, H7 (M7 400~480 MHz)</td><td>초저전력과 초고성능</td></tr><tr><td>2018~2020</td><td>G0, G4, WB(BLE), L5 (M33 TrustZone), WL(LoRa)</td><td>무선과 보안(Armv8-M) 세대</td></tr><tr><td>2021~2023</td><td>U5 (M33 초저전력), H5 (M33 250 MHz), C0 (초저가)</td><td>최신 공정·보안, 8비트 대체 시장</td></tr></tbody></table></div>
+<p>같은 시기에 도구도 바뀌었습니다. 초기에는 <strong>Standard Peripheral Library(SPL)</strong> 를 썼고, 2014년경부터 <strong>STM32Cube</strong>(HAL + CubeMX)가 표준이 되었습니다. 인터넷에서 찾은 오래된 예제가 <code>RCC_APB2PeriphClockCmd(...)</code> 같은 함수를 쓰면 SPL 코드이고, <code>HAL_GPIO_WritePin(...)</code> 이면 HAL 코드입니다. 두 코드는 섞어 쓸 수 없습니다.</p>
+<div class="callout callout-info"><div class="callout-title">MPU 도 있습니다</div><div class="callout-body"><p>STM32MP1 · MP2 는 Cortex-A 코어를 가진 <strong>마이크로프로세서(MPU)</strong> 로 리눅스를 돌립니다. 이름은 비슷하지만 이 강좌에서 다루는 STM32 MCU 와는 개발 방식이 전혀 다릅니다. 2024년 발표된 STM32N6 (Cortex-M55 + NPU) 는 MCU 이지만 AI 가속에 특화되어 있어 입문용은 아닙니다.</p></div></div>
+<h2 id="제품군-한눈에-보기">제품군 한눈에 보기<a class="anchor" href="#제품군-한눈에-보기">#</a></h2>
+<p>STM32 는 이름의 첫 글자로 <strong>성격</strong>을, 그 다음 숫자로 <strong>세대·라인</strong>을 나타냅니다. 아래 표는 각 제품군의 대표 값입니다. 같은 제품군 안에서도 라인마다 클럭과 메모리가 다르므로 "최대" 값으로 읽어 주세요.</p>
+<div class="table-wrap regmap"><table><thead><tr><th>제품군</th><th>코어</th><th>최대 클럭</th><th>플래시 범위</th><th>특징</th><th>주된 용도</th></tr></thead><tbody><tr><td><strong>F0</strong></td><td>M0</td><td>48 MHz</td><td>16 KB ~ 256 KB</td><td>가장 단순, 5 V 톨러런트 핀, 저가</td><td>8비트 MCU 대체, 소형 가전</td></tr><tr><td><strong>F1</strong></td><td>M3</td><td>72 MHz</td><td>16 KB ~ 1 MB</td><td>첫 세대, 자료·예제 최다, USB·CAN</td><td>범용, 교육 (BluePill, NUCLEO-F103RB)</td></tr><tr><td><strong>F2</strong></td><td>M3</td><td>120 MHz</td><td>128 KB ~ 1 MB</td><td>F4 이전의 고성능, 이더넷·카메라</td><td>산업, 통신 (지금은 F4 로 대체)</td></tr><tr><td><strong>F3</strong></td><td>M4F</td><td>72 MHz</td><td>16 KB ~ 512 KB</td><td>고속 비교기, 연산증폭기, 16비트 시그마델타 ADC</td><td>모터 제어, 디지털 전원, 계측</td></tr><tr><td><strong>F4</strong></td><td>M4F</td><td>84 ~ 180 MHz</td><td>128 KB ~ 2 MB</td><td>FPU·DSP, ART 가속기, 가장 넓은 라인업</td><td>범용 고성능, 교육 (NUCLEO-F411RE)</td></tr><tr><td><strong>F7</strong></td><td>M7</td><td>216 MHz</td><td>256 KB ~ 2 MB</td><td>L1 캐시, 배정밀도 FPU(F76x/77x), TFT·이더넷</td><td>GUI, 오디오, 산업 게이트웨이</td></tr><tr><td><strong>G0</strong></td><td>M0+</td><td>64 MHz</td><td>16 KB ~ 512 KB</td><td>F0 후속, 핀 대비 기능 많음, 1.7~3.6 V</td><td>저가 범용, 가전, 소형 센서 노드</td></tr><tr><td><strong>G4</strong></td><td>M4F</td><td>170 MHz</td><td>32 KB ~ 512 KB</td><td>F3 후속, 고해상도 타이머(HRTIM), CORDIC·FMAC, 연산증폭기</td><td>모터 제어, 디지털 전원, 충전기</td></tr><tr><td><strong>H5</strong></td><td>M33</td><td>250 MHz</td><td>128 KB ~ 2 MB</td><td>TrustZone, 보안 부트, 이더넷</td><td>보안이 필요한 산업·IoT</td></tr><tr><td><strong>H7</strong></td><td>M7 (+M4 듀얼 일부)</td><td>480 ~ 550 MHz</td><td>128 KB ~ 2 MB</td><td>최고 성능, 16 KB+16 KB 캐시, 대용량 SRAM, 그래픽</td><td>고성능 제어, 영상·오디오 처리</td></tr><tr><td><strong>L0</strong></td><td>M0+</td><td>32 MHz</td><td>8 KB ~ 192 KB</td><td>초저전력 입문, EEPROM 내장</td><td>배터리 센서, 계량기</td></tr><tr><td><strong>L1</strong></td><td>M3</td><td>32 MHz</td><td>32 KB ~ 512 KB</td><td>첫 저전력 라인, LCD 드라이버</td><td>(지금은 L4 로 대체)</td></tr><tr><td><strong>L4 / L4+</strong></td><td>M4F</td><td>80 / 120 MHz</td><td>128 KB ~ 2 MB</td><td>초저전력 + F4 급 성능, 고성능 ADC</td><td>웨어러블, 배터리 IoT (NUCLEO-L476RG)</td></tr><tr><td><strong>L5</strong></td><td>M33</td><td>110 MHz</td><td>256 KB ~ 512 KB</td><td>L4 + TrustZone</td><td>보안 저전력</td></tr><tr><td><strong>U5</strong></td><td>M33</td><td>160 MHz</td><td>512 KB ~ 4 MB</td><td>40 nm 공정, 최저 전력 + TrustZone, 그래픽</td><td>최신 배터리 기기</td></tr><tr><td><strong>WB</strong></td><td>M4F + M0+</td><td>64 MHz</td><td>256 KB ~ 1 MB</td><td>BLE 5 · Zigbee · Thread 무선 내장 (M0+ 가 무선 스택 담당)</td><td>무선 센서, BLE 기기</td></tr><tr><td><strong>WL</strong></td><td>M4 (+M0+ 일부)</td><td>48 MHz</td><td>64 KB ~ 256 KB</td><td>Sub-GHz LoRa · (G)FSK 무선 내장</td><td>LoRaWAN 노드</td></tr><tr><td><strong>C0</strong></td><td>M0+</td><td>48 MHz</td><td>16 KB ~ 256 KB</td><td>가장 저렴, 핀 8개 패키지부터</td><td>8비트 MCU 대체, 초소형 제품</td></tr></tbody></table></div>
+<p>표를 읽는 요령입니다.</p>
+<ul><li><strong>코어가 성능 등급</strong>입니다. M0/M0+ &lt; M3 &lt; M4F &lt; M7 순서이고, M33 은 M4 급 성능에 보안(TrustZone)을 더한 것입니다. 코어의 차이는 <a href="t02.html">T02</a> 에서 다룹니다.</li><li><strong>F/G 는 범용, L/U 는 저전력, H 는 고성능, W 는 무선, C 는 초저가</strong>입니다.</li><li>세대가 새로울수록(G &gt; F, U &gt; L, H5 &gt; H7 의 일부 기능) 같은 가격에서 기능이 많고 소비 전력이 낮지만, 인터넷 자료는 오래된 제품군(F1, F4)이 압도적으로 많습니다.</li></ul>
+<div class="callout callout-tip"><div class="callout-title">F411 이 이 강좌의 기준인 이유</div><div class="callout-body"><p>STM32F411 은 Cortex-M4F 100 MHz, 플래시 512 KB, SRAM 128 KB 를 가진 F4 의 "효율형" 라인입니다. FPU 와 DSP 명령이 있어 부동소수점 계산이 편하고, NUCLEO-F411RE 보드가 저렴하며, 레퍼런스 매뉴얼 RM0383 이 F4 중에서 가장 얇아(주변장치가 적어) 읽기 좋습니다. F1(F103) 은 자료가 가장 많지만 FPU 가 없고 GPIO 레지스터 구조가 다른(CRL/CRH) 옛 설계라, 강좌는 F411 을 기준으로 하고 F103 과의 차이를 그때그때 짚습니다.</p></div></div>
+<h2 id="이름-해독-규칙">이름 해독 규칙<a class="anchor" href="#이름-해독-규칙">#</a></h2>
+<figure class="fig" id="fig-chip-name"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 232" role="img" aria-label="STM32F411RET6 이름 해독 규칙" font-family="var(--sans)" font-size="12">
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--text-dim)"/></marker></defs>
+<text x="60" y="50" font-size="27" fill="var(--text)" text-anchor="middle" font-family="var(--mono)" font-weight="700">STM32</text>
+<line x1="60" y1="60" x2="60" y2="88" stroke="var(--border)" stroke-width="1.5"/>
+<rect x="12" y="88" width="96" height="130" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="60" y="110" font-size="12.5" fill="var(--text)" text-anchor="middle" font-weight="700">브랜드</text>
+<text x="60" y="128" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">ST 의 32비트</text>
+<text x="60" y="146" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">Arm Cortex-M</text>
+<text x="60" y="164" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">MCU 제품군</text>
+<text x="160" y="50" font-size="27" fill="var(--accent)" text-anchor="middle" font-family="var(--mono)" font-weight="700">F</text>
+<line x1="160" y1="60" x2="160" y2="88" stroke="var(--border)" stroke-width="1.5"/>
+<rect x="112" y="88" width="96" height="130" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="160" y="110" font-size="12.5" fill="var(--text)" text-anchor="middle" font-weight="700">제품 종류</text>
+<text x="160" y="128" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">F 범용(주력)</text>
+<text x="160" y="146" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">L 저전력</text>
+<text x="160" y="164" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">H 고성능</text>
+<text x="160" y="182" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">G 차세대 범용</text>
+<text x="260" y="50" font-size="27" fill="var(--text)" text-anchor="middle" font-family="var(--mono)" font-weight="700">411</text>
+<line x1="260" y1="60" x2="260" y2="88" stroke="var(--border)" stroke-width="1.5"/>
+<rect x="212" y="88" width="96" height="130" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="260" y="110" font-size="12.5" fill="var(--text)" text-anchor="middle" font-weight="700">시리즈·라인</text>
+<text x="260" y="128" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">4 = F4 시리즈</text>
+<text x="260" y="146" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">(Cortex-M4F)</text>
+<text x="260" y="164" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">11 = 411 라인</text>
+<text x="260" y="182" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">최대 100 MHz</text>
+<text x="360" y="50" font-size="27" fill="var(--accent)" text-anchor="middle" font-family="var(--mono)" font-weight="700">R</text>
+<line x1="360" y1="60" x2="360" y2="88" stroke="var(--border)" stroke-width="1.5"/>
+<rect x="312" y="88" width="96" height="130" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="360" y="110" font-size="12.5" fill="var(--text)" text-anchor="middle" font-weight="700">핀 수</text>
+<text x="360" y="128" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">C = 48핀</text>
+<text x="360" y="146" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">R = 64핀</text>
+<text x="360" y="164" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">V = 100핀</text>
+<text x="360" y="182" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">Z = 144핀</text>
+<text x="460" y="50" font-size="27" fill="var(--text)" text-anchor="middle" font-family="var(--mono)" font-weight="700">E</text>
+<line x1="460" y1="60" x2="460" y2="88" stroke="var(--border)" stroke-width="1.5"/>
+<rect x="412" y="88" width="96" height="130" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="460" y="110" font-size="12.5" fill="var(--text)" text-anchor="middle" font-weight="700">플래시 크기</text>
+<text x="460" y="128" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">8 = 64 KB</text>
+<text x="460" y="146" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">B = 128 KB</text>
+<text x="460" y="164" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">C = 256 KB</text>
+<text x="460" y="182" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">E = 512 KB</text>
+<text x="560" y="50" font-size="27" fill="var(--accent)" text-anchor="middle" font-family="var(--mono)" font-weight="700">T</text>
+<line x1="560" y1="60" x2="560" y2="88" stroke="var(--border)" stroke-width="1.5"/>
+<rect x="512" y="88" width="96" height="130" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="560" y="110" font-size="12.5" fill="var(--text)" text-anchor="middle" font-weight="700">패키지</text>
+<text x="560" y="128" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">T = LQFP</text>
+<text x="560" y="146" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">U = UFQFPN</text>
+<text x="560" y="164" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">H = BGA</text>
+<text x="560" y="182" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">Y = WLCSP</text>
+<text x="660" y="50" font-size="27" fill="var(--text)" text-anchor="middle" font-family="var(--mono)" font-weight="700">6</text>
+<line x1="660" y1="60" x2="660" y2="88" stroke="var(--border)" stroke-width="1.5"/>
+<rect x="612" y="88" width="96" height="130" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="660" y="110" font-size="12.5" fill="var(--text)" text-anchor="middle" font-weight="700">온도 범위</text>
+<text x="660" y="128" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">6 = −40~85 °C</text>
+<text x="660" y="146" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">7 = −40~105 °C</text>
+<text x="660" y="164" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">3 = −40~125 °C</text>
+<text x="660" y="182" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">(일부 제품군)</text>
+<text x="360" y="228" font-size="11" fill="var(--text-faint)" text-anchor="middle">STM32 F 411 R E T 6 — 자릿수별 의미 (DS10314 ordering information 기준)</text>
+</svg><figcaption>STM32F411RET6 의 각 자리. 홀수 자리(F · R · T)를 강조색으로 표시했습니다.</figcaption></figure>
+<p>칩 이름은 <strong>STM32 + 제품 종류 + 시리즈·라인 + 핀 수 + 플래시 + 패키지 + 온도</strong> 순서입니다. 자리별 코드는 다음과 같습니다.</p>
+<h3 id="제품-종류와-라인">제품 종류와 라인<a class="anchor" href="#제품-종류와-라인">#</a></h3>
+<div class="table-wrap"><table><thead><tr><th>글자</th><th>뜻</th><th>예</th></tr></thead><tbody><tr><td>F</td><td>Foundation / mainstream 범용</td><td>F0, F1, F2, F3, F4, F7</td></tr><tr><td>G</td><td>차세대 범용</td><td>G0, G4</td></tr><tr><td>L</td><td>Low-power 저전력</td><td>L0, L1, L4, L5</td></tr><tr><td>U</td><td>Ultra-low-power (최신)</td><td>U5</td></tr><tr><td>H</td><td>High-performance</td><td>H5, H7</td></tr><tr><td>W</td><td>Wireless</td><td>WB, WL</td></tr><tr><td>C</td><td>Cost-effective 초저가</td><td>C0</td></tr></tbody></table></div>
+<p>뒤따르는 세 자리 숫자에서 <strong>첫 자리가 시리즈(코어 세대)</strong>, 나머지 두 자리가 라인입니다. F4 시리즈 안에서 401 · 411 (효율형 100 MHz), 405 · 407 (168 MHz, 이더넷·카메라), 429 · 439 (180 MHz, TFT 컨트롤러), 446 (180 MHz, 신형 주변장치) 처럼 라인이 갈립니다. 숫자가 클수록 성능이 높은 경향은 있지만 규칙은 아닙니다 (F411 은 F405 보다 늦게 나왔지만 클럭은 낮습니다).</p>
+<h3 id="핀-수">핀 수<a class="anchor" href="#핀-수">#</a></h3>
+<div class="table-wrap pinmap"><table><thead><tr><th>코드</th><th>핀 수</th><th>코드</th><th>핀 수</th></tr></thead><tbody><tr><td>J</td><td>8</td><td>C</td><td>48</td></tr><tr><td>F</td><td>20</td><td>R</td><td>64</td></tr><tr><td>G</td><td>28</td><td>V</td><td>100</td></tr><tr><td>K</td><td>32</td><td>Z</td><td>144</td></tr><tr><td>T</td><td>36</td><td>I</td><td>176</td></tr><tr><td>S</td><td>44</td><td>B</td><td>208</td></tr></tbody></table></div>
+<p>Nucleo-64 보드의 칩은 모두 <strong>R(64핀)</strong> 이고, BluePill 은 <strong>C(48핀)</strong> 입니다. 핀 수가 많을수록 GPIO 와 주변장치 핀이 많이 나오지만, 같은 라인이면 내부 주변장치의 종류는 같습니다. 예를 들어 F411CE(48핀) 과 F411RE(64핀) 은 같은 다이(die)를 다른 패키지에 넣은 것으로, 코드가 그대로 호환됩니다.</p>
+<h3 id="플래시-크기">플래시 크기<a class="anchor" href="#플래시-크기">#</a></h3>
+<div class="table-wrap pinmap"><table><thead><tr><th>코드</th><th>크기</th><th>코드</th><th>크기</th></tr></thead><tbody><tr><td>4</td><td>16 KB</td><td>E</td><td>512 KB</td></tr><tr><td>6</td><td>32 KB</td><td>F</td><td>768 KB</td></tr><tr><td>8</td><td>64 KB</td><td>G</td><td>1 MB</td></tr><tr><td>B</td><td>128 KB</td><td>H</td><td>1.5 MB</td></tr><tr><td>C</td><td>256 KB</td><td>I</td><td>2 MB</td></tr><tr><td>D</td><td>384 KB</td><td></td><td></td></tr></tbody></table></div>
+<p>F411 은 C(256 KB) 와 E(512 KB) 두 가지가 있습니다. SRAM 크기는 이름에 나타나지 않으므로 데이터시트에서 확인해야 합니다 (F411: 128 KB, F103C8: 20 KB, F103RB: 20 KB).</p>
+<h3 id="패키지와-온도">패키지와 온도<a class="anchor" href="#패키지와-온도">#</a></h3>
+<div class="table-wrap"><table><thead><tr><th>자리</th><th>코드</th><th>뜻</th></tr></thead><tbody><tr><td>패키지</td><td>T</td><td>LQFP — 네 변에 갈매기 날개형 리드, 손 납땜 가능 (피치 0.5 mm)</td></tr><tr><td></td><td>U</td><td>UFQFPN / VFQFPN — 바닥 패드형 QFN, 리드가 옆으로 나오지 않음</td></tr><tr><td></td><td>H</td><td>BGA (UFBGA · TFBGA · LFBGA) — 바닥에 볼 격자, 리플로 필요</td></tr><tr><td></td><td>Y</td><td>WLCSP — 웨이퍼 레벨 CSP, 가장 작음 (F411CEY 약 3 mm 각)</td></tr><tr><td></td><td>P</td><td>TSSOP (G0 · C0 의 20핀)</td></tr><tr><td></td><td>M</td><td>SO8 (G0 · C0 의 8핀)</td></tr><tr><td>온도</td><td>6</td><td>−40 ~ 85 °C (산업용, 가장 흔함)</td></tr><tr><td></td><td>7</td><td>−40 ~ 105 °C</td></tr><tr><td></td><td>3</td><td>−40 ~ 125 °C (일부 제품군)</td></tr></tbody></table></div>
+<p>이름 끝에 <code>TR</code> 이 붙으면 릴(tape &amp; reel) 포장이라는 뜻이고, 칩 자체는 같습니다. 데이터시트의 "Ordering information" 절에 그 칩의 정확한 코드 표가 있습니다.</p>
+<div class="callout callout-check"><div class="callout-title">스스로 확인</div><div class="callout-body"><ul><li><code>STM32G031K8T6</code> 은 어떤 칩입니까? (제품군, 코어, 핀 수, 플래시, 패키지)</li><li><code>STM32H743ZIT6</code> 의 플래시는 몇 MB 입니까?</li><li>"F4 시리즈, 100핀, 1 MB, LQFP, 105 °C" 인 칩의 이름을 조립해 보세요. (라인은 407 로)</li></ul></div></div>
+<h2 id="핀-수와-패키지가-설계에-미치는-영향">핀 수와 패키지가 설계에 미치는 영향<a class="anchor" href="#핀-수와-패키지가-설계에-미치는-영향">#</a></h2>
+<p>같은 F411 이라도 패키지에 따라 실제로 쓸 수 있는 핀이 다릅니다. DS10314 의 F411 패키지 표를 예로 들면 다음과 같습니다.</p>
+<div class="table-wrap pinmap"><table><thead><tr><th>패키지</th><th>핀</th><th>GPIO 수</th><th>몸체 크기</th><th>손 납땜</th></tr></thead><tbody><tr><td>UFQFPN48</td><td>48</td><td>36</td><td>7 × 7 mm</td><td>어려움 (바닥 패드)</td></tr><tr><td>LQFP48</td><td>48</td><td>36</td><td>7 × 7 mm</td><td>가능</td></tr><tr><td>WLCSP49</td><td>49</td><td>36</td><td>약 3 × 3 mm</td><td>불가</td></tr><tr><td>LQFP64</td><td>64</td><td>50</td><td>10 × 10 mm</td><td>가능 (Nucleo-64)</td></tr><tr><td>LQFP100 / UFBGA100</td><td>100</td><td>81</td><td>14 × 14 / 7 × 7 mm</td><td>LQFP 만 가능</td></tr></tbody></table></div>
+<ul><li><strong>LQFP</strong> 는 취미·교육·소량 생산에서 가장 편합니다. 0.5 mm 피치는 플럭스와 얇은 인두로 손 납땜이 됩니다.</li><li><strong>QFN</strong> 은 리드가 없어 면적이 작고 기생 인덕턴스가 낮지만, 바닥의 노출 패드를 납땜하려면 리플로(오븐·핫플레이트)가 필요합니다.</li><li><strong>BGA</strong> 는 핀이 100개를 넘을 때 면적을 줄이지만 4층 이상의 PCB 와 X-ray 검사가 필요해 취미 수준에서는 쓰지 않습니다.</li><li>핀이 늘어나면 <strong>전원 핀 쌍(VDD/VSS)</strong> 도 늘어납니다. LQFP64 F411 은 VDD 4개 + VDDA + VBAT 가 있고, 모든 VDD 에 0.1 µF 디커플링 커패시터를 붙여야 합니다. 이 내용은 <a href="t05.html">T05</a> 에서 다시 봅니다.</li></ul>
+<h2 id="개발-보드-체계">개발 보드 체계<a class="anchor" href="#개발-보드-체계">#</a></h2>
+<p>ST 는 세 등급의 공식 보드를 만듭니다. 이름만 보고 어느 등급인지 알 수 있습니다.</p>
+<div class="table-wrap regmap"><table><thead><tr><th>등급</th><th>이름 규칙</th><th>특징</th><th>가격대</th><th>예</th></tr></thead><tbody><tr><td><strong>Nucleo</strong></td><td>NUCLEO-F411RE (칩 이름 그대로)</td><td>ST-Link 내장, 아두이노 호환 헤더 + 모포 헤더, 외부 장치 거의 없음</td><td>1~3만 원</td><td>NUCLEO-F103RB, NUCLEO-F411RE, NUCLEO-G071RB, NUCLEO-H743ZI</td></tr><tr><td><strong>Discovery</strong></td><td>STM32F407G-DISC1, B-L475E-IOT01A</td><td>ST-Link 내장, 센서·LCD·오디오·무선 등 장치가 보드에 실려 있음</td><td>2~10만 원</td><td>STM32F429I-DISC1 (TFT LCD), STM32F746G-DISCO (터치 LCD)</td></tr><tr><td><strong>Eval</strong></td><td>STM3240G-EVAL, STM32H743I-EVAL</td><td>칩의 모든 기능을 끌어낸 대형 보드, 전용 커넥터·확장 슬롯</td><td>수십만 원</td><td>산업 개발용</td></tr></tbody></table></div>
+<p>Nucleo 는 다시 크기로 나뉩니다.</p>
+<div class="table-wrap"><table><thead><tr><th>크기</th><th>칩 핀 수</th><th>헤더</th><th>특징</th></tr></thead><tbody><tr><td>Nucleo-32</td><td>32핀</td><td>아두이노 <strong>Nano</strong> 호환</td><td>브레드보드에 바로 꽂음 (NUCLEO-G031K8, L432KC)</td></tr><tr><td>Nucleo-64</td><td>64핀</td><td>아두이노 <strong>Uno</strong> 호환 + 모포 76핀</td><td>이 강좌의 기준 (F103RB, F411RE, L476RG)</td></tr><tr><td>Nucleo-144</td><td>144핀</td><td>Uno 호환 + ST Zio + 모포</td><td>이더넷·USB 커넥터 있는 모델 많음 (F429ZI, H743ZI)</td></tr></tbody></table></div>
+<p>Nucleo-64 의 ST-Link 부분은 <strong>분리선(V 자 홈)</strong> 을 따라 잘라 낼 수 있고, 잘라 낸 ST-Link 로 다른 보드(BluePill 등)를 프로그래밍할 수도 있습니다. Nucleo-64 의 회로도 · 핀 배치 · 솔더 브리지 설정은 ST 사용자 매뉴얼 <strong>UM1724</strong> 에 있습니다. 예를 들어 LD2 = PA5, B1 = PC13, USART2 = PA2/PA3 이 ST-Link 가상 COM 포트로 이어진 것도 UM1724 에 적혀 있습니다.</p>
+<div class="callout callout-info"><div class="callout-title">비공식 보드</div><div class="callout-body"><p>BluePill(STM32F103C8T6), BlackPill(STM32F411CEU6 · F401CCU6) 은 중국산 저가 보드입니다. ST-Link 가 없어 별도 프로그래머가 필요하고, BluePill 은 USB D+ 풀업 저항 값이 잘못된 개체가 많습니다(10 kΩ, 규격은 1.5 kΩ). BlackPill F411 은 이 강좌의 F411RE 와 같은 라인이라 코드가 거의 그대로 돌아갑니다 (LED 는 PC13, 버튼 PA0).</p></div></div>
+<h2 id="어떤-제품군을-고를까">어떤 제품군을 고를까<a class="anchor" href="#어떤-제품군을-고를까">#</a></h2>
+<p>처음에는 아래 순서로 생각하면 됩니다.</p>
+<ol><li><strong>배우는 중이면 F4(F411/F401) 또는 F1(F103).</strong> 자료가 가장 많고, 이 강좌의 시뮬레이터가 지원합니다. 둘 중에서는 FPU 가 있고 레지스터 구조가 최신 제품군과 같은 F4 가 낫습니다.</li><li><strong>배터리로 오래 동작해야 하면 L4 / U5 / L0.</strong> 소비 전력이 µA/MHz 단위로 표기되며, Stop 모드 전류가 수 µA 수준입니다.</li><li><strong>모터·전원 제어면 G4 (또는 F3).</strong> 고해상도 타이머와 아날로그 블록이 내장되어 있습니다.</li><li><strong>LCD GUI · 영상 · 고속 연산이면 H7 / F7.</strong> 캐시와 큰 SRAM 이 필요합니다.</li><li><strong>BLE 가 필요하면 WB, LoRa 면 WL.</strong> 별도 무선 칩 없이 하나로 끝납니다.</li><li><strong>원가가 가장 중요하면 C0 / G0.</strong> 8비트 MCU 가격에 32비트 성능을 얻습니다.</li><li><strong>보안(TrustZone, 보안 부트)이 요건이면 M33 계열(L5, U5, H5).</strong></li></ol>
+<p>여기에 더해 실제 제품 설계에서는 다음을 봅니다.</p>
+<ul><li><strong>주변장치 목록</strong>: USB · CAN · 이더넷 · ADC 채널 수 · 타이머 수 · 필요한 통신 포트 수. F411 은 CAN 이 없고 ADC 가 1개입니다.</li><li><strong>핀 수와 패키지</strong>: 필요한 GPIO 수, 손 납땜 여부.</li><li><strong>메모리</strong>: 플래시(코드 + 상수)와 SRAM(변수 + 스택 + 버퍼). RTOS 나 그래픽 라이브러리를 쓰면 SRAM 이 금방 부족합니다.</li><li><strong>수급과 수명</strong>: ST 의 "longevity commitment" 는 산업용 제품군을 10년 이상 공급합니다. 단종 예정 라인(F2, L1)은 새 설계에 쓰지 않습니다.</li><li><strong>가격</strong>: 1,000개 기준 단가는 ST 웹사이트 제품 페이지에 표시됩니다.</li></ul>
+<div class="callout callout-check"><div class="callout-title">스스로 확인</div><div class="callout-body"><ul><li>BLE 온도 센서를 배터리로 1년 이상 돌리려면 어떤 제품군이 알맞습니까?</li><li>300 W BLDC 모터 드라이버를 설계한다면?</li><li>학습용으로 F103 대신 F411 을 권하는 이유 두 가지는?</li></ul></div></div>
+<h2 id="자주-나는-오류와-해결">자주 나는 오류와 해결<a class="anchor" href="#자주-나는-오류와-해결">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인</th><th>해결</th></tr></thead><tbody><tr><td>인터넷 예제가 컴파일되지 않고 <code>RCC_APB2PeriphClockCmd</code> 같은 함수가 없다고 함</td><td>옛 SPL(Standard Peripheral Library) 코드</td><td>HAL 예제로 바꾸거나 함수 대응표를 보고 이식. SPL 과 HAL 은 섞어 쓸 수 없음</td></tr><tr><td>CubeMX 에서 원하는 칩을 찾을 수 없음</td><td>칩 이름 오타(O 와 0, I 와 1), 패키지 코드 차이</td><td>데이터시트 Ordering information 과 대조. CubeMX 는 패키지까지 정확히 골라야 핀 그림이 맞음</td></tr><tr><td>코드는 같은데 보드가 다르니 LED 가 반대로 동작</td><td>보드마다 LED 극성·핀이 다름 (Nucleo LD2 = PA5 active-high, BluePill PC13 active-low)</td><td>보드 회로도(UM1724 등)를 먼저 확인</td></tr><tr><td>SRAM 이 모자라 링크 오류 <code>region RAM overflowed</code></td><td>이름에는 SRAM 크기가 없어서 넉넉하다고 착각</td><td>데이터시트에서 SRAM 확인, 버퍼 줄이기, 더 큰 라인 선택</td></tr><tr><td>BluePill 이 USB 장치로 인식되지 않음</td><td>D+ 풀업 저항 값 오류(10 kΩ)</td><td>1.5 kΩ 으로 교체하거나 Nucleo 사용</td></tr><tr><td>저가 보드의 칩이 STM32 가 아님 (CKS32, GD32 등)</td><td>호환 칩</td><td>디버거가 거부하거나 주변장치가 조금 다를 수 있음. 학습용으로는 ST 정품 Nucleo 권장</td></tr></tbody></table></div>
+<h2 id="과제">과제<a class="anchor" href="#과제">#</a></h2>
+<ol><li>아래 다섯 칩의 이름을 해독해 표로 만드세요: <code>STM32F030F4P6</code>, <code>STM32F103C8T6</code>, <code>STM32F407VGT6</code>, <code>STM32L476RGT6</code>, <code>STM32H743ZIT6</code>.</li><li>ST 웹사이트의 제품 선택기(Product selector)에서 "Cortex-M4, 플래시 256 KB 이상, USB, 48핀" 조건으로 검색해 후보 세 개를 적고, 각각의 이름을 해독하세요.</li><li>여러분이 만들고 싶은 장치(예: 온습도 로거, 미니 로봇, 스마트 플러그)를 하나 정하고 "어떤 제품군을 고를까" 의 기준으로 제품군과 보드를 골라 이유를 세 줄로 쓰세요.</li><li>UM1724 에서 NUCLEO-F411RE 의 ST-Link 분리선과 솔더 브리지(SB) 표를 찾아, HSE 클럭이 어디에서 오는지 적으세요 (<a href="t04.html">T04</a> 예습).</li></ol>
+<h2 id="참고자료">참고자료<a class="anchor" href="#참고자료">#</a></h2>
+<ul><li>ST, <em>STM32 32-bit Arm Cortex MCUs</em> 제품군 소개 — https://www.st.com/en/microcontrollers-microprocessors/stm32-32-bit-arm-cortex-mcus.html</li><li>ST, <em>DS10314 — STM32F411xC/E Datasheet</em>, "Ordering information" 및 패키지 절</li><li>ST, <em>DS5319 — STM32F103x8/xB Datasheet</em></li><li>ST, <em>UM1724 — STM32 Nucleo-64 boards (MB1136)</em></li><li>ST, <em>AN4488 — Getting started with STM32F4xxxx MCU hardware development</em></li><li>Arm, <em>Cortex-M processor comparison</em> — https://developer.arm.com/</li><li>이 사이트의 <a href="l01.html">L01 STM32 시리즈와 개발 환경</a>, <a href="hal-reference.html">HAL 레퍼런스</a></li></ul>
+      <nav class="pager"><span class="pager-prev disabled"></span><a class="pager-next" href="t02.html"><span>다음 · T02</span>Cortex-M 코어 구조</a></nav>
+    </div>
+    <aside class="lesson-toc"><div class="toc-title">이 레슨의 내용</div><div class="toc-links"><a class="toc-l2" href="#학습-목표">학습 목표</a><a class="toc-l2" href="#st-와-stm32-의-역사">ST 와 STM32 의 역사</a><a class="toc-l2" href="#제품군-한눈에-보기">제품군 한눈에 보기</a><a class="toc-l2" href="#이름-해독-규칙">이름 해독 규칙</a><a class="toc-l3" href="#제품-종류와-라인">제품 종류와 라인</a><a class="toc-l3" href="#핀-수">핀 수</a><a class="toc-l3" href="#플래시-크기">플래시 크기</a><a class="toc-l3" href="#패키지와-온도">패키지와 온도</a><a class="toc-l2" href="#핀-수와-패키지가-설계에-미치는-영향">핀 수와 패키지가 설계에 미치는 영향</a><a class="toc-l2" href="#개발-보드-체계">개발 보드 체계</a><a class="toc-l2" href="#어떤-제품군을-고를까">어떤 제품군을 고를까</a><a class="toc-l2" href="#자주-나는-오류와-해결">자주 나는 오류와 해결</a><a class="toc-l2" href="#과제">과제</a><a class="toc-l2" href="#참고자료">참고자료</a></div></aside>
+  </div>
+</article>
+
+</main>
+<script src="../assets/js/site.js"></script>
+</body>
+</html>

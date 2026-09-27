@@ -5,3 +5,4 @@ node_modules/
 
 # Claude Code project notes (keep local only)
 CLAUDE.md
+.claude/

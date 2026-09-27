@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 404" role="img" aria-label="Cortex-M 4 GB 주소 공간과 STM32F411 실제 주소" font-family="var(--sans)" font-size="12">
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--text-dim)"/></marker></defs>
+<rect x="130" y="30" width="140" height="40" rx="0" fill="var(--accent-soft)" stroke="var(--border)" />
+<text x="200.0" y="54.0" font-size="12" fill="var(--text)" text-anchor="middle" font-weight="700">System / PPB</text>
+<circle cx="256" cy="42" r="8" fill="var(--accent)"/><text x="256" y="46" font-size="10" fill="var(--on-accent, #fff)" text-anchor="middle" font-family="var(--mono)" font-weight="700">D</text>
+<rect x="130" y="70" width="140" height="80" rx="0" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="200.0" y="114.0" font-size="12" fill="var(--text)" text-anchor="middle">External device</text>
+<rect x="130" y="150" width="140" height="80" rx="0" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="200.0" y="194.0" font-size="12" fill="var(--text)" text-anchor="middle">External RAM</text>
+<rect x="130" y="230" width="140" height="40" rx="0" fill="var(--accent-soft)" stroke="var(--border)" />
+<text x="200.0" y="254.0" font-size="12" fill="var(--text)" text-anchor="middle" font-weight="700">Peripheral</text>
+<circle cx="256" cy="242" r="8" fill="var(--accent)"/><text x="256" y="246" font-size="10" fill="var(--on-accent, #fff)" text-anchor="middle" font-family="var(--mono)" font-weight="700">C</text>
+<rect x="130" y="270" width="140" height="40" rx="0" fill="var(--accent-soft)" stroke="var(--border)" />
+<text x="200.0" y="294.0" font-size="12" fill="var(--text)" text-anchor="middle" font-weight="700">SRAM</text>
+<circle cx="256" cy="282" r="8" fill="var(--accent)"/><text x="256" y="286" font-size="10" fill="var(--on-accent, #fff)" text-anchor="middle" font-family="var(--mono)" font-weight="700">B</text>
+<rect x="130" y="310" width="140" height="40" rx="0" fill="var(--accent-soft)" stroke="var(--border)" />
+<text x="200.0" y="334.0" font-size="12" fill="var(--text)" text-anchor="middle" font-weight="700">Code</text>
+<circle cx="256" cy="322" r="8" fill="var(--accent)"/><text x="256" y="326" font-size="10" fill="var(--on-accent, #fff)" text-anchor="middle" font-family="var(--mono)" font-weight="700">A</text>
+<text x="122" y="34" font-size="11" fill="var(--text-dim)" text-anchor="end" font-family="var(--mono)">0xFFFF_FFFF</text>
+<line x1="126" y1="30" x2="130" y2="30" stroke="var(--border)" stroke-width="1"/>
+<text x="122" y="74" font-size="11" fill="var(--text-dim)" text-anchor="end" font-family="var(--mono)">0xE000_0000</text>
+<line x1="126" y1="70" x2="130" y2="70" stroke="var(--border)" stroke-width="1"/>
+<text x="122" y="154" font-size="11" fill="var(--text-dim)" text-anchor="end" font-family="var(--mono)">0xA000_0000</text>
+<line x1="126" y1="150" x2="130" y2="150" stroke="var(--border)" stroke-width="1"/>
+<text x="122" y="234" font-size="11" fill="var(--text-dim)" text-anchor="end" font-family="var(--mono)">0x6000_0000</text>
+<line x1="126" y1="230" x2="130" y2="230" stroke="var(--border)" stroke-width="1"/>
+<text x="122" y="274" font-size="11" fill="var(--text-dim)" text-anchor="end" font-family="var(--mono)">0x4000_0000</text>
+<line x1="126" y1="270" x2="130" y2="270" stroke="var(--border)" stroke-width="1"/>
+<text x="122" y="314" font-size="11" fill="var(--text-dim)" text-anchor="end" font-family="var(--mono)">0x2000_0000</text>
+<line x1="126" y1="310" x2="130" y2="310" stroke="var(--border)" stroke-width="1"/>
+<text x="122" y="354" font-size="11" fill="var(--text-dim)" text-anchor="end" font-family="var(--mono)">0x0000_0000</text>
+<line x1="126" y1="350" x2="130" y2="350" stroke="var(--border)" stroke-width="1"/>
+<text x="200.0" y="372" font-size="11" fill="var(--text-faint)" text-anchor="middle">4 GB = 0.5 GB 단위 8칸 (Armv7-M 고정)</text>
+<text x="200.0" y="388" font-size="11" fill="var(--text-faint)" text-anchor="middle">F411 은 색칠한 4구획만 씀</text>
+<rect x="310" y="30" width="392" height="88" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<circle cx="324" cy="43" r="8" fill="var(--accent)"/><text x="324" y="47" font-size="10" fill="var(--on-accent, #fff)" text-anchor="middle" font-family="var(--mono)" font-weight="700">A</text>
+<text x="338" y="47" font-size="12" fill="var(--text)" font-family="var(--mono)" font-weight="700">Code  0x0000_0000 ~ 0x1FFF_FFFF</text>
+<text x="320" y="66" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">0x0800_0000 ~ 0x0807_FFFF   Flash 512 KB (프로그램 · 상수)</text>
+<text x="320" y="81" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">0x1FFF_0000 ~ 0x1FFF_77FF   시스템 메모리 30 KB (ST 부트로더)</text>
+<text x="320" y="96" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">0x1FFF_C000                 옵션 바이트 (읽기 보호 · BOR 레벨)</text>
+<text x="320" y="111" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">0x0000_0000                 BOOT 핀에 따라 Flash / 시스템 메모리 / SRAM 이 비침</text>
+<rect x="310" y="122" width="392" height="58" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<circle cx="324" cy="135" r="8" fill="var(--accent)"/><text x="324" y="139" font-size="10" fill="var(--on-accent, #fff)" text-anchor="middle" font-family="var(--mono)" font-weight="700">B</text>
+<text x="338" y="139" font-size="12" fill="var(--text)" font-family="var(--mono)" font-weight="700">SRAM  0x2000_0000</text>
+<text x="320" y="158" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">0x2000_0000 ~ 0x2001_FFFF   SRAM 128 KB (.data .bss 힙 스택)</text>
+<text x="320" y="173" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">0x2200_0000 ~ 0x23FF_FFFF   SRAM 비트밴드 별칭 (1비트 = 1워드)</text>
+<rect x="310" y="178" width="392" height="133" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<circle cx="324" cy="191" r="8" fill="var(--accent)"/><text x="324" y="195" font-size="10" fill="var(--on-accent, #fff)" text-anchor="middle" font-family="var(--mono)" font-weight="700">C</text>
+<text x="338" y="195" font-size="12" fill="var(--text)" font-family="var(--mono)" font-weight="700">Peripheral  0x4000_0000</text>
+<text x="320" y="214" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">APB1 0x4000_0000  TIM2 · TIM3 0x4000_0400 · SPI2 0x4000_3800</text>
+<text x="320" y="229" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">                  USART2 0x4000_4400 · I2C1 0x4000_5400 · PWR 0x4000_7000</text>
+<text x="320" y="244" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">APB2 0x4001_0000  TIM1 · USART1 0x4001_1000 · ADC1 0x4001_2000</text>
+<text x="320" y="259" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">                  SPI1 0x4001_3000 · SYSCFG 0x4001_3800 · EXTI 0x4001_3C00</text>
+<text x="320" y="274" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">AHB1 0x4002_0000  GPIOA · GPIOB 0x4002_0400 · GPIOC 0x4002_0800</text>
+<text x="320" y="289" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">                  RCC 0x4002_3800 · FLASH 0x4002_3C00 · DMA1 0x4002_6000</text>
+<text x="320" y="304" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">AHB2 0x5000_0000  USB OTG FS</text>
+<rect x="310" y="316" width="392" height="58" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<circle cx="324" cy="329" r="8" fill="var(--accent)"/><text x="324" y="333" font-size="10" fill="var(--on-accent, #fff)" text-anchor="middle" font-family="var(--mono)" font-weight="700">D</text>
+<text x="338" y="333" font-size="12" fill="var(--text)" font-family="var(--mono)" font-weight="700">PPB  0xE000_0000 (코어 내부, 모든 Cortex-M 공통)</text>
+<text x="320" y="352" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">0xE000_E010 SysTick     0xE000_E100 NVIC</text>
+<text x="320" y="367" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">0xE000_ED00 SCB (VTOR · AIRCR · SCR …)     0xE000_ED90 MPU</text>
+</svg>

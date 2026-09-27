@@ -6,6 +6,7 @@
 
 /* ---------------------------------------------------------------- 트랙 색 (라이트 기본) */
 :root {
+  --track-theory:  #be123c;   /* PART 0 STM32 이해하기       — rose   */
   --track-basics:  #4f46e5;   /* PART 1 시작하기            — indigo */
   --track-comm:    #0e7490;   /* PART 2 통신·타이머·아날로그 — cyan   */
   --track-periph:  #9333ea;   /* PART 3 주변기기            — purple */
@@ -15,6 +16,7 @@
   --topbar-h: 56px;
 }
 :root[data-theme="dark"] {
+  --track-theory:  #fb7185;
   --track-basics:  #818cf8;
   --track-comm:    #22d3ee;
   --track-periph:  #c084fc;
@@ -24,6 +26,7 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    --track-theory:  #fb7185;
     --track-basics:  #818cf8;
     --track-comm:    #22d3ee;
     --track-periph:  #c084fc;
@@ -33,6 +36,7 @@
   }
 }
 
+.track-theory  { --tc: var(--track-theory); }
 .track-basics  { --tc: var(--track-basics); }
 .track-comm    { --tc: var(--track-comm); }
 .track-periph  { --tc: var(--track-periph); }
@@ -81,17 +85,19 @@ html { scroll-padding-top: calc(var(--topbar-h) + 16px); }
   color: var(--tc); background: color-mix(in srgb, var(--tc) 13%, transparent);
 }
 .nav-track .nav-no { color: var(--tc, var(--accent)); background: color-mix(in srgb, var(--tc, var(--accent)) 12%, transparent); }
+.nav-track[data-track="theory"]  { --tc: var(--track-theory); }
 .nav-track[data-track="basics"]  { --tc: var(--track-basics); }
 .nav-track[data-track="comm"]    { --tc: var(--track-comm); }
 .nav-track[data-track="periph"]  { --tc: var(--track-periph); }
 .nav-track[data-track="project"] { --tc: var(--track-project); }
 
 /* ---------------------------------------------------------------- 레슨 머리 */
-.track-pill.track-basics, .track-pill.track-comm, .track-pill.track-periph,
+.track-pill.track-theory, .track-pill.track-basics, .track-pill.track-comm, .track-pill.track-periph,
 .track-pill.track-project, .track-pill.track-ref {
   font-family: var(--mono); font-size: 12px; letter-spacing: .04em;
   color: var(--tc); background: color-mix(in srgb, var(--tc) 12%, transparent);
 }
+.track-page-theory  .lesson  { --tc: var(--track-theory); }
 .track-page-basics  .lesson  { --tc: var(--track-basics); }
 .track-page-comm    .lesson  { --tc: var(--track-comm); }
 .track-page-periph  .lesson  { --tc: var(--track-periph); }
@@ -137,6 +143,7 @@ html { scroll-padding-top: calc(var(--topbar-h) + 16px); }
 .track-block .part-no { color: var(--tc); background: color-mix(in srgb, var(--tc) 12%, transparent); border: none; }
 .track-block .lc-no { color: var(--tc); background: color-mix(in srgb, var(--tc) 10%, transparent); min-width: 42px; text-align: center; }
 .track-block .lesson-card:hover { border-color: var(--tc); }
+.track-block[data-track="theory"]  { --tc: var(--track-theory); }
 .track-block[data-track="basics"]  { --tc: var(--track-basics); }
 .track-block[data-track="comm"]    { --tc: var(--track-comm); }
 .track-block[data-track="periph"]  { --tc: var(--track-periph); }

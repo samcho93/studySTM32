@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 392" role="img" aria-label="타이머 카운터 블록과 PWM 파형 (TIM3, 84 MHz, PSC 83, ARR 999, CCR1 600)" font-family="var(--sans)" font-size="12">
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--text-dim)"/></marker></defs>
+<rect x="16" y="40" width="90" height="44" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="61.0" y="58.083333333333336" font-size="11.5" fill="var(--text)" text-anchor="middle" font-weight="700">CK_INT</text>
+<text x="61.0" y="73.58333333333334" font-size="11.5" fill="var(--text)" text-anchor="middle">84 MHz</text>
+<line x1="106" y1="62" x2="138" y2="62" stroke="var(--text-dim)" stroke-width="1.5" marker-end="url(#ar)"/>
+<rect x="138" y="40" width="96" height="44" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="186.0" y="58.083333333333336" font-size="11.5" fill="var(--text)" text-anchor="middle" font-weight="700">PSC 분주기</text>
+<text x="186.0" y="73.58333333333334" font-size="11.5" fill="var(--text)" text-anchor="middle">÷(PSC+1) = 84</text>
+<line x1="234" y1="62" x2="290" y2="62" stroke="var(--text-dim)" stroke-width="1.5" marker-end="url(#ar)"/>
+<text x="262" y="34" font-size="9.5" fill="var(--text-faint)" text-anchor="middle" font-family="var(--mono)">CK_CNT 1 MHz</text>
+<rect x="290" y="40" width="90" height="44" rx="6" fill="var(--accent-soft)" stroke="var(--accent-dim, var(--accent))" />
+<text x="335.0" y="58.083333333333336" font-size="11.5" fill="var(--text)" text-anchor="middle" font-weight="700">CNT</text>
+<text x="335.0" y="73.58333333333334" font-size="11.5" fill="var(--text)" text-anchor="middle">0 → ARR</text>
+<line x1="380" y1="62" x2="420" y2="62" stroke="var(--text-dim)" stroke-width="1.5" marker-end="url(#ar)"/>
+<rect x="420" y="40" width="90" height="44" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="465.0" y="58.166666666666664" font-size="11" fill="var(--text)" text-anchor="middle" font-weight="700">CNT = ARR ?</text>
+<text x="465.0" y="73.16666666666666" font-size="11" fill="var(--text)" text-anchor="middle">→ 0 으로</text>
+<line x1="510" y1="62" x2="550" y2="62" stroke="var(--text-dim)" stroke-width="1.5" marker-end="url(#ar)"/>
+<rect x="550" y="40" width="154" height="44" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="627.0" y="58.166666666666664" font-size="11" fill="var(--text)" text-anchor="middle" font-weight="700">UEV 업데이트 이벤트</text>
+<text x="627.0" y="73.16666666666666" font-size="11" fill="var(--text)" text-anchor="middle">인터럽트 · DMA · 프리로드 반영</text>
+<rect x="290" y="100" width="90" height="30" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="335.0" y="118.66666666666667" font-size="11" fill="var(--text)" text-anchor="middle" font-family="var(--mono)" font-weight="700">ARR = 999</text>
+<line x1="335" y1="100" x2="335" y2="84" stroke="var(--text-dim)" stroke-width="1.5" marker-end="url(#ar)"/>
+<text x="390" y="118" font-size="10" fill="var(--text-faint)">섀도 레지스터 (ARPE=1 이면 UEV 때 반영)</text>
+<rect x="290" y="146" width="90" height="30" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="335.0" y="164.66666666666666" font-size="11" fill="var(--text)" text-anchor="middle" font-family="var(--mono)" font-weight="700">CCR1 = 600</text>
+<line x1="380" y1="161" x2="420" y2="161" stroke="var(--text-dim)" stroke-width="1.5" marker-end="url(#ar)"/>
+<rect x="420" y="146" width="90" height="30" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="465.0" y="164.5" font-size="10.5" fill="var(--text)" text-anchor="middle" font-weight="700">CNT &lt; CCR1 ?</text>
+<line x1="510" y1="161" x2="550" y2="161" stroke="var(--text-dim)" stroke-width="1.5" marker-end="url(#ar)"/>
+<rect x="550" y="146" width="154" height="30" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="627.0" y="164.16666666666666" font-size="9.5" fill="var(--text)" text-anchor="middle" font-weight="700">OC1REF → 극성 → CH1 핀 (PA6)</text>
+<text x="16" y="118" font-size="10.5" fill="var(--text-dim)">CNT 는 업·다운·센터 정렬 중 하나로 셉니다.</text>
+<text x="16" y="134" font-size="10.5" fill="var(--text-dim)">PSC·ARR·CCR 은 모두 0 부터 세므로 +1.</text>
+<text x="16" y="162" font-size="11" fill="var(--accent)" font-family="var(--mono)">주기 = (PSC+1)(ARR+1) / 84 MHz</text>
+<text x="16" y="178" font-size="11" fill="var(--accent)" font-family="var(--mono)">= 84 × 1000 / 84 MHz = 1 ms (1 kHz)</text>
+<text x="64" y="262.0" font-size="11" fill="var(--text)" text-anchor="end" font-weight="700">CNT</text>
+<line x1="70" y1="300" x2="640" y2="300" stroke="var(--border)" stroke-width="1"/>
+<line x1="70" y1="216" x2="640" y2="216" stroke="var(--border)" stroke-width="1" stroke-dasharray="4 3"/>
+<line x1="70" y1="249.6" x2="640" y2="249.6" stroke="var(--info)" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="644" y="220" font-size="10" fill="var(--text-dim)" font-family="var(--mono)">ARR 999</text>
+<text x="644" y="253.6" font-size="10" fill="var(--info)" font-family="var(--mono)">CCR1 600</text>
+<text x="644" y="304" font-size="10" fill="var(--text-dim)" font-family="var(--mono)">0</text>
+<path d="M70 300 L250 216 L250 300 L430 216 L430 300 L610 216 L610 300" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" />
+<line x1="70" y1="202" x2="70" y2="214" stroke="var(--danger)" stroke-width="1.5" marker-end="url(#ar)"/>
+<text x="70" y="198" font-size="9" fill="var(--danger)" text-anchor="middle" font-family="var(--mono)">UEV</text>
+<line x1="250" y1="202" x2="250" y2="214" stroke="var(--danger)" stroke-width="1.5" marker-end="url(#ar)"/>
+<text x="250" y="198" font-size="9" fill="var(--danger)" text-anchor="middle" font-family="var(--mono)">UEV</text>
+<line x1="430" y1="202" x2="430" y2="214" stroke="var(--danger)" stroke-width="1.5" marker-end="url(#ar)"/>
+<text x="430" y="198" font-size="9" fill="var(--danger)" text-anchor="middle" font-family="var(--mono)">UEV</text>
+<line x1="610" y1="202" x2="610" y2="214" stroke="var(--danger)" stroke-width="1.5" marker-end="url(#ar)"/>
+<text x="610" y="198" font-size="9" fill="var(--danger)" text-anchor="middle" font-family="var(--mono)">UEV</text>
+<text x="64" y="347" font-size="11" fill="var(--text)" text-anchor="end" font-weight="700">CH1</text>
+<path d="M70 330 V330 H178.0 V356 H250.0 V330 H358.0 V356 H430.0 V330 H538.0 V356 H610.0 V330 H640.0" fill="none" stroke="var(--info)" stroke-width="2" stroke-linejoin="round" />
+<text x="124.0" y="324" font-size="10" fill="var(--info)" text-anchor="middle">듀티 = CCR/(ARR+1) = 60 %</text>
+<text x="340.0" y="376" font-size="10" fill="var(--text-dim)" text-anchor="middle">PWM 모드 1: CNT &lt; CCR 이면 1, 아니면 0  (모드 2 는 반대)  ·  주기 1 ms</text>
+</svg>

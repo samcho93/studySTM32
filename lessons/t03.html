@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T03. 메모리 맵과 버스 · studySTM32</title>
+<meta name="description" content="4 GB 주소 공간 구획, F411 의 실제 주소, 부트 매핑, AHB·APB 버스 매트릭스와 클럭 게이팅, GPIO_TypeDef 구조체와 GPIOA 매크로, 비트밴딩, DMA, 링커 스크립트와 빌드 로그의 text·data·bss 를 해설합니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
+<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="../assets/css/stm32.css">
+<link rel="stylesheet" href="../assets/css/ml-theme.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
+<script src="../assets/js/theme.js"></script>
+</head>
+<body class="lesson-page track-page-theory">
+<button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
+<aside class="sidebar" id="sidebar">
+<nav class="sidebar-nav">
+<div class="brand-row"><a class="brand" href="../index.html"><span class="brand-mark">32</span><span class="brand-text">studySTM32<small>STM32 HAL 인터랙티브 강좌</small></span></a></div>
+<div class="side-tools"><a class="side-tool" href="../sim/index.html">시뮬레이터</a><a class="side-tool" href="../lessons/hal-reference.html">HAL 레퍼런스</a></div>
+<div class="nav-track" data-track="theory">
+<div class="nav-track-title track-theory"><span class="nav-part-no">PART 0</span>STM32 이해하기</div>
+<ul>
+<li><a href="../lessons/t01.html" data-slug="t01"><span class="nav-no">T01</span>STM32 제품군 총람</a></li>
+<li><a href="../lessons/t02.html" data-slug="t02"><span class="nav-no">T02</span>Cortex-M 코어 구조</a></li>
+<li><a href="../lessons/t03.html" class="active" data-slug="t03"><span class="nav-no">T03</span>메모리 맵과 버스</a></li>
+<li><a href="../lessons/t04.html" data-slug="t04"><span class="nav-no">T04</span>클럭과 리셋 시스템</a></li>
+<li><a href="../lessons/t05.html" data-slug="t05"><span class="nav-no">T05</span>GPIO 내부 구조와 전기 특성</a></li>
+<li><a href="../lessons/t06.html" data-slug="t06"><span class="nav-no">T06</span>인터럽트·예외와 NVIC</a></li>
+<li><a href="../lessons/t07.html" data-slug="t07"><span class="nav-no">T07</span>타이머 구조</a></li>
+<li><a href="../lessons/t08.html" data-slug="t08"><span class="nav-no">T08</span>통신 인터페이스 원리</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="basics">
+<div class="nav-track-title track-basics"><span class="nav-part-no">PART 1</span>시작하기</div>
+<ul>
+<li><a href="../lessons/l01.html" data-slug="l01"><span class="nav-no">L01</span>STM32 시리즈와 개발 환경</a></li>
+<li><a href="../lessons/l02.html" data-slug="l02"><span class="nav-no">L02</span>시뮬레이터 둘러보기와 첫 프로젝트</a></li>
+<li><a href="../lessons/l03.html" data-slug="l03"><span class="nav-no">L03</span>GPIO 출력 — LED</a></li>
+<li><a href="../lessons/l04.html" data-slug="l04"><span class="nav-no">L04</span>GPIO 입력 — 스위치</a></li>
+<li><a href="../lessons/l05.html" data-slug="l05"><span class="nav-no">L05</span>외부 인터럽트 EXTI</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="comm">
+<div class="nav-track-title track-comm"><span class="nav-part-no">PART 2</span>통신·타이머·아날로그</div>
+<ul>
+<li><a href="../lessons/l06.html" data-slug="l06"><span class="nav-no">L06</span>UART와 printf</a></li>
+<li><a href="../lessons/l07.html" data-slug="l07"><span class="nav-no">L07</span>타이머 인터럽트</a></li>
+<li><a href="../lessons/l08.html" data-slug="l08"><span class="nav-no">L08</span>PWM — LED 밝기와 서보</a></li>
+<li><a href="../lessons/l09.html" data-slug="l09"><span class="nav-no">L09</span>ADC — 가변저항·조도센서</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="periph">
+<div class="nav-track-title track-periph"><span class="nav-part-no">PART 3</span>주변기기</div>
+<ul>
+<li><a href="../lessons/l10.html" data-slug="l10"><span class="nav-no">L10</span>I2C와 LCD1602</a></li>
+<li><a href="../lessons/l11.html" data-slug="l11"><span class="nav-no">L11</span>SPI 기초</a></li>
+<li><a href="../lessons/l12.html" data-slug="l12"><span class="nav-no">L12</span>7세그먼트 FND</a></li>
+<li><a href="../lessons/l13.html" data-slug="l13"><span class="nav-no">L13</span>DC 모터 드라이버</a></li>
+<li><a href="../lessons/l14.html" data-slug="l14"><span class="nav-no">L14</span>스텝모터</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="project">
+<div class="nav-track-title track-project"><span class="nav-part-no">PART 4</span>프로젝트</div>
+<ul>
+<li><a href="../lessons/l15.html" data-slug="l15"><span class="nav-no">L15</span>미니 프로젝트: 스마트 선풍기</a></li>
+<li><a href="../lessons/l16.html" data-slug="l16"><span class="nav-no">L16</span>실물 보드로 옮기기</a></li>
+</ul>
+</div>
+</nav>
+</aside>
+<div class="sidebar-scrim" id="scrim"></div>
+<main class="main">
+<header class="topbar"><a class="topbar-brand" href="../index.html"><span class="brand-mark">32</span>studySTM32</a><nav class="topnav" aria-label="사이트 메뉴"><a href="../index.html">강의 홈</a><a href="../sim/index.html">시뮬레이터</a><a href="../lessons/hal-reference.html">HAL 레퍼런스</a></nav><button class="theme-icon" type="button" data-theme-toggle data-theme-icon aria-label="테마 전환"></button></header>
+
+<article class="lesson" data-slug="t03" data-track="theory">
+  <div class="lesson-head">
+    <div class="crumbs"><span class="track-pill track-theory">PART 0</span> STM32 이해하기 &middot; 약 55분 &middot; 기초</div>
+    <h1><span class="lesson-no">T03</span>메모리 맵과 버스</h1>
+    <p class="lede">4 GB 주소 공간 구획, F411 의 실제 주소, 부트 매핑, AHB·APB 버스 매트릭스와 클럭 게이팅, GPIO_TypeDef 구조체와 GPIOA 매크로, 비트밴딩, DMA, 링커 스크립트와 빌드 로그의 text·data·bss 를 해설합니다.</p>
+    <div class="requires">선수 레슨: <a href="t02.html">T02</a></div>
+    <div class="lesson-actions">
+      <label class="done-toggle"><input type="checkbox" id="doneCheck"><span>학습 완료로 표시</span></label>
+      <a class="ghost-btn tool-sim" href="../sim/index.html?ex=l03-bsrr" data-sim-src="../sim/index.html?ex=l03-bsrr&amp;embed=1">시뮬레이터에서 실습</a>
+    </div>
+  </div>
+  <div class="lesson-grid">
+    <div class="lesson-body">
+<h2 id="학습-목표">학습 목표<a class="anchor" href="#학습-목표">#</a></h2>
+<ul><li>Cortex-M 의 4 GB 주소 공간이 Code · SRAM · Peripheral · System 으로 어떻게 나뉘는지, STM32F411 에서 각 구획의 <strong>실제 주소</strong>가 무엇인지 압니다.</li><li>BOOT 핀에 따라 0x0000_0000 에 무엇이 비치는지, <code>Reset_Handler</code> 가 어디에서 시작하는지 설명할 수 있습니다.</li><li>AHB1 · AHB2 · APB1 · APB2 버스와 버스 매트릭스를 이해하고, <code>__HAL_RCC_GPIOA_CLK_ENABLE()</code> 이 실제로 어느 레지스터의 어느 비트를 세우는지 압니다.</li><li><code>GPIO_TypeDef</code> 구조체와 <code>#define GPIOA ((GPIO_TypeDef *)GPIOA_BASE)</code> 가 어떻게 C 포인터로 레지스터에 닿는지 설명할 수 있습니다.</li><li>리틀 엔디언 · 정렬 · 비트밴딩 · DMA 의 개념을 알고, 링커 스크립트의 <code>.isr_vector</code> <code>.text</code> <code>.data</code> <code>.bss</code> 와 빌드 로그의 <code>text / data / bss</code> 숫자를 읽을 수 있습니다.</li></ul>
+<h2 id="4-gb-주소-공간">4 GB 주소 공간<a class="anchor" href="#4-gb-주소-공간">#</a></h2>
+<p>Cortex-M 은 32비트 주소를 쓰므로 2^32 = 4 GB 의 주소 공간이 있습니다. Arm 은 이 공간을 <strong>0.5 GB 단위의 큰 구획</strong>으로 미리 나눠 두었고, 모든 Cortex-M MCU 가 이 배치를 따릅니다.</p>
+<figure class="fig" id="fig-memory-map"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 404" role="img" aria-label="Cortex-M 4 GB 주소 공간과 STM32F411 실제 주소" font-family="var(--sans)" font-size="12">
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--text-dim)"/></marker></defs>
+<rect x="130" y="30" width="140" height="40" rx="0" fill="var(--accent-soft)" stroke="var(--border)" />
+<text x="200.0" y="54.0" font-size="12" fill="var(--text)" text-anchor="middle" font-weight="700">System / PPB</text>
+<circle cx="256" cy="42" r="8" fill="var(--accent)"/><text x="256" y="46" font-size="10" fill="var(--on-accent, #fff)" text-anchor="middle" font-family="var(--mono)" font-weight="700">D</text>
+<rect x="130" y="70" width="140" height="80" rx="0" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="200.0" y="114.0" font-size="12" fill="var(--text)" text-anchor="middle">External device</text>
+<rect x="130" y="150" width="140" height="80" rx="0" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="200.0" y="194.0" font-size="12" fill="var(--text)" text-anchor="middle">External RAM</text>
+<rect x="130" y="230" width="140" height="40" rx="0" fill="var(--accent-soft)" stroke="var(--border)" />
+<text x="200.0" y="254.0" font-size="12" fill="var(--text)" text-anchor="middle" font-weight="700">Peripheral</text>
+<circle cx="256" cy="242" r="8" fill="var(--accent)"/><text x="256" y="246" font-size="10" fill="var(--on-accent, #fff)" text-anchor="middle" font-family="var(--mono)" font-weight="700">C</text>
+<rect x="130" y="270" width="140" height="40" rx="0" fill="var(--accent-soft)" stroke="var(--border)" />
+<text x="200.0" y="294.0" font-size="12" fill="var(--text)" text-anchor="middle" font-weight="700">SRAM</text>
+<circle cx="256" cy="282" r="8" fill="var(--accent)"/><text x="256" y="286" font-size="10" fill="var(--on-accent, #fff)" text-anchor="middle" font-family="var(--mono)" font-weight="700">B</text>
+<rect x="130" y="310" width="140" height="40" rx="0" fill="var(--accent-soft)" stroke="var(--border)" />
+<text x="200.0" y="334.0" font-size="12" fill="var(--text)" text-anchor="middle" font-weight="700">Code</text>
+<circle cx="256" cy="322" r="8" fill="var(--accent)"/><text x="256" y="326" font-size="10" fill="var(--on-accent, #fff)" text-anchor="middle" font-family="var(--mono)" font-weight="700">A</text>
+<text x="122" y="34" font-size="11" fill="var(--text-dim)" text-anchor="end" font-family="var(--mono)">0xFFFF_FFFF</text>
+<line x1="126" y1="30" x2="130" y2="30" stroke="var(--border)" stroke-width="1"/>
+<text x="122" y="74" font-size="11" fill="var(--text-dim)" text-anchor="end" font-family="var(--mono)">0xE000_0000</text>
+<line x1="126" y1="70" x2="130" y2="70" stroke="var(--border)" stroke-width="1"/>
+<text x="122" y="154" font-size="11" fill="var(--text-dim)" text-anchor="end" font-family="var(--mono)">0xA000_0000</text>
+<line x1="126" y1="150" x2="130" y2="150" stroke="var(--border)" stroke-width="1"/>
+<text x="122" y="234" font-size="11" fill="var(--text-dim)" text-anchor="end" font-family="var(--mono)">0x6000_0000</text>
+<line x1="126" y1="230" x2="130" y2="230" stroke="var(--border)" stroke-width="1"/>
+<text x="122" y="274" font-size="11" fill="var(--text-dim)" text-anchor="end" font-family="var(--mono)">0x4000_0000</text>
+<line x1="126" y1="270" x2="130" y2="270" stroke="var(--border)" stroke-width="1"/>
+<text x="122" y="314" font-size="11" fill="var(--text-dim)" text-anchor="end" font-family="var(--mono)">0x2000_0000</text>
+<line x1="126" y1="310" x2="130" y2="310" stroke="var(--border)" stroke-width="1"/>
+<text x="122" y="354" font-size="11" fill="var(--text-dim)" text-anchor="end" font-family="var(--mono)">0x0000_0000</text>
+<line x1="126" y1="350" x2="130" y2="350" stroke="var(--border)" stroke-width="1"/>
+<text x="200.0" y="372" font-size="11" fill="var(--text-faint)" text-anchor="middle">4 GB = 0.5 GB 단위 8칸 (Armv7-M 고정)</text>
+<text x="200.0" y="388" font-size="11" fill="var(--text-faint)" text-anchor="middle">F411 은 색칠한 4구획만 씀</text>
+<rect x="310" y="30" width="392" height="88" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<circle cx="324" cy="43" r="8" fill="var(--accent)"/><text x="324" y="47" font-size="10" fill="var(--on-accent, #fff)" text-anchor="middle" font-family="var(--mono)" font-weight="700">A</text>
+<text x="338" y="47" font-size="12" fill="var(--text)" font-family="var(--mono)" font-weight="700">Code  0x0000_0000 ~ 0x1FFF_FFFF</text>
+<text x="320" y="66" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">0x0800_0000 ~ 0x0807_FFFF   Flash 512 KB (프로그램 · 상수)</text>
+<text x="320" y="81" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">0x1FFF_0000 ~ 0x1FFF_77FF   시스템 메모리 30 KB (ST 부트로더)</text>
+<text x="320" y="96" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">0x1FFF_C000                 옵션 바이트 (읽기 보호 · BOR 레벨)</text>
+<text x="320" y="111" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">0x0000_0000                 BOOT 핀에 따라 Flash / 시스템 메모리 / SRAM 이 비침</text>
+<rect x="310" y="122" width="392" height="58" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<circle cx="324" cy="135" r="8" fill="var(--accent)"/><text x="324" y="139" font-size="10" fill="var(--on-accent, #fff)" text-anchor="middle" font-family="var(--mono)" font-weight="700">B</text>
+<text x="338" y="139" font-size="12" fill="var(--text)" font-family="var(--mono)" font-weight="700">SRAM  0x2000_0000</text>
+<text x="320" y="158" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">0x2000_0000 ~ 0x2001_FFFF   SRAM 128 KB (.data .bss 힙 스택)</text>
+<text x="320" y="173" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">0x2200_0000 ~ 0x23FF_FFFF   SRAM 비트밴드 별칭 (1비트 = 1워드)</text>
+<rect x="310" y="178" width="392" height="133" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<circle cx="324" cy="191" r="8" fill="var(--accent)"/><text x="324" y="195" font-size="10" fill="var(--on-accent, #fff)" text-anchor="middle" font-family="var(--mono)" font-weight="700">C</text>
+<text x="338" y="195" font-size="12" fill="var(--text)" font-family="var(--mono)" font-weight="700">Peripheral  0x4000_0000</text>
+<text x="320" y="214" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">APB1 0x4000_0000  TIM2 · TIM3 0x4000_0400 · SPI2 0x4000_3800</text>
+<text x="320" y="229" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">                  USART2 0x4000_4400 · I2C1 0x4000_5400 · PWR 0x4000_7000</text>
+<text x="320" y="244" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">APB2 0x4001_0000  TIM1 · USART1 0x4001_1000 · ADC1 0x4001_2000</text>
+<text x="320" y="259" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">                  SPI1 0x4001_3000 · SYSCFG 0x4001_3800 · EXTI 0x4001_3C00</text>
+<text x="320" y="274" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">AHB1 0x4002_0000  GPIOA · GPIOB 0x4002_0400 · GPIOC 0x4002_0800</text>
+<text x="320" y="289" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">                  RCC 0x4002_3800 · FLASH 0x4002_3C00 · DMA1 0x4002_6000</text>
+<text x="320" y="304" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">AHB2 0x5000_0000  USB OTG FS</text>
+<rect x="310" y="316" width="392" height="58" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<circle cx="324" cy="329" r="8" fill="var(--accent)"/><text x="324" y="333" font-size="10" fill="var(--on-accent, #fff)" text-anchor="middle" font-family="var(--mono)" font-weight="700">D</text>
+<text x="338" y="333" font-size="12" fill="var(--text)" font-family="var(--mono)" font-weight="700">PPB  0xE000_0000 (코어 내부, 모든 Cortex-M 공통)</text>
+<text x="320" y="352" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">0xE000_E010 SysTick     0xE000_E100 NVIC</text>
+<text x="320" y="367" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)" xml:space="preserve">0xE000_ED00 SCB (VTOR · AIRCR · SCR …)     0xE000_ED90 MPU</text>
+</svg><figcaption>왼쪽은 Armv7-M 이 정한 구획, 오른쪽은 STM32F411 에서 실제로 쓰이는 주소입니다. 회색 구획(외부 메모리)은 F411 에 외부 버스가 없어 비어 있습니다.</figcaption></figure>
+<div class="table-wrap"><table><thead><tr><th>구획</th><th>시작 주소</th><th>크기</th><th>STM32 에서</th><th>실행 가능</th></tr></thead><tbody><tr><td><strong>Code</strong></td><td>0x0000_0000</td><td>0.5 GB</td><td>플래시, 시스템 메모리(부트로더), 옵션 바이트</td><td>예 (I-Code 버스)</td></tr><tr><td><strong>SRAM</strong></td><td>0x2000_0000</td><td>0.5 GB</td><td>내장 SRAM, 비트밴드 별칭</td><td>예 (System 버스)</td></tr><tr><td><strong>Peripheral</strong></td><td>0x4000_0000</td><td>0.5 GB</td><td>APB1 · APB2 · AHB1 · AHB2 주변장치, 비트밴드 별칭</td><td>아니오 (XN)</td></tr><tr><td>External RAM</td><td>0x6000_0000</td><td>1 GB</td><td>FSMC/FMC 외부 SRAM · LCD (F411 없음)</td><td>예</td></tr><tr><td>External device</td><td>0xA000_0000</td><td>1 GB</td><td>QSPI 등 (F411 없음)</td><td>아니오</td></tr><tr><td><strong>PPB / System</strong></td><td>0xE000_0000</td><td>0.5 GB</td><td>SysTick · NVIC · SCB · MPU · 디버그 (코어 내부)</td><td>아니오</td></tr></tbody></table></div>
+<p>주소만 봐도 어디를 가리키는지 알 수 있습니다. <code>0x0800_xxxx</code> 는 플래시, <code>0x2000_xxxx</code> 는 SRAM, <code>0x4002_0xxx</code> 는 GPIO, <code>0xE000_Exxx</code> 는 코어 내부입니다. 디버거에서 변수 주소가 <code>0x2000_0134</code> 로 보이면 SRAM 시작에서 0x134 = 308 바이트 뒤라는 뜻입니다.</p>
+<h3 id="stm32f411-의-실제-메모리">STM32F411 의 실제 메모리<a class="anchor" href="#stm32f411-의-실제-메모리">#</a></h3>
+<div class="table-wrap regmap"><table><thead><tr><th>이름</th><th>주소 범위</th><th>크기</th><th>내용</th></tr></thead><tbody><tr><td>메인 플래시</td><td>0x0800_0000 ~ 0x0807_FFFF</td><td>512 KB</td><td>프로그램 · 상수 · <code>.data</code> 초기값. 섹터 8개 (16 KB × 4, 64 KB, 128 KB × 3)</td></tr><tr><td>시스템 메모리</td><td>0x1FFF_0000 ~ 0x1FFF_77FF</td><td>30 KB</td><td>ST 가 구워 둔 부트로더 (USART · USB DFU 로 플래시 쓰기), 지울 수 없음</td></tr><tr><td>OTP</td><td>0x1FFF_7800 ~ 0x1FFF_7A0F</td><td>528 B</td><td>한 번만 쓸 수 있는 영역 (일련번호 등)</td></tr><tr><td>옵션 바이트</td><td>0x1FFF_C000 ~ 0x1FFF_C00F</td><td>16 B</td><td>읽기 보호(RDP), 쓰기 보호, BOR 레벨, 워치독 설정</td></tr><tr><td>SRAM</td><td>0x2000_0000 ~ 0x2001_FFFF</td><td>128 KB</td><td><code>.data</code> <code>.bss</code> 힙 스택</td></tr><tr><td>별칭</td><td>0x0000_0000 ~</td><td></td><td>BOOT 핀에 따라 플래시 · 시스템 메모리 · SRAM 중 하나가 비침</td></tr></tbody></table></div>
+<p>F103C8(BluePill) 은 플래시 0x0800_0000 부터 64 KB (1 KB 페이지 64개), SRAM 0x2000_0000 부터 20 KB 입니다. 주소 체계는 같고 크기만 다릅니다.</p>
+<p>플래시가 <strong>섹터 단위</strong>로만 지워진다는 점은 나중에 설정값을 플래시에 저장할 때 중요합니다. F411 은 가장 작은 섹터가 16 KB 이므로 EEPROM 처럼 바이트 단위로 자주 고쳐 쓰기에 알맞지 않습니다 (L0 · L1 은 진짜 EEPROM 이 내장되어 있습니다).</p>
+<h2 id="부트-매핑">부트 매핑<a class="anchor" href="#부트-매핑">#</a></h2>
+<p>리셋 후 코어는 0x0000_0000 에서 초기 SP 를, 0x0000_0004 에서 리셋 벡터를 읽습니다. 그런데 0x0000_0000 에는 실제 메모리가 없고, <strong>BOOT 핀 상태에 따라 다른 메모리가 비칩니다(aliasing).</strong></p>
+<div class="table-wrap"><table><thead><tr><th>BOOT0</th><th>BOOT1 (F4: PB2)</th><th>0x0000_0000 에 비치는 것</th><th>용도</th></tr></thead><tbody><tr><td>0</td><td>×</td><td>메인 플래시 0x0800_0000</td><td>보통 실행 (Nucleo 기본, BOOT0 이 GND 로 당겨짐)</td></tr><tr><td>1</td><td>0</td><td>시스템 메모리 0x1FFF_0000</td><td>ST 부트로더로 플래시 쓰기 (USART1 PA9/PA10, USB DFU 등, AN2606)</td></tr><tr><td>1</td><td>1</td><td>SRAM 0x2000_0000</td><td>디버거가 SRAM 에 넣은 코드 실행 (드묾)</td></tr></tbody></table></div>
+<p>BluePill 의 BOOT0 · BOOT1 점퍼가 이것입니다. BOOT0 을 1 로 두고 리셋하면 부트로더가 실행되어 USB-시리얼 어댑터로 플래시를 쓸 수 있습니다. Nucleo 는 ST-Link 가 SWD 로 직접 플래시를 쓰므로 BOOT0 을 건드릴 일이 거의 없습니다. 예외는 <a href="t08.html">T08</a> 에서 다루는 "디버그 핀을 잘못 설정해 ST-Link 가 연결되지 않을 때" 입니다.</p>
+<p>리셋 벡터는 0x0000_0004 에서 읽지만, 이후에는 별칭이 아닌 <strong>진짜 주소 0x0800_0000</strong> 에서 실행합니다. <code>SystemInit()</code> 이 SCB-&gt;VTOR 에 0x0800_0000 을 써서 벡터 테이블 위치를 못 박기 때문에, 이후 인터럽트가 나면 코어는 0x0800_0000 + 4 × 번호 에서 핸들러 주소를 읽습니다. 부트로더를 직접 만들 때는 애플리케이션이 시작하면서 VTOR 를 자기 주소(예: 0x0800_8000)로 바꿔야 합니다.</p>
+<h2 id="버스-매트릭스와-클럭-게이팅">버스 매트릭스와 클럭 게이팅<a class="anchor" href="#버스-매트릭스와-클럭-게이팅">#</a></h2>
+<div class="table-wrap regmap"><table><thead><tr><th>버스</th><th>최대 클럭 (F411)</th><th>붙어 있는 주변장치</th><th>주소 시작</th></tr></thead><tbody><tr><td><strong>AHB1</strong></td><td>100 MHz (= HCLK)</td><td>GPIOA~E · H, RCC, Flash 인터페이스, CRC, DMA1 · DMA2</td><td>0x4002_0000</td></tr><tr><td><strong>AHB2</strong></td><td>100 MHz</td><td>USB OTG FS</td><td>0x5000_0000</td></tr><tr><td><strong>APB1</strong></td><td>50 MHz (PCLK1)</td><td>TIM2~5, USART2, I2C1~3, SPI2 · SPI3, WWDG, RTC, PWR</td><td>0x4000_0000</td></tr><tr><td><strong>APB2</strong></td><td>100 MHz (PCLK2)</td><td>TIM1, TIM9~11, USART1 · USART6, ADC1, SPI1 · SPI4 · SPI5, SDIO, SYSCFG, EXTI</td><td>0x4001_0000</td></tr></tbody></table></div>
+<p><strong>AHB(Advanced High-performance Bus)</strong> 는 코어와 DMA 가 직접 쓰는 빠른 버스이고, <strong>APB(Advanced Peripheral Bus)</strong> 는 AHB 에서 브리지를 거쳐 나온 느린 버스입니다. GPIO 가 F4 부터 AHB 에 붙은 이유는 핀 토글 속도를 높이기 위해서입니다 (F1 은 GPIO 가 APB2 에 있어 최대 18 MHz 토글이 한계였습니다).</p>
+<p>코어 · DMA1 · DMA2 가 <strong>마스터</strong>, 플래시 · SRAM · 각 버스가 <strong>슬레이브</strong>이고, 이들을 잇는 <strong>버스 매트릭스</strong>가 서로 다른 슬레이브에 대한 접근을 동시에 처리합니다. 예를 들어 코어가 플래시에서 명령을 가져오는 동안 DMA 가 SRAM 에서 USART2 로 데이터를 옮길 수 있습니다. 같은 SRAM 을 두 마스터가 동시에 원하면 라운드 로빈으로 번갈아 씁니다.</p>
+<h3 id="클럭-게이팅">클럭 게이팅<a class="anchor" href="#클럭-게이팅">#</a></h3>
+<p>STM32 의 모든 주변장치는 <strong>리셋 직후 클럭이 꺼져 있습니다.</strong> 전력을 아끼기 위해서인데, 클럭이 꺼진 주변장치의 레지스터는 읽으면 0, 써도 무시됩니다(또는 BusFault). 그래서 GPIO 하나를 쓰려 해도 먼저 RCC 의 인에이블 비트를 세워야 합니다. CubeMX 가 만든 <code>MX_GPIO_Init()</code> 첫 줄이 그것입니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-h">__HAL_RCC_GPIOA_CLK_ENABLE</span>();
+<span class="tk-c">/* stm32f4xx_hal_rcc.h 에서 이 매크로는 다음으로 펼쳐집니다 */</span>
+<span class="tk-k">do</span> {
+  __IO <span class="tk-t">uint32_t</span> tmpreg = <span class="tk-n">0x00U</span>;
+  <span class="tk-f">SET_BIT</span>(<span class="tk-m">RCC</span>-&gt;<span class="tk-m">AHB1ENR</span>, <span class="tk-m">RCC_AHB1ENR_GPIOAEN</span>);   <span class="tk-c">/* RCC-&gt;AHB1ENR |= (1 &lt;&lt; 0);  주소 0x4002_3830 */</span>
+  tmpreg = <span class="tk-f">READ_BIT</span>(<span class="tk-m">RCC</span>-&gt;<span class="tk-m">AHB1ENR</span>, <span class="tk-m">RCC_AHB1ENR_GPIOAEN</span>);   <span class="tk-c">/* 읽어서 쓰기가 반영될 시간을 벎 */</span>
+  <span class="tk-f">UNUSED</span>(tmpreg);
+} <span class="tk-k">while</span> (<span class="tk-n">0U</span>);</code></pre></div>
+<ul><li><code>RCC-&gt;AHB1ENR</code> 은 RCC(0x4002_3800) 의 오프셋 0x30 에 있는 AHB1 주변장치 클럭 인에이블 레지스터입니다. bit 0 = GPIOA, bit 1 = GPIOB, … bit 21 = DMA1, bit 22 = DMA2.</li><li>APB1 장치는 <code>RCC-&gt;APB1ENR</code> (TIM2 = bit 0, USART2 = bit 17, I2C1 = bit 21), APB2 장치는 <code>RCC-&gt;APB2ENR</code> (TIM1 = bit 0, USART1 = bit 4, ADC1 = bit 8, SPI1 = bit 12, SYSCFG = bit 14) 입니다.</li><li>읽기 한 번을 끼워 넣는 이유는 F4 에러타에 있는 <strong>"클럭 인에이블 직후 바로 접근하면 반영이 안 될 수 있다"</strong> 는 문제 때문입니다. 레지스터를 직접 다룰 때는 이 매크로를 그대로 쓰는 것이 안전합니다.</li></ul>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l03-bsrr" data-sim-src="../sim/index.html?ex=l03-bsrr&amp;embed=1" data-sim-id="l03-bsrr"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">레지스터 직접 접근 예제 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l03-bsrr" target="_blank" rel="noopener">새 창</a><code class="sim-id">l03-bsrr</code></div>
+<p>시뮬레이터에서 이 예제의 <code>MX_GPIO_Init()</code> 을 보면 <code>__HAL_RCC_GPIOA_CLK_ENABLE()</code> 이 <code>GPIOA-&gt;MODER</code> 설정보다 먼저 옵니다. 순서를 바꾸면 실물에서는 MODER 쓰기가 사라져 LED 가 켜지지 않습니다.</p>
+<h2 id="레지스터-구조체-gpiotypedef-와-gpioa">레지스터 구조체: GPIO_TypeDef 와 GPIOA<a class="anchor" href="#레지스터-구조체-gpiotypedef-와-gpioa">#</a></h2>
+<p>주변장치의 레지스터는 <strong>베이스 주소부터 일정한 오프셋</strong>에 놓여 있습니다. ST 는 이것을 C 구조체로 표현합니다 (<code>stm32f411xe.h</code>).</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-k">typedef</span> <span class="tk-k">struct</span> {
+  __IO <span class="tk-t">uint32_t</span> <span class="tk-m">MODER</span>;    <span class="tk-c">/* 0x00  모드 (입력·출력·AF·아날로그) */</span>
+  __IO <span class="tk-t">uint32_t</span> <span class="tk-m">OTYPER</span>;   <span class="tk-c">/* 0x04  출력 종류 (푸시풀·오픈드레인) */</span>
+  __IO <span class="tk-t">uint32_t</span> <span class="tk-m">OSPEEDR</span>;  <span class="tk-c">/* 0x08  출력 속도 */</span>
+  __IO <span class="tk-t">uint32_t</span> <span class="tk-m">PUPDR</span>;    <span class="tk-c">/* 0x0C  풀업·풀다운 */</span>
+  __IO <span class="tk-t">uint32_t</span> <span class="tk-m">IDR</span>;      <span class="tk-c">/* 0x10  입력 데이터 (읽기 전용) */</span>
+  __IO <span class="tk-t">uint32_t</span> <span class="tk-m">ODR</span>;      <span class="tk-c">/* 0x14  출력 데이터 */</span>
+  __IO <span class="tk-t">uint32_t</span> <span class="tk-m">BSRR</span>;     <span class="tk-c">/* 0x18  비트 set/reset (쓰기 전용) */</span>
+  __IO <span class="tk-t">uint32_t</span> <span class="tk-m">LCKR</span>;     <span class="tk-c">/* 0x1C  설정 잠금 */</span>
+  __IO <span class="tk-t">uint32_t</span> <span class="tk-m">AFR</span>[<span class="tk-n">2</span>];   <span class="tk-c">/* 0x20, 0x24  대체 기능 (AFRL: 핀 0~7, AFRH: 핀 8~15) */</span>
+} <span class="tk-t">GPIO_TypeDef</span>;
+
+<span class="tk-p">#define</span> <span class="tk-m">PERIPH_BASE</span>       <span class="tk-n">0x40000000UL</span>
+<span class="tk-p">#define</span> <span class="tk-f">AHB1PERIPH_BASE</span>   (<span class="tk-m">PERIPH_BASE</span> + <span class="tk-n">0x00020000UL</span>)    <span class="tk-c">/* 0x4002_0000 */</span>
+<span class="tk-p">#define</span> <span class="tk-f">GPIOA_BASE</span>        (<span class="tk-m">AHB1PERIPH_BASE</span> + <span class="tk-n">0x0000UL</span>)    <span class="tk-c">/* 0x4002_0000 */</span>
+<span class="tk-p">#define</span> <span class="tk-f">GPIOB_BASE</span>        (<span class="tk-m">AHB1PERIPH_BASE</span> + <span class="tk-n">0x0400UL</span>)    <span class="tk-c">/* 0x4002_0400 */</span>
+<span class="tk-p">#define</span> <span class="tk-f">GPIOC_BASE</span>        (<span class="tk-m">AHB1PERIPH_BASE</span> + <span class="tk-n">0x0800UL</span>)    <span class="tk-c">/* 0x4002_0800 */</span>
+<span class="tk-p">#define</span> <span class="tk-f">GPIOA</span>             ((<span class="tk-t">GPIO_TypeDef</span> *) <span class="tk-m">GPIOA_BASE</span>)
+<span class="tk-p">#define</span> <span class="tk-f">GPIOB</span>             ((<span class="tk-t">GPIO_TypeDef</span> *) <span class="tk-m">GPIOB_BASE</span>)</code></pre></div>
+<ul><li><code>__IO</code> 는 <code>volatile</code> 의 별칭입니다. 컴파일러가 "방금 썼으니 다시 읽을 필요 없다" 고 최적화하지 못하게 합니다. 하드웨어가 값을 바꾸는 IDR 을 두 번 읽으면 두 번 모두 실제로 버스에 접근해야 하기 때문입니다.</li><li><code>GPIOA</code> 는 <strong>정수 0x4002_0000 을 구조체 포인터로 캐스팅한 것</strong>입니다. 변수가 아니라 상수이므로 메모리를 차지하지 않습니다.</li><li><code>GPIOA-&gt;ODR</code> 은 컴파일러가 <code>*(volatile uint32_t *)(0x40020000 + 0x14)</code> 로 바꿉니다. 어셈블리로는 <code>ldr r3, [r2, #20]</code> 한 명령입니다 (<a href="t02.html">T02</a> 의 예).</li><li>포트끼리 간격이 0x400 (1 KB) 이므로 <code>GPIOA + 1</code> 같은 포인터 산술은 하면 안 됩니다 (구조체 크기 0x28 만큼 움직임). 반드시 <code>GPIOB</code> 매크로를 쓰세요.</li></ul>
+<p>같은 방식으로 <code>RCC_TypeDef</code>, <code>USART_TypeDef</code>, <code>TIM_TypeDef</code> 가 정의되어 있고, HAL 핸들의 <code>Instance</code> 멤버가 이 포인터입니다. <code>huart2.Instance == USART2</code> 는 "핸들이 0x4000_4400 을 가리키는가" 를 묻는 것입니다.</p>
+<div class="callout callout-tip"><div class="callout-title">레퍼런스 매뉴얼 읽는 법</div><div class="callout-body"><p>RM0383 의 각 주변장치 장 끝에는 "register map" 표가 있습니다. 표의 오프셋 열이 구조체 멤버 순서와 같고, 각 레지스터 절에는 비트별 뜻과 리셋값이 있습니다. HAL 함수가 무엇을 하는지 궁금하면 <code>stm32f4xx_hal_gpio.c</code> 의 <code>HAL_GPIO_Init()</code> 을 열어 <code>GPIOx-&gt;MODER</code> 를 어떻게 고치는지와 RM0383 의 MODER 설명을 나란히 놓고 보세요.</p></div></div>
+<h2 id="리틀-엔디언과-정렬">리틀 엔디언과 정렬<a class="anchor" href="#리틀-엔디언과-정렬">#</a></h2>
+<p>Cortex-M 은 <strong>리틀 엔디언</strong>입니다. 32비트 값 <code>0x12345678</code> 을 주소 0x2000_0000 에 쓰면 바이트 순서는 다음과 같습니다.</p>
+<div class="table-wrap"><table><thead><tr><th>주소</th><th>0x2000_0000</th><th>0x2000_0001</th><th>0x2000_0002</th><th>0x2000_0003</th></tr></thead><tbody><tr><td>값</td><td>0x78</td><td>0x56</td><td>0x34</td><td>0x12</td></tr></tbody></table></div>
+<ul><li><code>uint8_t *p = (uint8_t *)&amp;x;</code> 로 첫 바이트를 읽으면 0x78 (최하위)이 나옵니다.</li><li>UART 로 <code>uint16_t</code> 를 두 바이트로 보낼 때 어느 쪽을 먼저 보낼지 프로토콜과 맞춰야 합니다. 네트워크 · 많은 센서(빅 엔디언)와 반대이므로 <code>__REV16()</code> 같은 명령으로 뒤집습니다.</li><li>구조체를 통째로 메모리에 저장하거나 통신으로 보내면 엔디언과 패딩이 그대로 실리므로, 다른 아키텍처와 주고받을 때 주의합니다.</li></ul>
+<p><strong>정렬(alignment)</strong> 은 4바이트 값은 4 의 배수 주소에, 2바이트 값은 2 의 배수 주소에 두는 규칙입니다. Cortex-M3/M4 는 SRAM 에서 정렬되지 않은 <code>ldr</code>/<code>str</code> 을 하드웨어가 처리해 주지만(여러 사이클), **주변장치 영역과 <code>ldm</code>/<code>stm</code> 계열 명령은 정렬을 요구**하며 위반하면 UsageFault 입니다. M0/M0+ 는 모든 비정렬 접근이 폴트입니다. <code>uint8_t buf[6]</code> 의 <code>buf+1</code> 을 <code>uint32_t *</code> 로 캐스팅해 읽는 코드가 M0 에서 죽는 흔한 이유입니다. 컴파일러는 구조체 멤버 사이에 패딩을 넣어 정렬을 맞추므로 <code>sizeof(struct { uint8_t a; uint32_t b; })</code> 는 5 가 아니라 8 입니다.</p>
+<h2 id="비트밴딩-f1-f4">비트밴딩 (F1 · F4)<a class="anchor" href="#비트밴딩-f1-f4">#</a></h2>
+<p>Cortex-M3/M4 에는 <strong>비트밴딩(bit-banding)</strong> 이라는 기능이 있습니다. SRAM 의 처음 1 MB 와 주변장치 영역의 처음 1 MB 에 대해, <strong>각 비트마다 32비트 주소 하나가 별칭으로 배정</strong>됩니다.</p>
+<p><span class="math">별칭 주소 = 별칭 시작 + (바이트 오프셋 × 32) + (비트 번호 × 4)</span></p>
+<div class="table-wrap"><table><thead><tr><th>영역</th><th>비트밴드 영역</th><th>별칭 영역</th></tr></thead><tbody><tr><td>SRAM</td><td>0x2000_0000 ~ 0x200F_FFFF</td><td>0x2200_0000 ~ 0x23FF_FFFF</td></tr><tr><td>Peripheral</td><td>0x4000_0000 ~ 0x400F_FFFF</td><td>0x4200_0000 ~ 0x43FF_FFFF</td></tr></tbody></table></div>
+<p>예를 들어 <code>GPIOA-&gt;ODR</code> (0x4002_0014) 의 비트 5 (PA5) 는 바이트 오프셋 0x20014 이므로 별칭 주소는 0x4200_0000 + 0x20014 × 32 + 5 × 4 = <strong>0x4240_0294</strong> 입니다. 이 주소에 1 을 쓰면 PA5 만 1 이 되고, 0 을 쓰면 0 이 됩니다. 읽기-수정-쓰기 세 명령이 아니라 <strong>쓰기 한 명령</strong>이므로 원자적입니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-p">#define</span> <span class="tk-f">BITBAND_PERI</span>(addr, bit)  (*(<span class="tk-k">volatile</span> <span class="tk-t">uint32_t</span> *)(<span class="tk-n">0x42000000</span> + ((addr) - <span class="tk-n">0x40000000</span>) * <span class="tk-n">32</span> + (bit) * <span class="tk-n">4</span>))
+<span class="tk-f">BITBAND_PERI</span>(<span class="tk-n">0x40020014</span>, <span class="tk-n">5</span>) = <span class="tk-n">1</span>;    <span class="tk-c">/* PA5 = 1 (GPIOA-&gt;ODR bit 5) */</span></code></pre></div>
+<p>M0 · M0+ · M7 · M33 에는 비트밴딩이 없으므로 이식성이 있는 코드에서는 쓰지 않습니다. GPIO 는 BSRR 이 같은 목적을 더 이식성 있게 해결합니다 (<a href="t05.html">T05</a>).</p>
+<h2 id="dma-개념">DMA 개념<a class="anchor" href="#dma-개념">#</a></h2>
+<p><strong>DMA(Direct Memory Access)</strong> 는 코어를 거치지 않고 메모리 ↔ 주변장치, 메모리 ↔ 메모리 사이에서 데이터를 옮기는 별도의 마스터입니다. F411 에는 DMA1 · DMA2 두 컨트롤러가 있고 각각 <strong>8개 스트림</strong>, 스트림마다 <strong>8개 채널</strong> 중 하나를 고릅니다. 어떤 주변장치가 어느 스트림 · 채널에 붙는지는 RM0383 의 DMA 요청 매핑 표에 고정되어 있습니다.</p>
+<div class="table-wrap"><table><thead><tr><th>주변장치 요청</th><th>컨트롤러</th><th>스트림</th><th>채널</th></tr></thead><tbody><tr><td>USART2_RX</td><td>DMA1</td><td>5</td><td>4</td></tr><tr><td>USART2_TX</td><td>DMA1</td><td>6</td><td>4</td></tr><tr><td>I2C1_RX</td><td>DMA1</td><td>0 또는 5</td><td>1</td></tr><tr><td>SPI2_TX</td><td>DMA1</td><td>4</td><td>0</td></tr><tr><td>ADC1</td><td>DMA2</td><td>0 또는 4</td><td>0</td></tr><tr><td>TIM3_CH1</td><td>DMA1</td><td>4</td><td>5</td></tr><tr><td>메모리 → 메모리</td><td>DMA2 만</td><td>아무 스트림</td><td>—</td></tr></tbody></table></div>
+<p>DMA1 은 APB1 주변장치, DMA2 는 APB2 주변장치와 메모리 간 복사를 맡습니다. CubeMX 의 DMA 탭에서 "USART2_RX" 를 추가하면 이 표에 따라 스트림이 자동으로 정해집니다.</p>
+<p>전송이 끝나면 인터럽트(전송 완료 TC, 절반 완료 HT)가 나고, HAL 은 <code>HAL_UART_RxCpltCallback</code> 같은 콜백으로 알려 줍니다. <a href="l09.html">L09</a> 의 ADC 순환 DMA 가 대표적인 예입니다. ADC 가 변환할 때마다 DMA 가 <code>adc_buf[]</code> 에 값을 써 주므로 메인 루프는 배열만 읽으면 됩니다.</p>
+<div class="callout callout-warn"><div class="callout-title">DMA 와 캐시 · 정렬</div><div class="callout-body"><p>DMA 는 코어 레지스터가 아니라 <strong>메모리 주소</strong>를 봅니다. 그래서 DMA 버퍼는 지역 변수(스택, 함수가 끝나면 사라짐)가 아니라 전역 · <code>static</code> 으로 두고, 코어가 읽을 때는 <code>volatile</code> 로 선언합니다. Cortex-M7(F7 · H7)에서는 데이터 캐시 때문에 DMA 가 쓴 값이 코어에 보이지 않는 문제가 추가로 생기며, 캐시 무효화나 비캐시 영역(MPU)이 필요합니다. F4 에는 데이터 캐시가 없어 이 문제가 없습니다.</p></div></div>
+<h2 id="링커-스크립트와-메모리-섹션">링커 스크립트와 메모리 섹션<a class="anchor" href="#링커-스크립트와-메모리-섹션">#</a></h2>
+<p>컴파일러가 만든 오브젝트 파일에는 코드와 데이터가 <strong>섹션</strong> 단위로 들어 있고, 링커 스크립트(<code>STM32F411RETX_FLASH.ld</code>)가 각 섹션을 플래시와 SRAM 의 어느 주소에 놓을지 정합니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">text</span><span class="code-file">STM32F411RETX_FLASH.ld (요약)</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-text">_estack = ORIGIN(RAM) + LENGTH(RAM);     /* 0x2002_0000 = 스택 시작 (SRAM 끝) */
+_Min_Heap_Size  = 0x200;                 /* 힙 최소 512 B  (malloc 을 쓰면 늘려야 함) */
+_Min_Stack_Size = 0x400;                 /* 스택 최소 1 KB (링크 시 검사용) */
+
+MEMORY {
+  RAM   (xrw) : ORIGIN = 0x20000000, LENGTH = 128K
+  FLASH (rx)  : ORIGIN = 0x8000000,  LENGTH = 512K
+}
+
+SECTIONS {
+  .isr_vector : { KEEP(*(.isr_vector)) } &gt; FLASH      /* 벡터 테이블, 반드시 플래시 맨 앞 */
+  .text       : { *(.text*) }            &gt; FLASH      /* 코드 */
+  .rodata     : { *(.rodata*) }          &gt; FLASH      /* const 상수, 문자열 리터럴 */
+  _sidata = LOADADDR(.data);                          /* .data 초기값이 놓인 플래시 주소 */
+  .data       : { _sdata = .; *(.data*); _edata = .; } &gt; RAM AT&gt; FLASH   /* 초기값 있는 전역 변수 */
+  .bss        : { _sbss = .;  *(.bss*);  _ebss = .;  } &gt; RAM             /* 초기값 0 인 전역 변수 */
+  ._user_heap_stack : { . += _Min_Heap_Size; . += _Min_Stack_Size; } &gt; RAM
+}</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>섹션</th><th>무엇이 들어가나</th><th>어디에</th><th>예</th></tr></thead><tbody><tr><td><code>.isr_vector</code></td><td>벡터 테이블 (초기 SP + 핸들러 주소들)</td><td>플래시 맨 앞</td><td><code>g_pfnVectors</code></td></tr><tr><td><code>.text</code></td><td>기계어 코드</td><td>플래시</td><td>모든 함수, HAL 라이브러리</td></tr><tr><td><code>.rodata</code></td><td>읽기 전용 데이터</td><td>플래시</td><td><code>const uint8_t seg[10]</code>, <code>&quot;Hello\r\n&quot;</code></td></tr><tr><td><code>.data</code></td><td>초기값이 0 이 아닌 전역 · static 변수</td><td>SRAM (초기값은 플래시에)</td><td><code>int count = 5;</code></td></tr><tr><td><code>.bss</code></td><td>초기값이 0 이거나 없는 전역 · static 변수</td><td>SRAM (시작 때 0 으로 채움)</td><td><code>uint8_t rx_buf[64];</code></td></tr><tr><td>힙</td><td><code>malloc</code> 이 쓰는 영역</td><td>SRAM, <code>.bss</code> 뒤</td><td><code>printf</code> 의 <code>%f</code> 가 쓰기도 함</td></tr><tr><td>스택</td><td>지역 변수, 복귀 주소, 예외 프레임</td><td>SRAM 끝에서 아래로</td><td></td></tr></tbody></table></div>
+<p><code>Reset_Handler</code> 가 <code>_sidata</code> 에서 <code>_sdata</code>~<code>_edata</code> 로 복사하고 <code>_sbss</code>~<code>_ebss</code> 를 0 으로 채우는 코드가 바로 이 심볼들을 씁니다 (<a href="t02.html">T02</a> 리셋 절). 힙과 스택은 같은 빈 공간을 양쪽에서 쓰기 때문에, 스택이 깊어지거나 <code>malloc</code> 을 많이 하면 서로 침범합니다. 링커는 최소 크기만 검사할 뿐 실행 중 침범은 잡지 못합니다.</p>
+<h3 id="빌드-로그의-text-data-bss">빌드 로그의 text · data · bss<a class="anchor" href="#빌드-로그의-text-data-bss">#</a></h3>
+<p>CubeIDE 빌드 끝에 <code>arm-none-eabi-size</code> 가 이런 줄을 찍습니다. 시뮬레이터의 빌드 로그도 같은 형식을 흉내 냅니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">text</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-text">   text    data     bss     dec     hex filename
+  10236     116    1764   12116    2f54 project.elf</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>항목</th><th>뜻</th><th>차지하는 곳</th></tr></thead><tbody><tr><td><strong>text</strong></td><td><code>.isr_vector</code> + <code>.text</code> + <code>.rodata</code></td><td>플래시</td></tr><tr><td><strong>data</strong></td><td><code>.data</code> (초기값 있는 변수)</td><td>플래시(초기값) <strong>와</strong> SRAM(실행 중) 둘 다</td></tr><tr><td><strong>bss</strong></td><td><code>.bss</code> (0 초기화 변수)</td><td>SRAM 만</td></tr><tr><td>dec / hex</td><td>세 값의 합 (10진 · 16진), 실용적 의미는 적음</td><td></td></tr></tbody></table></div>
+<p>그러므로 <strong>플래시 사용량 = text + data</strong>, <strong>SRAM 사용량(정적) = data + bss</strong> 이고, 여기에 실행 중 힙과 스택이 더해집니다. 위 예라면 플래시 10,352 B (512 KB 의 2 %), SRAM 정적 1,880 B (128 KB 의 1.4 %) 입니다. <code>uint8_t big[100000];</code> 을 전역으로 선언하면 bss 가 100 KB 로 뛰고, 128 KB 를 넘으면 링커가 <code>region &#x27;RAM&#x27; overflowed</code> 오류를 냅니다.</p>
+<div class="callout callout-check"><div class="callout-title">스스로 확인</div><div class="callout-body"><ul><li><code>const char msg[] = &quot;hi&quot;;</code> 와 <code>char msg[] = &quot;hi&quot;;</code> 는 각각 어느 섹션에 들어갑니까? 플래시 · SRAM 사용량은 어떻게 다릅니까?</li><li><code>GPIOC-&gt;IDR</code> 의 절대 주소는? (GPIOC 베이스 + 오프셋)</li><li><code>RCC-&gt;APB1ENR</code> 의 bit 17 을 세우지 않고 <code>USART2-&gt;CR1</code> 에 쓰면 어떻게 됩니까?</li><li><code>int x = 0;</code> 을 전역으로 선언하면 data 와 bss 중 어디에 들어갑니까?</li></ul></div></div>
+<h2 id="자주-나는-오류와-해결">자주 나는 오류와 해결<a class="anchor" href="#자주-나는-오류와-해결">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인</th><th>해결</th></tr></thead><tbody><tr><td>레지스터에 값을 써도 0 으로 읽힘, 또는 HardFault</td><td>해당 주변장치 클럭(RCC-&gt;xxxENR)을 켜지 않음</td><td><code>__HAL_RCC_xxx_CLK_ENABLE()</code> 을 먼저. CubeMX 는 <code>MX_xxx_Init</code> 안에서 자동 처리</td></tr><tr><td>링크 오류 <code>region &#x27;RAM&#x27; overflowed by N bytes</code></td><td>전역 배열 · 버퍼가 SRAM 보다 큼</td><td>배열 크기 줄이기, 상수는 <code>const</code> 로 플래시에, 더 큰 칩 선택</td></tr><tr><td>링크 오류 <code>region &#x27;FLASH&#x27; overflowed</code></td><td>코드 + 상수가 플래시 초과 (<code>-O0</code>, printf float, 큰 폰트 · 이미지)</td><td><code>-Os</code>/<code>-O2</code>, 사용하지 않는 HAL 모듈 제외, 이미지는 압축</td></tr><tr><td>전역 변수 초기값이 이상함</td><td>링커 스크립트나 startup 을 다른 칩 것으로 씀 (<code>_sidata</code> 불일치)</td><td>CubeMX 가 만든 <code>.ld</code> · <code>startup_*.s</code> 를 그대로 사용</td></tr><tr><td>DMA 버퍼에 값이 안 들어옴</td><td>지역 변수(스택) 버퍼, 스트림 · 채널 매핑 오류</td><td>전역 · static <code>volatile</code> 버퍼, RM0383 DMA 매핑 표 확인</td></tr><tr><td>부트로더가 실행되지 않음</td><td>BOOT0 이 0 으로 고정 (Nucleo 는 CN7 의 BOOT0 핀을 VDD 에 연결해야 함)</td><td>BOOT0 = 1 로 두고 리셋, AN2606 의 부트로더 인터페이스 확인</td></tr><tr><td>애플리케이션 점프 후 인터럽트가 엉뚱한 곳으로</td><td>VTOR 를 새 벡터 테이블 주소로 바꾸지 않음</td><td><code>SCB-&gt;VTOR = APP_ADDR;</code> 후 <code>__DSB(); __ISB();</code></td></tr></tbody></table></div>
+<h2 id="과제">과제<a class="anchor" href="#과제">#</a></h2>
+<ol><li><code>GPIOB-&gt;BSRR</code>, <code>USART2-&gt;DR</code> (오프셋 0x04), <code>TIM3-&gt;CNT</code> (TIM3 베이스 0x4000_0400, CNT 오프셋 0x24), <code>RCC-&gt;AHB1ENR</code> 의 절대 주소를 계산하세요.</li><li><code>GPIOA-&gt;ODR</code> 비트 5 의 비트밴드 별칭 주소 계산을 직접 따라 하고, <code>GPIOC-&gt;ODR</code> 비트 13 (BluePill LED) 의 별칭 주소를 구하세요.</li><li>시뮬레이터에서 L03 예제를 빌드해 로그의 text · data · bss 를 적은 뒤, <code>uint32_t table[256] = {1};</code> 을 전역에 추가해 다시 빌드하고 어느 값이 얼마나 늘었는지, 왜 그런지 설명하세요. <code>static const</code> 로 바꾸면 어떻게 달라집니까?</li><li>RM0383 의 "Memory map" 표에서 I2C1, SPI1, ADC1, EXTI, SYSCFG 의 베이스 주소와 버스를 찾아 표로 정리하세요.</li><li>(실물) CubeIDE 의 Build Analyzer 를 열어 Memory Regions 와 Memory Details 탭에서 가장 큰 심볼 다섯 개를 찾고, 어떤 섹션에 들어 있는지 적으세요.</li></ol>
+<h2 id="참고자료">참고자료<a class="anchor" href="#참고자료">#</a></h2>
+<ul><li>ST, <em>RM0383 — STM32F411xC/E Reference Manual</em>, 2장 Memory and bus architecture, 3장 Embedded Flash memory interface, 6장 RCC (AHB1ENR · APB1ENR · APB2ENR), 9장 DMA</li><li>ST, <em>RM0008 — STM32F101xx … F107xx Reference Manual</em>, 2장 Memory and bus architecture (F1 비교)</li><li>ST, <em>PM0214 — Cortex-M4 programming manual</em>, 2.2 Memory model (비트밴딩, 정렬)</li><li>ST, <em>AN2606 — STM32 microcontroller system memory boot mode</em></li><li>ST, <em>AN4488 — Getting started with STM32F4xxxx MCU hardware development</em> (BOOT 핀)</li><li>GNU, <em>ld manual</em> — 링커 스크립트 문법 (<code>MEMORY</code>, <code>SECTIONS</code>, <code>AT&gt;</code>)</li><li>이 사이트의 <a href="l03.html">L03 GPIO 출력</a> (BSRR), <a href="l09.html">L09 ADC</a> (DMA)</li></ul>
+      <nav class="pager"><a class="pager-prev" href="t02.html"><span>이전 · T02</span>Cortex-M 코어 구조</a><a class="pager-next" href="t04.html"><span>다음 · T04</span>클럭과 리셋 시스템</a></nav>
+    </div>
+    <aside class="lesson-toc"><div class="toc-title">이 레슨의 내용</div><div class="toc-links"><a class="toc-l2" href="#학습-목표">학습 목표</a><a class="toc-l2" href="#4-gb-주소-공간">4 GB 주소 공간</a><a class="toc-l3" href="#stm32f411-의-실제-메모리">STM32F411 의 실제 메모리</a><a class="toc-l2" href="#부트-매핑">부트 매핑</a><a class="toc-l2" href="#버스-매트릭스와-클럭-게이팅">버스 매트릭스와 클럭 게이팅</a><a class="toc-l3" href="#클럭-게이팅">클럭 게이팅</a><a class="toc-l2" href="#레지스터-구조체-gpiotypedef-와-gpioa">레지스터 구조체: GPIO_TypeDef 와 GPIOA</a><a class="toc-l2" href="#리틀-엔디언과-정렬">리틀 엔디언과 정렬</a><a class="toc-l2" href="#비트밴딩-f1-f4">비트밴딩 (F1 · F4)</a><a class="toc-l2" href="#dma-개념">DMA 개념</a><a class="toc-l2" href="#링커-스크립트와-메모리-섹션">링커 스크립트와 메모리 섹션</a><a class="toc-l3" href="#빌드-로그의-text-data-bss">빌드 로그의 text · data · bss</a><a class="toc-l2" href="#자주-나는-오류와-해결">자주 나는 오류와 해결</a><a class="toc-l2" href="#과제">과제</a><a class="toc-l2" href="#참고자료">참고자료</a></div></aside>
+  </div>
+</article>
+
+</main>
+<script src="../assets/js/site.js"></script>
+</body>
+</html>

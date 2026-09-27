@@ -826,7 +826,7 @@ def index_page(cur: dict) -> str:
       <b>CubeMX로 핀을 설정</b>하고, 생성된 코드의 <code>USER CODE</code> 구역에 <b>HAL 코드</b>를 쓰고,
       브라우저 <b>시뮬레이터</b>에서 LED·버튼·LCD·모터 회로로 바로 실행해 봅니다.
       같은 코드를 STM32CubeIDE에 붙여 넣으면 <b>실물 Nucleo 보드</b>에서도 그대로 동작합니다.
-      GPIO부터 UART·타이머·PWM·ADC·I2C·SPI, 모터 제어와 미니 프로젝트까지 총 {total}개 레슨.
+      STM32 제품군·코어·메모리·클럭을 이해하는 PART 0 부터 GPIO·UART·타이머·PWM·ADC·I2C·SPI, 모터 제어와 미니 프로젝트까지 총 {total}개 레슨.
     </p>
     <div class="hero-cta">
       <a class="btn primary" href="lessons/{first}.html">{first_no}부터 시작</a>
@@ -854,7 +854,7 @@ def index_page(cur: dict) -> str:
 </header>
 
 <section class="facts">
-  <div class="fact"><div class="fact-n">{total}</div><div class="fact-l">레슨 (PART 1~4)</div></div>
+  <div class="fact"><div class="fact-n">{total}</div><div class="fact-l">레슨 (PART 0~4)</div></div>
   <div class="fact"><div class="fact-n">{nboards}</div><div class="fact-l">지원 보드 (Nucleo F411RE · F103RB · BluePill)</div></div>
   <div class="fact"><div class="fact-n">{ndev}</div><div class="fact-l">종 주변기기 노드 (LED · LCD · 모터 …)</div></div>
   <div class="fact"><div class="fact-n">{napi}</div><div class="fact-l">개 HAL API 에뮬레이션</div></div>

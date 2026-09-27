@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T05. GPIO 내부 구조와 전기 특성 · studySTM32</title>
+<meta name="description" content="핀 한 개의 회로(슈미트 입력, 풀업·풀다운, 푸시풀·오픈드레인 드라이버, AF 멀티플렉서), MODER~AFR 레지스터와 F1 의 CRL·CRH, BSRR 의 원자성, 전기 특성과 시리즈 저항 계산, 외부 회로 연결을 다룹니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
+<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="../assets/css/stm32.css">
+<link rel="stylesheet" href="../assets/css/ml-theme.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
+<script src="../assets/js/theme.js"></script>
+</head>
+<body class="lesson-page track-page-theory">
+<button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
+<aside class="sidebar" id="sidebar">
+<nav class="sidebar-nav">
+<div class="brand-row"><a class="brand" href="../index.html"><span class="brand-mark">32</span><span class="brand-text">studySTM32<small>STM32 HAL 인터랙티브 강좌</small></span></a></div>
+<div class="side-tools"><a class="side-tool" href="../sim/index.html">시뮬레이터</a><a class="side-tool" href="../lessons/hal-reference.html">HAL 레퍼런스</a></div>
+<div class="nav-track" data-track="theory">
+<div class="nav-track-title track-theory"><span class="nav-part-no">PART 0</span>STM32 이해하기</div>
+<ul>
+<li><a href="../lessons/t01.html" data-slug="t01"><span class="nav-no">T01</span>STM32 제품군 총람</a></li>
+<li><a href="../lessons/t02.html" data-slug="t02"><span class="nav-no">T02</span>Cortex-M 코어 구조</a></li>
+<li><a href="../lessons/t03.html" data-slug="t03"><span class="nav-no">T03</span>메모리 맵과 버스</a></li>
+<li><a href="../lessons/t04.html" data-slug="t04"><span class="nav-no">T04</span>클럭과 리셋 시스템</a></li>
+<li><a href="../lessons/t05.html" class="active" data-slug="t05"><span class="nav-no">T05</span>GPIO 내부 구조와 전기 특성</a></li>
+<li><a href="../lessons/t06.html" data-slug="t06"><span class="nav-no">T06</span>인터럽트·예외와 NVIC</a></li>
+<li><a href="../lessons/t07.html" data-slug="t07"><span class="nav-no">T07</span>타이머 구조</a></li>
+<li><a href="../lessons/t08.html" data-slug="t08"><span class="nav-no">T08</span>통신 인터페이스 원리</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="basics">
+<div class="nav-track-title track-basics"><span class="nav-part-no">PART 1</span>시작하기</div>
+<ul>
+<li><a href="../lessons/l01.html" data-slug="l01"><span class="nav-no">L01</span>STM32 시리즈와 개발 환경</a></li>
+<li><a href="../lessons/l02.html" data-slug="l02"><span class="nav-no">L02</span>시뮬레이터 둘러보기와 첫 프로젝트</a></li>
+<li><a href="../lessons/l03.html" data-slug="l03"><span class="nav-no">L03</span>GPIO 출력 — LED</a></li>
+<li><a href="../lessons/l04.html" data-slug="l04"><span class="nav-no">L04</span>GPIO 입력 — 스위치</a></li>
+<li><a href="../lessons/l05.html" data-slug="l05"><span class="nav-no">L05</span>외부 인터럽트 EXTI</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="comm">
+<div class="nav-track-title track-comm"><span class="nav-part-no">PART 2</span>통신·타이머·아날로그</div>
+<ul>
+<li><a href="../lessons/l06.html" data-slug="l06"><span class="nav-no">L06</span>UART와 printf</a></li>
+<li><a href="../lessons/l07.html" data-slug="l07"><span class="nav-no">L07</span>타이머 인터럽트</a></li>
+<li><a href="../lessons/l08.html" data-slug="l08"><span class="nav-no">L08</span>PWM — LED 밝기와 서보</a></li>
+<li><a href="../lessons/l09.html" data-slug="l09"><span class="nav-no">L09</span>ADC — 가변저항·조도센서</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="periph">
+<div class="nav-track-title track-periph"><span class="nav-part-no">PART 3</span>주변기기</div>
+<ul>
+<li><a href="../lessons/l10.html" data-slug="l10"><span class="nav-no">L10</span>I2C와 LCD1602</a></li>
+<li><a href="../lessons/l11.html" data-slug="l11"><span class="nav-no">L11</span>SPI 기초</a></li>
+<li><a href="../lessons/l12.html" data-slug="l12"><span class="nav-no">L12</span>7세그먼트 FND</a></li>
+<li><a href="../lessons/l13.html" data-slug="l13"><span class="nav-no">L13</span>DC 모터 드라이버</a></li>
+<li><a href="../lessons/l14.html" data-slug="l14"><span class="nav-no">L14</span>스텝모터</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="project">
+<div class="nav-track-title track-project"><span class="nav-part-no">PART 4</span>프로젝트</div>
+<ul>
+<li><a href="../lessons/l15.html" data-slug="l15"><span class="nav-no">L15</span>미니 프로젝트: 스마트 선풍기</a></li>
+<li><a href="../lessons/l16.html" data-slug="l16"><span class="nav-no">L16</span>실물 보드로 옮기기</a></li>
+</ul>
+</div>
+</nav>
+</aside>
+<div class="sidebar-scrim" id="scrim"></div>
+<main class="main">
+<header class="topbar"><a class="topbar-brand" href="../index.html"><span class="brand-mark">32</span>studySTM32</a><nav class="topnav" aria-label="사이트 메뉴"><a href="../index.html">강의 홈</a><a href="../sim/index.html">시뮬레이터</a><a href="../lessons/hal-reference.html">HAL 레퍼런스</a></nav><button class="theme-icon" type="button" data-theme-toggle data-theme-icon aria-label="테마 전환"></button></header>
+
+<article class="lesson" data-slug="t05" data-track="theory">
+  <div class="lesson-head">
+    <div class="crumbs"><span class="track-pill track-theory">PART 0</span> STM32 이해하기 &middot; 약 55분 &middot; 기초</div>
+    <h1><span class="lesson-no">T05</span>GPIO 내부 구조와 전기 특성</h1>
+    <p class="lede">핀 한 개의 회로(슈미트 입력, 풀업·풀다운, 푸시풀·오픈드레인 드라이버, AF 멀티플렉서), MODER~AFR 레지스터와 F1 의 CRL·CRH, BSRR 의 원자성, 전기 특성과 시리즈 저항 계산, 외부 회로 연결을 다룹니다.</p>
+    <div class="requires">선수 레슨: <a href="t03.html">T03</a></div>
+    <div class="lesson-actions">
+      <label class="done-toggle"><input type="checkbox" id="doneCheck"><span>학습 완료로 표시</span></label>
+      <a class="ghost-btn tool-sim" href="../sim/index.html?ex=l03-bsrr" data-sim-src="../sim/index.html?ex=l03-bsrr&amp;embed=1">시뮬레이터에서 실습</a>
+    </div>
+  </div>
+  <div class="lesson-grid">
+    <div class="lesson-body">
+<h2 id="학습-목표">학습 목표<a class="anchor" href="#학습-목표">#</a></h2>
+<ul><li>GPIO 핀 한 개의 내부 회로(슈미트 트리거 입력, 풀업 · 풀다운, P/N MOSFET 출력 드라이버, AF 멀티플렉서, 아날로그 스위치)를 그림으로 설명할 수 있습니다.</li><li>MODER · OTYPER · OSPEEDR · PUPDR · IDR · ODR · BSRR · AFRL/AFRH 레지스터(F4)와 CRL · CRH (F1)의 비트 배치를 읽고 쓸 수 있습니다.</li><li>BSRR 이 왜 원자적인지, ODR 읽기-수정-쓰기가 왜 위험한지 설명할 수 있습니다.</li><li>출력 속도(슬루레이트)와 EMI, VIL/VIH, 핀당 · 총 전류 한계, 5 V 톨러런트(FT) 핀의 뜻을 알고, LED 시리즈 저항을 계산할 수 있습니다.</li><li>오픈드레인이 I2C 와 레벨 변환에 필요한 이유, 스위치 디바운스, 트랜지스터 · 릴레이 · 레벨 시프터로 외부 회로를 잇는 법을 압니다.</li></ul>
+<h2 id="핀-한-개의-회로">핀 한 개의 회로<a class="anchor" href="#핀-한-개의-회로">#</a></h2>
+<figure class="fig" id="fig-gpio-pin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 366" role="img" aria-label="STM32 GPIO 핀 한 개의 내부 회로 (RM0383 그림 기준 단순화)" font-family="var(--sans)" font-size="12">
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--text-dim)"/></marker></defs>
+<line x1="80" y1="30" x2="700" y2="30" stroke="var(--text-dim)" stroke-width="1.5"/>
+<text x="70" y="34" font-size="11" fill="var(--text-dim)" text-anchor="end" font-family="var(--mono)" font-weight="700">VDD</text>
+<line x1="80" y1="318" x2="700" y2="318" stroke="var(--text-dim)" stroke-width="1.5"/>
+<text x="70" y="322" font-size="11" fill="var(--text-dim)" text-anchor="end" font-family="var(--mono)" font-weight="700">VSS</text>
+<circle cx="660" cy="174" r="14" fill="var(--bg-elev)" stroke="var(--accent)" stroke-width="2"/>
+<text x="660" y="178" font-size="9.5" fill="var(--accent)" text-anchor="middle" font-family="var(--mono)" font-weight="700">I/O</text>
+<text x="660" y="205" font-size="11.5" fill="var(--text)" text-anchor="middle" font-weight="700">PA5 핀</text>
+<line x1="560" y1="174" x2="646" y2="174" stroke="var(--text)" stroke-width="2"/>
+<line x1="610" y1="30" x2="610" y2="174" stroke="var(--border)" stroke-width="1.2"/>
+<line x1="610" y1="174" x2="610" y2="318" stroke="var(--border)" stroke-width="1.2"/>
+<path d="M604 60 L616 60 L610 48 Z" fill="var(--text-dim)"/>
+<path d="M604 300 L616 300 L610 288 Z" fill="var(--text-dim)"/>
+<text x="620" y="56" font-size="10" fill="var(--text-faint)">보호 다이오드</text>
+<text x="620" y="296" font-size="10" fill="var(--text-faint)">(FT 핀은 위쪽 없음)</text>
+<line x1="560" y1="30" x2="560" y2="60" stroke="var(--border)" stroke-width="1.5"/>
+<rect x="553" y="60" width="14" height="34" rx="2" fill="var(--bg-elev-2)" stroke="var(--text-dim)" />
+<text x="548" y="82" font-size="10" fill="var(--text-dim)" text-anchor="end">풀업 40 kΩ</text>
+<line x1="560" y1="94" x2="560" y2="110" stroke="var(--border)" stroke-width="1.5"/>
+<line x1="560" y1="110" x2="572" y2="126" stroke="var(--text-dim)" stroke-width="1.5"/>
+<line x1="560" y1="130" x2="560" y2="174" stroke="var(--border)" stroke-width="1.5"/>
+<text x="548" y="124" font-size="10" fill="var(--accent)" text-anchor="end" font-family="var(--mono)">PUPDR</text>
+<line x1="560" y1="174" x2="560" y2="220" stroke="var(--border)" stroke-width="1.5"/>
+<line x1="560" y1="220" x2="572" y2="236" stroke="var(--text-dim)" stroke-width="1.5"/>
+<line x1="560" y1="240" x2="560" y2="254" stroke="var(--border)" stroke-width="1.5"/>
+<rect x="553" y="254" width="14" height="34" rx="2" fill="var(--bg-elev-2)" stroke="var(--text-dim)" />
+<text x="548" y="274" font-size="10" fill="var(--text-dim)" text-anchor="end">풀다운</text>
+<text x="574" y="274" font-size="10" fill="var(--text-dim)">40 kΩ</text>
+<line x1="560" y1="288" x2="560" y2="318" stroke="var(--border)" stroke-width="1.5"/>
+<line x1="560" y1="174" x2="480" y2="174" stroke="var(--border)" stroke-width="1.5"/>
+<line x1="480" y1="174" x2="480" y2="120" stroke="var(--border)" stroke-width="1.5"/>
+<line x1="480" y1="120" x2="468" y2="120" stroke="var(--border)" stroke-width="1.5"/>
+<path d="M468 104 L468 136 L436 120 Z" fill="var(--bg-elev-2)" stroke="var(--border)" stroke-width="1.5"/>
+<text x="452" y="96" font-size="10" fill="var(--text-dim)" text-anchor="middle">TTL 슈미트 트리거</text>
+<line x1="436" y1="120" x2="400" y2="120" stroke="var(--text-dim)" stroke-width="1.5"/>
+<line x1="400" y1="120" x2="400" y2="100" stroke="var(--text-dim)" stroke-width="1.5"/>
+<line x1="400" y1="100" x2="372" y2="100" stroke="var(--text-dim)" stroke-width="1.5" marker-end="url(#ar)"/>
+<line x1="400" y1="120" x2="400" y2="140" stroke="var(--text-dim)" stroke-width="1.5"/>
+<line x1="400" y1="140" x2="372" y2="140" stroke="var(--text-dim)" stroke-width="1.5" marker-end="url(#ar)"/>
+<rect x="222" y="86" width="150" height="28" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="297.0" y="103.83333333333333" font-size="11.5" fill="var(--text)" text-anchor="middle" font-weight="700">입력 데이터 IDR</text>
+<rect x="222" y="126" width="150" height="28" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="297.0" y="143.33333333333334" font-size="10" fill="var(--text)" text-anchor="middle" font-weight="700">AF 입력 (USART_RX · EXTI …)</text>
+<text x="222" y="74" font-size="10.5" fill="var(--text-faint)">읽기 경로 (입력·AF 모드에서만 켜짐)</text>
+<rect x="40" y="180" width="118" height="28" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="99.0" y="197.83333333333334" font-size="11.5" fill="var(--text)" text-anchor="middle" font-weight="700">ODR · BSRR</text>
+<rect x="40" y="220" width="118" height="28" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="99.0" y="237.5" font-size="10.5" fill="var(--text)" text-anchor="middle" font-weight="700">AF 출력 (TIM_CH, TX …)</text>
+<line x1="158" y1="194" x2="190" y2="194" stroke="var(--text-dim)" stroke-width="1.5" marker-end="url(#ar)"/>
+<line x1="158" y1="234" x2="190" y2="234" stroke="var(--text-dim)" stroke-width="1.5" marker-end="url(#ar)"/>
+<rect x="190" y="180" width="96" height="68" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="238" y="208" font-size="11.5" fill="var(--text)" text-anchor="middle" font-weight="700">출력 제어</text>
+<text x="238" y="226" font-size="10" fill="var(--text-dim)" text-anchor="middle">MODER 로 선택</text>
+<text x="238" y="240" font-size="10" fill="var(--text-dim)" text-anchor="middle">OTYPER · OSPEEDR</text>
+<line x1="286" y1="214" x2="330" y2="214" stroke="var(--text-dim)" stroke-width="1.5" marker-end="url(#ar)"/>
+<line x1="340" y1="30" x2="340" y2="160" stroke="var(--border)" stroke-width="1.5"/>
+<rect x="326" y="160" width="28" height="40" rx="4" fill="var(--accent-soft)" stroke="var(--accent)" />
+<text x="340" y="184" font-size="12" fill="var(--accent)" text-anchor="middle" font-family="var(--mono)" font-weight="700">P</text>
+<line x1="340" y1="200" x2="340" y2="232" stroke="var(--text)" stroke-width="2"/>
+<rect x="326" y="232" width="28" height="40" rx="4" fill="var(--accent-soft)" stroke="var(--accent)" />
+<text x="340" y="256" font-size="12" fill="var(--accent)" text-anchor="middle" font-family="var(--mono)" font-weight="700">N</text>
+<line x1="340" y1="272" x2="340" y2="318" stroke="var(--border)" stroke-width="1.5"/>
+<line x1="340" y1="216" x2="480" y2="216" stroke="var(--text)" stroke-width="2"/>
+<line x1="480" y1="216" x2="480" y2="174" stroke="var(--text)" stroke-width="2"/>
+<text x="360" y="172" font-size="10" fill="var(--text-dim)">P-MOS → 1 (VDD)</text>
+<text x="360" y="268" font-size="10" fill="var(--text-dim)">N-MOS → 0 (VSS)</text>
+<text x="16" y="340" font-size="10" fill="var(--accent)">푸시풀 = P·N 모두 사용 (1 = VDD, 0 = VSS)  /  오픈드레인 = N 만 사용 (0 = VSS, 1 = 끊김 Hi-Z → 외부 풀업 필요)</text>
+<line x1="500" y1="174" x2="500" y2="300" stroke="var(--border)" stroke-width="1.5" stroke-dasharray="4 3"/>
+<line x1="500" y1="300" x2="372" y2="300" stroke="var(--border)" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#ar)"/>
+<rect x="222" y="286" width="150" height="28" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="297.0" y="303.6666666666667" font-size="11" fill="var(--text)" text-anchor="middle" font-weight="700">아날로그 ADC · DAC</text>
+<text x="16" y="356" font-size="10" fill="var(--text-faint)">아날로그 모드: 슈미트·풀업·풀다운을 모두 끄고 핀을 직접 연결 (소비 전류 최소)</text>
+</svg><figcaption>GPIO 한 핀의 구조. 위쪽이 읽기(입력) 경로, 아래쪽이 출력 드라이버, 오른쪽 끝이 실제 핀입니다. RM0383 "Basic structure of a 5-volt tolerant I/O port bit" 그림을 단순화했습니다.</figcaption></figure>
+<p>핀 하나에는 생각보다 많은 회로가 있습니다. 각 블록의 역할은 다음과 같습니다.</p>
+<div class="table-wrap"><table><thead><tr><th>블록</th><th>역할</th><th>제어 레지스터</th></tr></thead><tbody><tr><td><strong>보호 다이오드</strong></td><td>핀 전압이 VDD + 0.3 V 를 넘거나 VSS − 0.3 V 아래로 가면 전류를 흘려 보냄. FT 핀은 위쪽 다이오드 대신 다른 구조를 써서 5 V 를 견딤</td><td>—</td></tr><tr><td><strong>풀업 · 풀다운 저항</strong></td><td>약 40 kΩ (30~50 kΩ). 입력이 떠 있지 않게 기본 레벨을 잡음</td><td>PUPDR</td></tr><tr><td><strong>TTL 슈미트 트리거</strong></td><td>입력 전압을 0/1 로 판정. 히스테리시스(약 0.1 × VDD)가 있어 잡음이 낀 느린 신호도 한 번만 바뀜</td><td>MODER (아날로그 모드에서 꺼짐)</td></tr><tr><td><strong>입력 데이터 레지스터 IDR</strong></td><td>슈미트 출력을 매 AHB 클럭마다 래치. 읽으면 "지금" 핀 상태</td><td>IDR (읽기 전용)</td></tr><tr><td><strong>AF 입력</strong></td><td>슈미트 출력을 USART_RX · TIM_CH(입력 캡처) · EXTI 등 주변장치로 보냄</td><td>MODER = AF, AFR</td></tr><tr><td><strong>출력 데이터 ODR · BSRR</strong></td><td>출력 레벨 저장</td><td>ODR, BSRR</td></tr><tr><td><strong>AF 출력</strong></td><td>주변장치(TIM_CH PWM · USART_TX · SPI_SCK)가 출력 레벨을 결정</td><td>MODER = AF, AFR</td></tr><tr><td><strong>출력 제어 + P/N MOSFET</strong></td><td>푸시풀: 1 이면 P-MOS 가 VDD 로, 0 이면 N-MOS 가 VSS 로. 오픈드레인: N-MOS 만 (1 = 끊김)</td><td>OTYPER, OSPEEDR</td></tr><tr><td><strong>아날로그 스위치</strong></td><td>디지털 회로를 모두 끊고 핀을 ADC · DAC 에 직결</td><td>MODER = 아날로그</td></tr></tbody></table></div>
+<p>리셋 직후 대부분의 핀은 <strong>플로팅 입력(MODER = 00, PUPDR = 00)</strong> 입니다. 떠 있는 입력은 주변 잡음에 따라 0/1 을 오가며 슈미트 트리거가 계속 뒤집혀 전류를 조금 더 먹으므로, 안 쓰는 핀은 CubeMX 기본대로 아날로그 모드로 두는 것이 좋습니다. 예외는 디버그 핀입니다. PA13 (SWDIO) 은 풀업, PA14 (SWCLK) 은 풀다운, PA15 · PB4 (JTAG) 는 풀업으로 시작합니다.</p>
+<h2 id="레지스터-f4">레지스터 (F4)<a class="anchor" href="#레지스터-f4">#</a></h2>
+<p>포트마다 아래 레지스터 한 벌이 있습니다. 핀 16개를 다루므로 <strong>2비트 필드는 32비트에 16핀, 4비트 필드(AFR)는 두 레지스터에 8핀씩</strong> 들어갑니다.</p>
+<div class="table-wrap regmap"><table><thead><tr><th>레지스터</th><th>오프셋</th><th>핀당 비트</th><th>값</th><th>리셋값</th></tr></thead><tbody><tr><td><strong>MODER</strong></td><td>0x00</td><td>2</td><td>00 입력, 01 범용 출력, 10 대체 기능(AF), 11 아날로그</td><td>0 (PA: 0xA800_0000 — 디버그 핀 AF)</td></tr><tr><td><strong>OTYPER</strong></td><td>0x04</td><td>1</td><td>0 푸시풀, 1 오픈드레인</td><td>0</td></tr><tr><td><strong>OSPEEDR</strong></td><td>0x08</td><td>2</td><td>00 낮음, 01 중간, 10 빠름, 11 매우 빠름</td><td>0 (PA13 은 11)</td></tr><tr><td><strong>PUPDR</strong></td><td>0x0C</td><td>2</td><td>00 없음, 01 풀업, 10 풀다운, 11 예약</td><td>0 (PA: 0x6400_0000 — PA13 풀업, PA14 풀다운)</td></tr><tr><td><strong>IDR</strong></td><td>0x10</td><td>1</td><td>읽기 전용, 핀의 현재 레벨</td><td>—</td></tr><tr><td><strong>ODR</strong></td><td>0x14</td><td>1</td><td>출력 레벨. 읽고 수정하고 쓰기 가능</td><td>0</td></tr><tr><td><strong>BSRR</strong></td><td>0x18</td><td>2 (하위 16 = set, 상위 16 = reset)</td><td>쓰기 전용. 1 을 쓴 비트만 동작, 0 은 무시</td><td>—</td></tr><tr><td><strong>LCKR</strong></td><td>0x1C</td><td>1 + LCKK</td><td>설정 잠금 (리셋 전까지 MODER 등 변경 불가)</td><td>0</td></tr><tr><td><strong>AFRL</strong></td><td>0x20</td><td>4 (핀 0~7)</td><td>AF0 ~ AF15</td><td>0</td></tr><tr><td><strong>AFRH</strong></td><td>0x24</td><td>4 (핀 8~15)</td><td>AF0 ~ AF15</td><td>0</td></tr></tbody></table></div>
+<p>PA6 을 TIM3_CH1 PWM 출력으로 설정하는 예를 레지스터로 쓰면 다음과 같습니다. <code>HAL_GPIO_Init()</code> 이 내부에서 하는 일과 같습니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-h">__HAL_RCC_GPIOA_CLK_ENABLE</span>();
+<span class="tk-m">GPIOA</span>-&gt;<span class="tk-m">MODER</span>   = (<span class="tk-m">GPIOA</span>-&gt;<span class="tk-m">MODER</span>   &amp; ~(<span class="tk-n">3U</span> &lt;&lt; (<span class="tk-n">6</span> * <span class="tk-n">2</span>))) | (<span class="tk-n">2U</span> &lt;&lt; (<span class="tk-n">6</span> * <span class="tk-n">2</span>));   <span class="tk-c">/* PA6: 10 = AF        */</span>
+<span class="tk-m">GPIOA</span>-&gt;<span class="tk-m">OTYPER</span> &amp;= ~(<span class="tk-n">1U</span> &lt;&lt; <span class="tk-n">6</span>);                                             <span class="tk-c">/* 푸시풀               */</span>
+<span class="tk-m">GPIOA</span>-&gt;<span class="tk-m">OSPEEDR</span> = (<span class="tk-m">GPIOA</span>-&gt;<span class="tk-m">OSPEEDR</span> &amp; ~(<span class="tk-n">3U</span> &lt;&lt; (<span class="tk-n">6</span> * <span class="tk-n">2</span>))) | (<span class="tk-n">0U</span> &lt;&lt; (<span class="tk-n">6</span> * <span class="tk-n">2</span>));  <span class="tk-c">/* 낮은 속도 (1 kHz PWM 에 충분) */</span>
+<span class="tk-m">GPIOA</span>-&gt;<span class="tk-m">PUPDR</span>  &amp;= ~(<span class="tk-n">3U</span> &lt;&lt; (<span class="tk-n">6</span> * <span class="tk-n">2</span>));                                       <span class="tk-c">/* 풀업 · 풀다운 없음    */</span>
+<span class="tk-m">GPIOA</span>-&gt;<span class="tk-m">AFR</span>[<span class="tk-n">0</span>]  = (<span class="tk-m">GPIOA</span>-&gt;<span class="tk-m">AFR</span>[<span class="tk-n">0</span>]  &amp; ~(<span class="tk-n">0xFU</span> &lt;&lt; (<span class="tk-n">6</span> * <span class="tk-n">4</span>))) | (<span class="tk-n">2U</span> &lt;&lt; (<span class="tk-n">6</span> * <span class="tk-n">4</span>)); <span class="tk-c">/* AF2 = TIM3~5        */</span></code></pre></div>
+<p>AF 번호는 핀마다가 아니라 <strong>주변장치 그룹마다</strong> 정해져 있습니다 (F4 공통). 어느 핀에 어느 AF 가 있는지는 데이터시트의 "Alternate function mapping" 표에 있고, CubeMX 가 핀을 클릭하면 보여 주는 목록이 그 표입니다.</p>
+<div class="table-wrap"><table><thead><tr><th>AF</th><th>주변장치 (F411)</th><th>AF</th><th>주변장치</th></tr></thead><tbody><tr><td>AF0</td><td>SYS (SWD · JTAG · MCO · RTC)</td><td>AF7</td><td>USART1 · USART2</td></tr><tr><td>AF1</td><td>TIM1 · TIM2</td><td>AF8</td><td>USART6</td></tr><tr><td>AF2</td><td>TIM3 · TIM4 · TIM5</td><td>AF9</td><td>I2C2 · I2C3 (대체 핀)</td></tr><tr><td>AF3</td><td>TIM9 · TIM10 · TIM11</td><td>AF10</td><td>USB OTG FS</td></tr><tr><td>AF4</td><td>I2C1 · I2C2 · I2C3</td><td>AF12</td><td>SDIO</td></tr><tr><td>AF5</td><td>SPI1 · SPI2 · SPI4 · I2S</td><td>AF15</td><td>EVENTOUT</td></tr><tr><td>AF6</td><td>SPI3 · SPI5</td><td></td><td></td></tr></tbody></table></div>
+<h3 id="f1-의-crl-crh">F1 의 CRL · CRH<a class="anchor" href="#f1-의-crl-crh">#</a></h3>
+<p>F103 은 같은 정보를 <strong>핀당 4비트(CNF 2비트 + MODE 2비트)</strong> 로 CRL(핀 0~7) · CRH(핀 8~15) 에 넣습니다.</p>
+<div class="table-wrap"><table><thead><tr><th>MODE[1:0]</th><th>뜻</th><th>CNF[1:0] (입력일 때)</th><th>CNF[1:0] (출력일 때)</th></tr></thead><tbody><tr><td>00</td><td>입력</td><td>00 아날로그, 01 플로팅, 10 풀업/풀다운 (ODR 비트로 선택), 11 예약</td><td>—</td></tr><tr><td>01</td><td>출력 10 MHz</td><td>—</td><td>00 푸시풀, 01 오픈드레인, 10 AF 푸시풀, 11 AF 오픈드레인</td></tr><tr><td>10</td><td>출력 2 MHz</td><td>—</td><td>위와 같음</td></tr><tr><td>11</td><td>출력 50 MHz</td><td>—</td><td>위와 같음</td></tr></tbody></table></div>
+<p>풀업과 풀다운을 <strong>ODR 비트로 고르는 것</strong>(1 = 풀업, 0 = 풀다운)이 F1 의 특이한 점이고, AF 핀 배치는 AFR 대신 <code>AFIO-&gt;MAPR</code> 의 리맵 비트로 통째로 옮깁니다. F1 에는 <code>BRR</code> (비트 리셋 전용) 레지스터가 따로 있습니다. HAL 은 이 차이를 <code>HAL_GPIO_Init</code> 안에 감춰 두었으므로 사용자 코드는 같습니다.</p>
+<h2 id="bsrr-이-원자적인-이유">BSRR 이 원자적인 이유<a class="anchor" href="#bsrr-이-원자적인-이유">#</a></h2>
+<p>ODR 로 PA5 를 켜는 코드는 <strong>읽기 → 수정 → 쓰기</strong> 세 명령입니다 (<a href="t02.html">T02</a>).</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">text</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-text">GPIOA-&gt;ODR |= (1 &lt;&lt; 5);          ldr r3,[r2,#0x14]  → orr r3,#0x20 → str r3,[r2,#0x14]</code></pre></div>
+<p><code>ldr</code> 과 <code>str</code> 사이에 인터럽트가 들어와 같은 포트의 <strong>다른 핀</strong>(예: PA6)을 바꾸면, 인터럽트가 끝난 뒤 <code>str</code> 이 인터럽트 전의 낡은 값을 덮어써 PA6 의 변경이 사라집니다. 메인 루프와 ISR 이 같은 포트를 쓰는 프로그램이라면 반드시 생기는 경쟁 조건입니다.</p>
+<p><strong>BSRR</strong> 은 쓰기 한 명령으로 끝납니다. 하위 16비트에 1 을 쓰면 해당 핀이 set, 상위 16비트에 1 을 쓰면 reset 되며, 0 을 쓴 비트는 <strong>손대지 않습니다.</strong> 읽을 필요가 없으니 끼어들 틈이 없습니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-m">GPIOA</span>-&gt;<span class="tk-m">BSRR</span> = (<span class="tk-n">1U</span> &lt;&lt; <span class="tk-n">5</span>);          <span class="tk-c">/* PA5 = 1 (set)   — str 한 명령 */</span>
+<span class="tk-m">GPIOA</span>-&gt;<span class="tk-m">BSRR</span> = (<span class="tk-n">1U</span> &lt;&lt; (<span class="tk-n">5</span> + <span class="tk-n">16</span>));   <span class="tk-c">/* PA5 = 0 (reset) */</span>
+<span class="tk-m">GPIOA</span>-&gt;<span class="tk-m">BSRR</span> = (<span class="tk-n">1U</span> &lt;&lt; <span class="tk-n">6</span>) | (<span class="tk-n">1U</span> &lt;&lt; (<span class="tk-n">7</span> + <span class="tk-n">16</span>));   <span class="tk-c">/* PA6 = 1 과 PA7 = 0 을 같은 순간에 */</span></code></pre></div>
+<ul><li>같은 비트에 set 과 reset 을 동시에 쓰면 F4 에서는 <strong>set 이 우선</strong>입니다 (RM0383).</li><li>여러 핀을 한 번에 바꿔야 하는 7세그먼트 · 병렬 버스(<a href="l12.html">L12</a>)에서는 "겹치는 중간 상태" 가 없다는 장점도 있습니다.</li><li><code>HAL_GPIO_WritePin()</code> 은 내부에서 BSRR 을 씁니다. <code>HAL_GPIO_TogglePin()</code> 은 ODR 을 읽어 BSRR 에 쓰는 형태라 완전히 원자적이지는 않습니다(F4 HAL 의 구현에 따라 다름).</li></ul>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l03-bsrr" data-sim-src="../sim/index.html?ex=l03-bsrr&amp;embed=1" data-sim-id="l03-bsrr"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">BSRR 로 LED 켜고 끄기 예제 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l03-bsrr" target="_blank" rel="noopener">새 창</a><code class="sim-id">l03-bsrr</code></div>
+<p>시뮬레이터의 파형 탭에서 PA5 가 바뀌는 순간을 보며, 예제의 <code>GPIOA-&gt;BSRR</code> 줄을 <code>GPIOA-&gt;ODR |=</code> 로 바꿔도 이 단순한 예제에서는 결과가 같다는 것, 그러나 EXTI 콜백이 같은 포트를 건드리면 달라질 수 있다는 것을 생각해 보세요.</p>
+<h2 id="출력-속도와-emi">출력 속도와 EMI<a class="anchor" href="#출력-속도와-emi">#</a></h2>
+<p>OSPEEDR 은 출력 드라이버의 <strong>슬루레이트(전압이 바뀌는 속도)</strong> 를 정합니다. "속도" 는 최대 토글 주파수가 아니라 상승 · 하강 시간을 뜻합니다.</p>
+<div class="table-wrap"><table><thead><tr><th>OSPEEDR</th><th>이름</th><th>최대 주파수 (3.3 V, 부하 50 pF 기준, 대략)</th><th>상승 · 하강 시간 (대략)</th><th>알맞은 용도</th></tr></thead><tbody><tr><td>00</td><td>낮음</td><td>수 MHz</td><td>100 ns 급</td><td>LED, 버튼, 릴레이, 느린 I2C</td></tr><tr><td>01</td><td>중간</td><td>수십 MHz</td><td>10 ns 급</td><td>400 kHz I2C, 1 Mbps UART, 저속 SPI</td></tr><tr><td>10</td><td>빠름</td><td>50 MHz 급</td><td>6 ns 급</td><td>10 MHz 이상 SPI</td></tr><tr><td>11</td><td>매우 빠름</td><td>100 MHz 급 (VDD ≥ 2.7 V, 30 pF)</td><td>4 ns 급</td><td>SDIO · 고속 SPI · 병렬 LCD</td></tr></tbody></table></div>
+<p>정확한 값은 DS10314 의 "I/O AC characteristics" 표에 전압 · 부하 커패시턴스별로 있습니다.</p>
+<p>빠르게 설정할수록 <strong>에지가 가팔라져</strong> 고조파가 늘고, 배선에서 링잉 · 오버슈트가 생기며 다른 핀과 전원에 잡음을 넣습니다(EMI). 1 kHz PWM 을 100 MHz 설정으로 내보낼 이유는 없습니다. CubeMX 기본값은 "Low" 이고, 통신 핀은 CubeMX 가 주변장치 속도에 맞춰 올려 줍니다. 원칙은 <strong>필요한 만큼만 빠르게</strong> 입니다.</p>
+<h2 id="전기-특성">전기 특성<a class="anchor" href="#전기-특성">#</a></h2>
+<p>DS10314 의 값입니다. 다른 제품군도 비슷하지만 표를 꼭 확인하세요.</p>
+<div class="table-wrap regmap"><table><thead><tr><th>항목</th><th>값 (F411, VDD = 3.3 V)</th><th>뜻</th></tr></thead><tbody><tr><td>VDD</td><td>1.7 ~ 3.6 V</td><td>코어 · I/O 전원. Nucleo 는 3.3 V</td></tr><tr><td><strong>VIL</strong> (입력 LOW 최대)</td><td>약 0.3 × VDD ≈ 1.0 V 이하</td><td>이보다 낮으면 확실히 0</td></tr><tr><td><strong>VIH</strong> (입력 HIGH 최소)</td><td>약 0.7 × VDD ≈ 2.3 V 이상</td><td>이보다 높으면 확실히 1 (사이는 정의되지 않음)</td></tr><tr><td>슈미트 히스테리시스</td><td>약 0.1 × VDD ≈ 0.3 V 이상</td><td>0→1 과 1→0 문턱의 차이</td></tr><tr><td>VOL (출력 LOW)</td><td>≤ 0.4 V @ 8 mA</td><td>8 mA 를 흘려도 0.4 V 이하</td></tr><tr><td>VOH (출력 HIGH)</td><td>≥ VDD − 0.4 V @ 8 mA</td><td></td></tr><tr><td><strong>핀당 최대 전류</strong></td><td>25 mA (절대 최대)</td><td>넘으면 손상. 설계는 8 mA 이하 권장</td></tr><tr><td><strong>모든 I/O 합계</strong></td><td>120 mA (싱크 · 소스 각각)</td><td>여러 LED 를 직접 구동할 때 합산</td></tr><tr><td>VDD 핀 전체 전류</td><td>160 mA</td><td>칩 전체</td></tr><tr><td>입력 누설 전류</td><td>±1 µA (FT 핀은 5 V 에서 조금 더)</td><td>풀업 계산에 관계</td></tr><tr><td>풀업 · 풀다운</td><td>약 40 kΩ (30 ~ 50)</td><td>약 80 µA 가 흐름</td></tr><tr><td>PC13 · PC14 · PC15</td><td>싱크 3 mA, 속도 2 MHz 제한</td><td>전원 스위치를 거치는 핀. BluePill LED 가 PC13 인 이유로 밝기가 약함</td></tr></tbody></table></div>
+<h3 id="5-v-톨러런트-ft-핀">5 V 톨러런트 (FT) 핀<a class="anchor" href="#5-v-톨러런트-ft-핀">#</a></h3>
+<p>데이터시트 핀 표의 "FT" 는 <strong>5 V tolerant</strong> 로, 입력 모드일 때 5 V 신호를 넣어도 됩니다. "TTa" 는 아날로그 기능이 있는 3.3 V 전용 핀입니다.</p>
+<ul><li>FT 핀도 <strong>출력은 3.3 V</strong> 입니다. 5 V 장치가 3.3 V 를 HIGH 로 인식하는지(VIH ≤ 3.3 V 인지) 확인해야 합니다. 대부분의 5 V CMOS (VIH = 3.5 V) 는 인식하지 못하고, TTL 계열(VIH = 2.0 V) 은 인식합니다.</li><li>FT 핀에 <strong>풀업을 켜면 3.3 V 로 당기므로</strong> 5 V 오픈드레인 버스(I2C)에 붙여도 5 V 풀업과 충돌하지 않지만, 내부 풀업은 끄는 것이 맞습니다.</li><li>FT 핀이라도 <strong>아날로그 모드나 VDD 가 꺼진 상태</strong>에서는 5 V 를 견디지 못합니다.</li><li>F411 의 PA · PB · PC 는 대부분 FT 이고, ADC 입력이 되는 PA0~7 · PB0~1 · PC0~5 는 TTa 입니다.</li></ul>
+<h3 id="시리즈-저항-계산">시리즈 저항 계산<a class="anchor" href="#시리즈-저항-계산">#</a></h3>
+<p>LED 를 핀에 직접 달 때 저항은 다음과 같이 정합니다.</p>
+<p><span class="math">R = (V_{OH} − V_F) / I_F</span></p>
+<div class="table-wrap"><table><thead><tr><th>LED 색</th><th>순방향 전압 VF</th><th>3.3 V, 330 Ω 일 때 전류</th><th>5 mA 를 원할 때 저항</th></tr></thead><tbody><tr><td>빨강</td><td>약 1.8 ~ 2.0 V</td><td>(3.2 − 1.9) / 330 ≈ <strong>3.9 mA</strong></td><td>260 Ω → 270 Ω</td></tr><tr><td>노랑 · 초록</td><td>약 2.0 ~ 2.2 V</td><td>≈ 3.3 mA</td><td>220 Ω</td></tr><tr><td>파랑 · 흰색</td><td>약 2.8 ~ 3.2 V</td><td>≈ 0.6 mA (어두움)</td><td>68 Ω 정도, 또는 트랜지스터</td></tr></tbody></table></div>
+<p>VOH 는 부하가 있으면 3.3 V 보다 조금 내려가므로 3.2 V 로 잡았습니다. 이 강좌의 예제가 LED 마다 <strong>330 Ω</strong> 을 쓰는 것은 어떤 색이든 핀 한계 안에서 안전하기 때문입니다. LED 8개를 330 Ω 으로 동시에 켜면 약 30 mA 로 120 mA 한계 안이지만, LED 16개를 100 Ω 으로 켜면 한계를 넘습니다.</p>
+<h2 id="오픈드레인이-필요한-곳">오픈드레인이 필요한 곳<a class="anchor" href="#오픈드레인이-필요한-곳">#</a></h2>
+<p>푸시풀 출력 두 개를 한 선에 이으면 하나는 1 (P-MOS 로 VDD), 다른 하나는 0 (N-MOS 로 VSS) 을 낼 때 <strong>VDD 에서 VSS 로 큰 전류가 흘러</strong> 칩이 상합니다. 오픈드레인은 N-MOS 만 있어 <strong>0 으로 끌어내리거나(active) 놓거나(Hi-Z)</strong> 두 가지만 하므로, 여러 장치가 같은 선을 안전하게 공유할 수 있습니다. 선을 1 로 만드는 것은 외부 풀업 저항입니다.</p>
+<div class="table-wrap"><table><thead><tr><th>용도</th><th>이유</th></tr></thead><tbody><tr><td><strong>I2C SDA · SCL</strong></td><td>여러 장치가 같은 두 선을 공유. 누구든 0 으로 당길 수 있어 ACK · 클럭 스트레칭 · 중재가 가능 (<a href="t08.html">T08</a>)</td></tr><tr><td>인터럽트 선 공유</td><td>센서 여러 개의 INT 를 한 핀에 wired-AND</td></tr><tr><td>레벨 변환</td><td>3.3 V 핀을 오픈드레인으로 두고 풀업을 5 V 에 달면 5 V 신호를 만들 수 있음 (FT 핀에서만)</td></tr><tr><td>1-Wire, 릴레이 모듈 입력</td><td>버스 프로토콜 규격, active-low 입력</td></tr></tbody></table></div>
+<p>오픈드레인의 단점은 <strong>상승 에지가 느리다</strong>는 것입니다. 0 → 1 은 풀업 저항이 배선 커패시턴스를 충전하는 RC 시간이 걸립니다 (4.7 kΩ × 100 pF ≈ 0.5 µs). I2C 속도가 400 kHz 로 제한되는 근본 이유입니다.</p>
+<h2 id="입력과-디바운스">입력과 디바운스<a class="anchor" href="#입력과-디바운스">#</a></h2>
+<p>기계식 스위치는 닫히는 순간 접점이 수 ms 동안 튀며(bounce) 0/1 을 여러 번 오갑니다. 슈미트 트리거는 잡음은 걸러도 진짜로 튀는 접점은 거르지 못하므로 소프트웨어나 RC 로 <strong>디바운스</strong>해야 합니다.</p>
+<ul><li><strong>소프트웨어</strong>: 레벨이 바뀐 뒤 5 ~ 20 ms 동안 무시하거나, 일정 간격으로 읽어 N 번 연속 같을 때만 인정. <a href="l04.html">L04</a> 의 방식입니다.</li><li><strong>RC 필터</strong>: 10 kΩ + 100 nF (τ = 1 ms) 를 붙이고 슈미트 입력으로 받으면 하드웨어만으로도 됩니다. EXTI 를 쓸 때 특히 유용합니다.</li><li>Nucleo 의 B1 (PC13) 은 보드에 100 nF 와 풀업이 붙어 있어 비교적 깨끗하지만, 브레드보드의 택트 스위치는 그렇지 않습니다.</li></ul>
+<p>active-low 스위치(누르면 GND)가 표준인 이유는 <strong>풀업이 내장되어 있어 부품이 하나 줄고</strong>, GND 는 어디에나 있어 배선이 쉽기 때문입니다.</p>
+<h2 id="외부-회로와-잇기">외부 회로와 잇기<a class="anchor" href="#외부-회로와-잇기">#</a></h2>
+<p>GPIO 로 직접 구동할 수 있는 것은 LED 와 논리 신호 정도입니다. 그 이상은 아래처럼 사이에 부품을 둡니다.</p>
+<div class="table-wrap"><table><thead><tr><th>부하</th><th>문제</th><th>해결</th></tr></thead><tbody><tr><td>릴레이 · 솔레노이드 · 모터 (수십 mA ~ A, 유도성)</td><td>전류 초과, 역기전력</td><td>NPN 트랜지스터(2N2222) 또는 N-MOSFET(논리 레벨, 2N7000 · IRLZ44) + 베이스 저항 1 kΩ + <strong>플라이백 다이오드</strong>(1N4007) 를 코일에 역방향으로. 모터는 <a href="l13.html">L13</a> 의 드라이버 IC</td></tr><tr><td>5 V 입력 장치 (일부 릴레이 모듈, 5 V 논리 IC)</td><td>3.3 V HIGH 를 못 읽음</td><td>74HCT 버퍼(3.3 V 입력 인식) 또는 트랜지스터, 오픈드레인 + 5 V 풀업</td></tr><tr><td>5 V 출력 장치 → STM32 입력</td><td>3.3 V 전용 핀 손상</td><td>FT 핀 사용, 아니면 저항 분압(10 k : 20 k) 또는 BSS138 레벨 시프터</td></tr><tr><td>5 V I2C 장치</td><td>양방향 레벨 변환 필요</td><td>BSS138 기반 양방향 레벨 시프터, 또는 FT 핀 + 3.3 V 풀업 (장치가 3.3 V 를 HIGH 로 인식하면)</td></tr><tr><td>12 V · 24 V 입력</td><td>절연 · 감쇄 필요</td><td>옵토커플러(PC817) 또는 분압 + 제너</td></tr><tr><td>긴 배선 · 산업 환경</td><td>정전기 · 서지</td><td>TVS 다이오드, 시리즈 저항 100 Ω ~ 1 kΩ</td></tr></tbody></table></div>
+<p>핀에 <strong>시리즈 저항 100 Ω ~ 1 kΩ</strong> 을 두는 습관은 배선 실수(출력끼리 단락)에서 칩을 지켜 줍니다. 신호가 느려지는 대가는 대부분의 취미 회로에서 무시할 수 있습니다.</p>
+<div class="callout callout-safety"><div class="callout-title">실물 배선 전 확인</div><div class="callout-body"><ul><li>5 V 를 TTa 핀이나 아날로그 모드 핀에 넣지 않습니다.</li><li>모터 · 릴레이를 GPIO 에 직접 달지 않습니다. 코일에는 반드시 플라이백 다이오드를 붙입니다.</li><li>두 출력 핀을 서로 직접 잇지 않습니다 (푸시풀 충돌).</li><li>보드 전원과 외부 전원의 GND 를 공통으로 연결합니다.</li></ul></div></div>
+<div class="callout callout-check"><div class="callout-title">스스로 확인</div><div class="callout-body"><ul><li><code>GPIOB-&gt;MODER</code> 에서 PB9 를 오픈드레인 AF (I2C1_SDA, AF4) 로 설정하는 비트 연산을 써 보세요.</li><li>흰색 LED 를 3.3 V 핀에서 10 mA 로 켤 수 있습니까? 없다면 왜입니까?</li><li>ISR 에서 <code>GPIOA-&gt;ODR ^= (1 &lt;&lt; 6)</code> 을 하고 메인에서 <code>GPIOA-&gt;ODR |= (1 &lt;&lt; 5)</code> 를 하면 어떤 문제가 생길 수 있습니까?</li><li>PC13 에 20 mA LED 를 직접 달면 어떻게 됩니까?</li></ul></div></div>
+<h2 id="자주-나는-오류와-해결">자주 나는 오류와 해결<a class="anchor" href="#자주-나는-오류와-해결">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인</th><th>해결</th></tr></thead><tbody><tr><td>핀을 1 로 썼는데 전압이 0 에 가까움</td><td>오픈드레인으로 설정됨(풀업 없음), 부하 과다, 다른 출력과 단락</td><td>OTYPER 확인, 부하 전류 계산, 배선 점검</td></tr><tr><td>입력이 아무것도 안 붙여도 0/1 을 오감</td><td>플로팅 입력</td><td>풀업 · 풀다운 켜기 (PUPDR 또는 외부 저항)</td></tr><tr><td>버튼 한 번에 여러 번 반응</td><td>접점 바운스</td><td>소프트웨어 디바운스 5~20 ms, RC 필터</td></tr><tr><td>5 V 센서 출력을 읽었더니 핀이 죽음</td><td>TTa (비 FT) 핀에 5 V</td><td>FT 핀 확인, 레벨 시프터</td></tr><tr><td>LED 가 켜지긴 하는데 어두움</td><td>파랑 · 흰색 LED 에 330 Ω, PC13~15 핀의 3 mA 제한</td><td>저항 값 조정, 트랜지스터 구동, 다른 핀 사용</td></tr><tr><td>릴레이가 붙었다 떨어질 때 MCU 가 리셋</td><td>플라이백 다이오드 없음, 전원 공통 GND 문제</td><td>다이오드 추가, 전원 분리 · 디커플링</td></tr><tr><td>PWM 이나 SPI 파형의 에지에 링잉</td><td>속도가 너무 빠름, 배선이 김</td><td>OSPEEDR 낮추기, 시리즈 저항 33~100 Ω</td></tr><tr><td>BSRR 을 썼는데 아무 변화 없음</td><td>상위 · 하위 비트 혼동, MODER 가 출력이 아님, 클럭 미인에이블</td><td><code>1 &lt;&lt; (n + 16)</code> 은 reset, MODER = 01 확인</td></tr><tr><td>디버거 연결이 안 됨</td><td>PA13 · PA14 를 GPIO 로 재설정</td><td>CubeMX SYS → Debug Serial Wire 유지 (<a href="t08.html">T08</a>)</td></tr></tbody></table></div>
+<h2 id="과제">과제<a class="anchor" href="#과제">#</a></h2>
+<ol><li>PB8 (I2C1_SCL, AF4) 을 오픈드레인 AF 로, PC13 을 풀업 입력으로, PA0 을 아날로그로 설정하는 레지스터 코드를 쓰세요. 그리고 같은 설정의 <code>GPIO_InitTypeDef</code> 를 적으세요.</li><li>빨강 · 초록 · 파랑 LED 를 각각 5 mA 로 켜는 시리즈 저항을 계산하고 E24 표준값으로 고르세요. 셋을 동시에 켤 때 총 전류는 얼마입니까?</li><li>시뮬레이터에서 L03 BSRR 예제에 EXTI 콜백(L05 참고)을 추가해 같은 포트의 다른 LED 를 토글하게 하고, 메인 루프를 <code>ODR |=</code> 방식으로 바꾸었을 때와 BSRR 방식일 때 어떤 차이가 생길 수 있는지 설명하세요 (시뮬레이터가 실제로 차이를 보이는지도 확인).</li><li>DS10314 의 핀 표에서 PA0~PA7 각각의 "I/O structure" 열(FT/TTa)과 AF 목록을 옮겨 적고, 5 V 센서를 붙일 수 있는 핀을 고르세요.</li><li>12 V 릴레이를 GPIO 로 구동하는 회로를 그리세요 (트랜지스터, 베이스 저항, 플라이백 다이오드, 공통 GND). 베이스 저항 값을 계산하세요 (릴레이 코일 30 mA, hFE 100 가정).</li></ol>
+<h2 id="참고자료">참고자료<a class="anchor" href="#참고자료">#</a></h2>
+<ul><li>ST, <em>RM0383 — STM32F411xC/E Reference Manual</em>, 8장 General-purpose I/Os (GPIO) — 핀 구조 그림, 레지스터 설명</li><li>ST, <em>DS10314 — STM32F411xC/E Datasheet</em>, 4 Pinouts and pin description (FT/TTa, AF mapping), 6.3.14 I/O port characteristics, 6.3.15 I/O AC characteristics, 6.2 Absolute maximum ratings</li><li>ST, <em>RM0008 — STM32F1 Reference Manual</em>, 9장 GPIO and AFIO (CRL · CRH · 리맵)</li><li>ST, <em>AN4899 — STM32 GPIO configuration for hardware settings and low-power consumption</em></li><li>ST, <em>AN4488</em> — 하드웨어 설계 시작 가이드 (디커플링, 리셋, BOOT)</li><li>이 사이트의 <a href="l03.html">L03 GPIO 출력</a>, <a href="l04.html">L04 GPIO 입력</a>, <a href="l12.html">L12 7세그먼트</a></li></ul>
+      <nav class="pager"><a class="pager-prev" href="t04.html"><span>이전 · T04</span>클럭과 리셋 시스템</a><a class="pager-next" href="t06.html"><span>다음 · T06</span>인터럽트·예외와 NVIC</a></nav>
+    </div>
+    <aside class="lesson-toc"><div class="toc-title">이 레슨의 내용</div><div class="toc-links"><a class="toc-l2" href="#학습-목표">학습 목표</a><a class="toc-l2" href="#핀-한-개의-회로">핀 한 개의 회로</a><a class="toc-l2" href="#레지스터-f4">레지스터 (F4)</a><a class="toc-l3" href="#f1-의-crl-crh">F1 의 CRL · CRH</a><a class="toc-l2" href="#bsrr-이-원자적인-이유">BSRR 이 원자적인 이유</a><a class="toc-l2" href="#출력-속도와-emi">출력 속도와 EMI</a><a class="toc-l2" href="#전기-특성">전기 특성</a><a class="toc-l3" href="#5-v-톨러런트-ft-핀">5 V 톨러런트 (FT) 핀</a><a class="toc-l3" href="#시리즈-저항-계산">시리즈 저항 계산</a><a class="toc-l2" href="#오픈드레인이-필요한-곳">오픈드레인이 필요한 곳</a><a class="toc-l2" href="#입력과-디바운스">입력과 디바운스</a><a class="toc-l2" href="#외부-회로와-잇기">외부 회로와 잇기</a><a class="toc-l2" href="#자주-나는-오류와-해결">자주 나는 오류와 해결</a><a class="toc-l2" href="#과제">과제</a><a class="toc-l2" href="#참고자료">참고자료</a></div></aside>
+  </div>
+</article>
+
+</main>
+<script src="../assets/js/site.js"></script>
+</body>
+</html>

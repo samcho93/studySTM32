@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 232" role="img" aria-label="STM32F411RET6 이름 해독 규칙" font-family="var(--sans)" font-size="12">
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--text-dim)"/></marker></defs>
+<text x="60" y="50" font-size="27" fill="var(--text)" text-anchor="middle" font-family="var(--mono)" font-weight="700">STM32</text>
+<line x1="60" y1="60" x2="60" y2="88" stroke="var(--border)" stroke-width="1.5"/>
+<rect x="12" y="88" width="96" height="130" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="60" y="110" font-size="12.5" fill="var(--text)" text-anchor="middle" font-weight="700">브랜드</text>
+<text x="60" y="128" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">ST 의 32비트</text>
+<text x="60" y="146" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">Arm Cortex-M</text>
+<text x="60" y="164" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">MCU 제품군</text>
+<text x="160" y="50" font-size="27" fill="var(--accent)" text-anchor="middle" font-family="var(--mono)" font-weight="700">F</text>
+<line x1="160" y1="60" x2="160" y2="88" stroke="var(--border)" stroke-width="1.5"/>
+<rect x="112" y="88" width="96" height="130" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="160" y="110" font-size="12.5" fill="var(--text)" text-anchor="middle" font-weight="700">제품 종류</text>
+<text x="160" y="128" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">F 범용(주력)</text>
+<text x="160" y="146" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">L 저전력</text>
+<text x="160" y="164" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">H 고성능</text>
+<text x="160" y="182" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">G 차세대 범용</text>
+<text x="260" y="50" font-size="27" fill="var(--text)" text-anchor="middle" font-family="var(--mono)" font-weight="700">411</text>
+<line x1="260" y1="60" x2="260" y2="88" stroke="var(--border)" stroke-width="1.5"/>
+<rect x="212" y="88" width="96" height="130" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="260" y="110" font-size="12.5" fill="var(--text)" text-anchor="middle" font-weight="700">시리즈·라인</text>
+<text x="260" y="128" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">4 = F4 시리즈</text>
+<text x="260" y="146" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">(Cortex-M4F)</text>
+<text x="260" y="164" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">11 = 411 라인</text>
+<text x="260" y="182" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">최대 100 MHz</text>
+<text x="360" y="50" font-size="27" fill="var(--accent)" text-anchor="middle" font-family="var(--mono)" font-weight="700">R</text>
+<line x1="360" y1="60" x2="360" y2="88" stroke="var(--border)" stroke-width="1.5"/>
+<rect x="312" y="88" width="96" height="130" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="360" y="110" font-size="12.5" fill="var(--text)" text-anchor="middle" font-weight="700">핀 수</text>
+<text x="360" y="128" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">C = 48핀</text>
+<text x="360" y="146" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">R = 64핀</text>
+<text x="360" y="164" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">V = 100핀</text>
+<text x="360" y="182" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">Z = 144핀</text>
+<text x="460" y="50" font-size="27" fill="var(--text)" text-anchor="middle" font-family="var(--mono)" font-weight="700">E</text>
+<line x1="460" y1="60" x2="460" y2="88" stroke="var(--border)" stroke-width="1.5"/>
+<rect x="412" y="88" width="96" height="130" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="460" y="110" font-size="12.5" fill="var(--text)" text-anchor="middle" font-weight="700">플래시 크기</text>
+<text x="460" y="128" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">8 = 64 KB</text>
+<text x="460" y="146" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">B = 128 KB</text>
+<text x="460" y="164" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">C = 256 KB</text>
+<text x="460" y="182" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">E = 512 KB</text>
+<text x="560" y="50" font-size="27" fill="var(--accent)" text-anchor="middle" font-family="var(--mono)" font-weight="700">T</text>
+<line x1="560" y1="60" x2="560" y2="88" stroke="var(--border)" stroke-width="1.5"/>
+<rect x="512" y="88" width="96" height="130" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="560" y="110" font-size="12.5" fill="var(--text)" text-anchor="middle" font-weight="700">패키지</text>
+<text x="560" y="128" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">T = LQFP</text>
+<text x="560" y="146" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">U = UFQFPN</text>
+<text x="560" y="164" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">H = BGA</text>
+<text x="560" y="182" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">Y = WLCSP</text>
+<text x="660" y="50" font-size="27" fill="var(--text)" text-anchor="middle" font-family="var(--mono)" font-weight="700">6</text>
+<line x1="660" y1="60" x2="660" y2="88" stroke="var(--border)" stroke-width="1.5"/>
+<rect x="612" y="88" width="96" height="130" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="660" y="110" font-size="12.5" fill="var(--text)" text-anchor="middle" font-weight="700">온도 범위</text>
+<text x="660" y="128" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">6 = −40~85 °C</text>
+<text x="660" y="146" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">7 = −40~105 °C</text>
+<text x="660" y="164" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">3 = −40~125 °C</text>
+<text x="660" y="182" font-size="11" fill="var(--text-dim)" text-anchor="middle" font-family="var(--mono)">(일부 제품군)</text>
+<text x="360" y="228" font-size="11" fill="var(--text-faint)" text-anchor="middle">STM32 F 411 R E T 6 — 자릿수별 의미 (DS10314 ordering information 기준)</text>
+</svg>

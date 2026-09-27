@@ -4,7 +4,7 @@ CubeMX 핀 설정 → HAL 코드 → 브라우저 시뮬레이터 → 실물 보
 
 - 배포: https://samcho93.github.io/studySTM32/ (GitHub Pages, 서버·npm 빌드 체인 없음)
 - 대상 보드: **NUCLEO-F411RE**(기본, 84 MHz), NUCLEO-F103RB, BluePill(STM32F103C8)
-- 레슨 16개 (PART 1 시작하기 · PART 2 통신·타이머·아날로그 · PART 3 주변기기 · PART 4 프로젝트) + HAL API 레퍼런스
+- 레슨 24개 (PART 0 STM32 이해하기 · PART 1 시작하기 · PART 2 통신·타이머·아날로그 · PART 3 주변기기 · PART 4 프로젝트) + HAL API 레퍼런스
 - 레슨 속 **[시뮬레이터에서 열기]** 버튼을 누르면 해당 예제 프로젝트가 페이지 오른쪽 실습 패널에 열립니다.
 
 ## 구조
@@ -15,6 +15,8 @@ studySTM32/
 ├── build.py                    # content/*.md → lessons/*.html, index.html
 ├── content/
 │   ├── curriculum.json         # 트랙(PART)·레슨 목록, 제목·요약·시간·난이도
+│   ├── theory/  t01~t08.md     # PART 0 STM32 이해하기 (이론: 제품군·코어·메모리·클럭·GPIO·NVIC·타이머·통신)
+│   ├── figures/ *.svg          # @fig[name] 으로 본문에 넣는 도해
 │   ├── basics/  l01~l05.md     # PART 1 시작하기
 │   ├── comm/    l06~l09.md     # PART 2 통신·타이머·아날로그
 │   ├── periph/  l10~l14.md     # PART 3 주변기기
@@ -76,7 +78,7 @@ C 서브셋 컴파일러가 사용자 코드를 JavaScript 로 바꾸고, 런타
 ## 디자인
 
 "SAM 로봇강좌" 디자인 시스템 — 인디고 강조색 + 진한 노랑 보조색, Pretendard + JetBrains Mono, 라이트 기본 / 다크 지원.
-트랙 색은 `--track-basics`(인디고) · `--track-comm`(시안) · `--track-periph`(보라) · `--track-project`(노랑) · `--track-ref`(초록) 입니다.
+트랙 색은 `--track-theory`(로즈) · `--track-basics`(인디고) · `--track-comm`(시안) · `--track-periph`(보라) · `--track-project`(노랑) · `--track-ref`(초록) 입니다.
 
 ## 라이선스와 상표
 

@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T06. 인터럽트·예외와 NVIC · studySTM32</title>
+<meta name="description" content="벡터 테이블과 IRQHandler 이름 규칙, NVIC 우선순위(프리엠션·서브·그룹), 테일체이닝, EXTI 라인 매핑과 SYSCFG, HAL 인터럽트 흐름, ISR 작성 규칙, SysTick 우선순위 함정, 폴링·인터럽트·DMA 비교를 익힙니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
+<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="../assets/css/stm32.css">
+<link rel="stylesheet" href="../assets/css/ml-theme.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
+<script src="../assets/js/theme.js"></script>
+</head>
+<body class="lesson-page track-page-theory">
+<button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
+<aside class="sidebar" id="sidebar">
+<nav class="sidebar-nav">
+<div class="brand-row"><a class="brand" href="../index.html"><span class="brand-mark">32</span><span class="brand-text">studySTM32<small>STM32 HAL 인터랙티브 강좌</small></span></a></div>
+<div class="side-tools"><a class="side-tool" href="../sim/index.html">시뮬레이터</a><a class="side-tool" href="../lessons/hal-reference.html">HAL 레퍼런스</a></div>
+<div class="nav-track" data-track="theory">
+<div class="nav-track-title track-theory"><span class="nav-part-no">PART 0</span>STM32 이해하기</div>
+<ul>
+<li><a href="../lessons/t01.html" data-slug="t01"><span class="nav-no">T01</span>STM32 제품군 총람</a></li>
+<li><a href="../lessons/t02.html" data-slug="t02"><span class="nav-no">T02</span>Cortex-M 코어 구조</a></li>
+<li><a href="../lessons/t03.html" data-slug="t03"><span class="nav-no">T03</span>메모리 맵과 버스</a></li>
+<li><a href="../lessons/t04.html" data-slug="t04"><span class="nav-no">T04</span>클럭과 리셋 시스템</a></li>
+<li><a href="../lessons/t05.html" data-slug="t05"><span class="nav-no">T05</span>GPIO 내부 구조와 전기 특성</a></li>
+<li><a href="../lessons/t06.html" class="active" data-slug="t06"><span class="nav-no">T06</span>인터럽트·예외와 NVIC</a></li>
+<li><a href="../lessons/t07.html" data-slug="t07"><span class="nav-no">T07</span>타이머 구조</a></li>
+<li><a href="../lessons/t08.html" data-slug="t08"><span class="nav-no">T08</span>통신 인터페이스 원리</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="basics">
+<div class="nav-track-title track-basics"><span class="nav-part-no">PART 1</span>시작하기</div>
+<ul>
+<li><a href="../lessons/l01.html" data-slug="l01"><span class="nav-no">L01</span>STM32 시리즈와 개발 환경</a></li>
+<li><a href="../lessons/l02.html" data-slug="l02"><span class="nav-no">L02</span>시뮬레이터 둘러보기와 첫 프로젝트</a></li>
+<li><a href="../lessons/l03.html" data-slug="l03"><span class="nav-no">L03</span>GPIO 출력 — LED</a></li>
+<li><a href="../lessons/l04.html" data-slug="l04"><span class="nav-no">L04</span>GPIO 입력 — 스위치</a></li>
+<li><a href="../lessons/l05.html" data-slug="l05"><span class="nav-no">L05</span>외부 인터럽트 EXTI</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="comm">
+<div class="nav-track-title track-comm"><span class="nav-part-no">PART 2</span>통신·타이머·아날로그</div>
+<ul>
+<li><a href="../lessons/l06.html" data-slug="l06"><span class="nav-no">L06</span>UART와 printf</a></li>
+<li><a href="../lessons/l07.html" data-slug="l07"><span class="nav-no">L07</span>타이머 인터럽트</a></li>
+<li><a href="../lessons/l08.html" data-slug="l08"><span class="nav-no">L08</span>PWM — LED 밝기와 서보</a></li>
+<li><a href="../lessons/l09.html" data-slug="l09"><span class="nav-no">L09</span>ADC — 가변저항·조도센서</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="periph">
+<div class="nav-track-title track-periph"><span class="nav-part-no">PART 3</span>주변기기</div>
+<ul>
+<li><a href="../lessons/l10.html" data-slug="l10"><span class="nav-no">L10</span>I2C와 LCD1602</a></li>
+<li><a href="../lessons/l11.html" data-slug="l11"><span class="nav-no">L11</span>SPI 기초</a></li>
+<li><a href="../lessons/l12.html" data-slug="l12"><span class="nav-no">L12</span>7세그먼트 FND</a></li>
+<li><a href="../lessons/l13.html" data-slug="l13"><span class="nav-no">L13</span>DC 모터 드라이버</a></li>
+<li><a href="../lessons/l14.html" data-slug="l14"><span class="nav-no">L14</span>스텝모터</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="project">
+<div class="nav-track-title track-project"><span class="nav-part-no">PART 4</span>프로젝트</div>
+<ul>
+<li><a href="../lessons/l15.html" data-slug="l15"><span class="nav-no">L15</span>미니 프로젝트: 스마트 선풍기</a></li>
+<li><a href="../lessons/l16.html" data-slug="l16"><span class="nav-no">L16</span>실물 보드로 옮기기</a></li>
+</ul>
+</div>
+</nav>
+</aside>
+<div class="sidebar-scrim" id="scrim"></div>
+<main class="main">
+<header class="topbar"><a class="topbar-brand" href="../index.html"><span class="brand-mark">32</span>studySTM32</a><nav class="topnav" aria-label="사이트 메뉴"><a href="../index.html">강의 홈</a><a href="../sim/index.html">시뮬레이터</a><a href="../lessons/hal-reference.html">HAL 레퍼런스</a></nav><button class="theme-icon" type="button" data-theme-toggle data-theme-icon aria-label="테마 전환"></button></header>
+
+<article class="lesson" data-slug="t06" data-track="theory">
+  <div class="lesson-head">
+    <div class="crumbs"><span class="track-pill track-theory">PART 0</span> STM32 이해하기 &middot; 약 55분 &middot; 기초</div>
+    <h1><span class="lesson-no">T06</span>인터럽트·예외와 NVIC</h1>
+    <p class="lede">벡터 테이블과 IRQHandler 이름 규칙, NVIC 우선순위(프리엠션·서브·그룹), 테일체이닝, EXTI 라인 매핑과 SYSCFG, HAL 인터럽트 흐름, ISR 작성 규칙, SysTick 우선순위 함정, 폴링·인터럽트·DMA 비교를 익힙니다.</p>
+    <div class="requires">선수 레슨: <a href="t02.html">T02</a></div>
+    <div class="lesson-actions">
+      <label class="done-toggle"><input type="checkbox" id="doneCheck"><span>학습 완료로 표시</span></label>
+      <a class="ghost-btn tool-sim" href="../sim/index.html?ex=l05-exti" data-sim-src="../sim/index.html?ex=l05-exti&amp;embed=1">시뮬레이터에서 실습</a>
+    </div>
+  </div>
+  <div class="lesson-grid">
+    <div class="lesson-body">
+<h2 id="학습-목표">학습 목표<a class="anchor" href="#학습-목표">#</a></h2>
+<ul><li>벡터 테이블이 <code>startup_stm32f411xetx.s</code> 에 어떻게 놓여 있고, <code>xxx_IRQHandler</code> 이름 규칙이 어떻게 링크되는지 설명할 수 있습니다.</li><li>NVIC 우선순위의 <strong>4비트 · 프리엠션/서브 · 우선순위 그룹</strong>을 이해하고 <code>HAL_NVIC_SetPriority</code> 의 두 숫자를 올바르게 정할 수 있습니다.</li><li>테일체이닝 · late arrival 이 무엇인지, EXTI 라인이 핀 번호와 SYSCFG_EXTICR 로 어떻게 매핑되는지, pending 플래그를 왜 지워야 하는지 압니다.</li><li><code>IRQHandler → HAL_xxx_IRQHandler → Callback</code> 으로 이어지는 HAL 인터럽트 흐름을 따라갈 수 있습니다.</li><li>ISR 작성 규칙(짧게, <code>volatile</code>, 공유 데이터 보호, HAL_Delay 금지)과 SysTick 우선순위 함정, 폴링 · 인터럽트 · DMA 의 선택 기준을 압니다.</li></ul>
+<h2 id="벡터-테이블">벡터 테이블<a class="anchor" href="#벡터-테이블">#</a></h2>
+<figure class="fig" id="fig-exception-entry"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 384" role="img" aria-label="벡터 테이블과 예외 진입 과정 (Cortex-M4, STM32F411)" font-family="var(--sans)" font-size="12">
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--text-dim)"/></marker></defs>
+<text x="16" y="30" font-size="10.5" fill="var(--text-faint)">startup_stm32f411xetx.s 의 g_pfnVectors (Flash 0x0800_0000 → 0x0000_0000 별칭)</text>
+<rect x="16" y="42" width="300" height="292" rx="6" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="24" y="57" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)">0x0000</text>
+<text x="82" y="57" font-size="10.5" fill="var(--text)" font-family="var(--mono)">_estack</text>
+<text x="308" y="57" font-size="9.5" fill="var(--text-faint)" text-anchor="end">초기 MSP 값</text>
+<text x="24" y="75" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)">0x0004</text>
+<text x="82" y="75" font-size="10.5" fill="var(--text)" font-family="var(--mono)">Reset_Handler</text>
+<text x="308" y="75" font-size="9.5" fill="var(--text-faint)" text-anchor="end">−3 (고정)</text>
+<text x="24" y="93" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)">0x0008</text>
+<text x="82" y="93" font-size="10.5" fill="var(--text)" font-family="var(--mono)">NMI_Handler</text>
+<text x="308" y="93" font-size="9.5" fill="var(--text-faint)" text-anchor="end">−2 (고정)</text>
+<text x="24" y="111" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)">0x000C</text>
+<text x="82" y="111" font-size="10.5" fill="var(--text)" font-family="var(--mono)">HardFault_Handler</text>
+<text x="308" y="111" font-size="9.5" fill="var(--text-faint)" text-anchor="end">−1 (고정)</text>
+<text x="24" y="129" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)">0x0010</text>
+<text x="82" y="129" font-size="10.5" fill="var(--text)" font-family="var(--mono)">MemManage_Handler</text>
+<text x="308" y="129" font-size="9.5" fill="var(--text-faint)" text-anchor="end">설정 가능</text>
+<text x="24" y="147" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)">0x0014</text>
+<text x="82" y="147" font-size="10.5" fill="var(--text)" font-family="var(--mono)">BusFault_Handler</text>
+<text x="308" y="147" font-size="9.5" fill="var(--text-faint)" text-anchor="end">설정 가능</text>
+<text x="24" y="165" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)">0x0018</text>
+<text x="82" y="165" font-size="10.5" fill="var(--text)" font-family="var(--mono)">UsageFault_Handler</text>
+<text x="308" y="165" font-size="9.5" fill="var(--text-faint)" text-anchor="end">설정 가능</text>
+<text x="24" y="183" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)">0x002C</text>
+<text x="82" y="183" font-size="10.5" fill="var(--text)" font-family="var(--mono)">SVC_Handler</text>
+<text x="308" y="183" font-size="9.5" fill="var(--text-faint)" text-anchor="end">설정 가능</text>
+<text x="24" y="201" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)">0x0038</text>
+<text x="82" y="201" font-size="10.5" fill="var(--text)" font-family="var(--mono)">PendSV_Handler</text>
+<text x="308" y="201" font-size="9.5" fill="var(--text-faint)" text-anchor="end">설정 가능</text>
+<text x="24" y="219" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)">0x003C</text>
+<text x="82" y="219" font-size="10.5" fill="var(--text)" font-family="var(--mono)">SysTick_Handler</text>
+<text x="308" y="219" font-size="9.5" fill="var(--text-faint)" text-anchor="end">HAL: 15</text>
+<text x="24" y="237" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)">0x0040</text>
+<text x="82" y="237" font-size="10.5" fill="var(--text)" font-family="var(--mono)">WWDG_IRQHandler</text>
+<text x="308" y="237" font-size="9.5" fill="var(--text-faint)" text-anchor="end">IRQ 0</text>
+<rect x="18" y="242" width="296" height="18" rx="3" fill="var(--accent-soft)" stroke="none" />
+<text x="24" y="255" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)">0x0058</text>
+<text x="82" y="255" font-size="10.5" fill="var(--accent)" font-family="var(--mono)" font-weight="700">EXTI0_IRQHandler</text>
+<text x="308" y="255" font-size="9.5" fill="var(--text-faint)" text-anchor="end">IRQ 6</text>
+<rect x="18" y="260" width="296" height="18" rx="3" fill="var(--accent-soft)" stroke="none" />
+<text x="24" y="273" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)">0x00B4</text>
+<text x="82" y="273" font-size="10.5" fill="var(--accent)" font-family="var(--mono)" font-weight="700">TIM3_IRQHandler</text>
+<text x="308" y="273" font-size="9.5" fill="var(--text-faint)" text-anchor="end">IRQ 29</text>
+<text x="24" y="291" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)">0x00D8</text>
+<text x="82" y="291" font-size="10.5" fill="var(--text)" font-family="var(--mono)">USART2_IRQHandler</text>
+<text x="308" y="291" font-size="9.5" fill="var(--text-faint)" text-anchor="end">IRQ 38</text>
+<text x="24" y="309" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)">0x00E0</text>
+<text x="82" y="309" font-size="10.5" fill="var(--text)" font-family="var(--mono)">EXTI15_10_IRQHandler</text>
+<text x="308" y="309" font-size="9.5" fill="var(--text-faint)" text-anchor="end">IRQ 40</text>
+<text x="24" y="327" font-size="10.5" fill="var(--text-dim)" font-family="var(--mono)">…</text>
+<text x="82" y="327" font-size="10.5" fill="var(--text)" font-family="var(--mono)">0x40 + 4 × IRQ 번호</text>
+<text x="308" y="327" font-size="9.5" fill="var(--text-faint)" text-anchor="end">총 86개 (F411)</text>
+<text x="16" y="354" font-size="10" fill="var(--text-faint)">우선순위: 음수 = 고정, 나머지는 NVIC/SCB 로 설정</text>
+<text x="430.0" y="46" font-size="11.5" fill="var(--text)" text-anchor="middle" font-weight="700">자동 스태킹 8워드 (32 B)</text>
+<rect x="378" y="60" width="104" height="24" rx="0" fill="var(--accent-soft)" stroke="var(--border)" />
+<text x="430.0" y="76" font-size="11" fill="var(--text)" text-anchor="middle" font-family="var(--mono)">R0</text>
+<rect x="378" y="84" width="104" height="24" rx="0" fill="var(--accent-soft)" stroke="var(--border)" />
+<text x="430.0" y="100" font-size="11" fill="var(--text)" text-anchor="middle" font-family="var(--mono)">R1</text>
+<rect x="378" y="108" width="104" height="24" rx="0" fill="var(--accent-soft)" stroke="var(--border)" />
+<text x="430.0" y="124" font-size="11" fill="var(--text)" text-anchor="middle" font-family="var(--mono)">R2</text>
+<rect x="378" y="132" width="104" height="24" rx="0" fill="var(--accent-soft)" stroke="var(--border)" />
+<text x="430.0" y="148" font-size="11" fill="var(--text)" text-anchor="middle" font-family="var(--mono)">R3</text>
+<rect x="378" y="156" width="104" height="24" rx="0" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="430.0" y="172" font-size="11" fill="var(--text)" text-anchor="middle" font-family="var(--mono)">R12</text>
+<rect x="378" y="180" width="104" height="24" rx="0" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="430.0" y="196" font-size="11" fill="var(--text)" text-anchor="middle" font-family="var(--mono)">LR (R14)</text>
+<rect x="378" y="204" width="104" height="24" rx="0" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="430.0" y="220" font-size="11" fill="var(--text)" text-anchor="middle" font-family="var(--mono)">PC (복귀 주소)</text>
+<rect x="378" y="228" width="104" height="24" rx="0" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="430.0" y="244" font-size="11" fill="var(--text)" text-anchor="middle" font-family="var(--mono)">xPSR</text>
+<text x="372" y="76" font-size="10" fill="var(--accent)" text-anchor="end" font-family="var(--mono)">SP(새) →</text>
+<text x="372" y="256" font-size="10" fill="var(--text-dim)" text-anchor="end" font-family="var(--mono)">SP(이전) →</text>
+<text x="430.0" y="272" font-size="10" fill="var(--text-faint)" text-anchor="middle">낮은 주소 ↑  높은 주소 ↓</text>
+<text x="430.0" y="288" font-size="10" fill="var(--text-faint)" text-anchor="middle">FPU 사용 시 +S0~S15·FPSCR</text>
+<text x="430.0" y="302" font-size="10" fill="var(--text-faint)" text-anchor="middle">= 26워드 (lazy stacking)</text>
+<circle cx="509" cy="56" r="9" fill="var(--accent)"/><text x="509" y="60" font-size="10.5" fill="var(--on-accent, #fff)" text-anchor="middle" font-family="var(--mono)" font-weight="700">1</text>
+<text x="526" y="60" font-size="12" fill="var(--text)" font-weight="700">인터럽트 요청</text>
+<text x="526" y="76" font-size="10.5" fill="var(--text-dim)">주변장치 → NVIC pending.</text>
+<text x="526" y="89" font-size="10.5" fill="var(--text-dim)">우선순위가 현재보다 높으면 진입</text>
+<circle cx="509" cy="120" r="9" fill="var(--accent)"/><text x="509" y="124" font-size="10.5" fill="var(--on-accent, #fff)" text-anchor="middle" font-family="var(--mono)" font-weight="700">2</text>
+<text x="526" y="124" font-size="12" fill="var(--text)" font-weight="700">스태킹</text>
+<text x="526" y="140" font-size="10.5" fill="var(--text-dim)">현재 명령 마무리 후 8워드를 SP 에</text>
+<text x="526" y="153" font-size="10.5" fill="var(--text-dim)">하드웨어가 push (약 12 사이클)</text>
+<circle cx="509" cy="184" r="9" fill="var(--accent)"/><text x="509" y="188" font-size="10.5" fill="var(--on-accent, #fff)" text-anchor="middle" font-family="var(--mono)" font-weight="700">3</text>
+<text x="526" y="188" font-size="12" fill="var(--text)" font-weight="700">벡터 읽기</text>
+<text x="526" y="204" font-size="10.5" fill="var(--text-dim)">VTOR + 4×번호 에서 핸들러 주소</text>
+<text x="526" y="217" font-size="10.5" fill="var(--text-dim)">fetch, LR =</text>
+<text x="526" y="230" font-size="10.5" fill="var(--text-dim)">0xFFFF_FFF9</text>
+<circle cx="509" cy="248" r="9" fill="var(--accent)"/><text x="509" y="252" font-size="10.5" fill="var(--on-accent, #fff)" text-anchor="middle" font-family="var(--mono)" font-weight="700">4</text>
+<text x="526" y="252" font-size="12" fill="var(--text)" font-weight="700">핸들러 실행</text>
+<text x="526" y="268" font-size="10.5" fill="var(--text-dim)">핸들러 모드·특권.</text>
+<text x="526" y="281" font-size="10.5" fill="var(--text-dim)">xxx_IRQHandler 는 보통의</text>
+<text x="526" y="294" font-size="10.5" fill="var(--text-dim)">C 함수</text>
+<circle cx="509" cy="312" r="9" fill="var(--accent)"/><text x="509" y="316" font-size="10.5" fill="var(--on-accent, #fff)" text-anchor="middle" font-family="var(--mono)" font-weight="700">5</text>
+<text x="526" y="316" font-size="12" fill="var(--text)" font-weight="700">복귀</text>
+<text x="526" y="332" font-size="10.5" fill="var(--text-dim)">bx lr → 8워드 pop → 스레드</text>
+<text x="526" y="345" font-size="10.5" fill="var(--text-dim)">모드로 (다음 IRQ 가 대기 중이면</text>
+<text x="526" y="358" font-size="10.5" fill="var(--text-dim)">테일체이닝)</text>
+</svg><figcaption>벡터 테이블(왼쪽)과 예외 진입(오른쪽). 코어 쪽 절차는 <a href="t02.html">T02</a> 에서 다뤘으므로 이 레슨은 NVIC 와 주변장치 쪽을 봅니다.</figcaption></figure>
+<p>벡터 테이블은 <strong>"예외 번호 × 4" 오프셋에 핸들러 주소를 늘어놓은 배열</strong>입니다. CubeMX 가 만든 <code>startup_stm32f411xetx.s</code> 에 어셈블리로 들어 있습니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">text</span><span class="code-file">startup_stm32f411xetx.s (일부)</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-text">  .section .isr_vector,&quot;a&quot;,%progbits
+g_pfnVectors:
+  .word  _estack                 /* 0x00  초기 MSP (링커 스크립트) */
+  .word  Reset_Handler           /* 0x04 */
+  .word  NMI_Handler             /* 0x08 */
+  .word  HardFault_Handler       /* 0x0C */
+  ...
+  .word  SysTick_Handler         /* 0x3C */
+  .word  WWDG_IRQHandler         /* 0x40  IRQ 0 */
+  .word  PVD_IRQHandler          /* 0x44  IRQ 1 */
+  ...
+  .word  EXTI0_IRQHandler        /* 0x58  IRQ 6 */
+  ...
+  .word  EXTI9_5_IRQHandler      /* 0x9C  IRQ 23 */
+  .word  TIM3_IRQHandler         /* 0xB4  IRQ 29 */
+  ...
+  .word  USART2_IRQHandler       /* 0xD8  IRQ 38 */
+  .word  EXTI15_10_IRQHandler    /* 0xE0  IRQ 40 */
+  ...
+  .weak      EXTI15_10_IRQHandler
+  .thumb_set EXTI15_10_IRQHandler,Default_Handler     /* 정의하지 않으면 Default_Handler (무한 루프) */</code></pre></div>
+<ul><li>모든 핸들러는 <strong>weak</strong> 심볼로 <code>Default_Handler</code>(무한 루프)에 묶여 있습니다. 사용자가 같은 이름의 C 함수를 정의하면 링커가 그것으로 바꿔 줍니다. 그래서 <code>stm32f4xx_it.c</code> 에 <code>void EXTI15_10_IRQHandler(void)</code> 를 쓰기만 하면 벡터 테이블에 들어갑니다.</li><li><strong>이름을 한 글자라도 틀리면</strong> 컴파일 오류 없이 조용히 Default_Handler 가 남아, 인터럽트가 나는 순간 프로그램이 무한 루프에 갇힙니다. "인터럽트 켜면 멈춘다" 의 가장 흔한 원인입니다.</li><li><code>IRQn_Type</code> 열거형(<code>stm32f411xe.h</code>)이 이름과 번호를 잇습니다: <code>EXTI15_10_IRQn = 40</code>, <code>TIM3_IRQn = 29</code>, <code>USART2_IRQn = 38</code>, 시스템 예외는 음수 (<code>SysTick_IRQn = -1</code>, <code>PendSV_IRQn = -2</code>, <code>SVCall_IRQn = -5</code>).</li><li>F411 은 벡터 위치 85 (SPI5) 까지 있고 그중 일부는 예약(비어 있음)입니다. F103 은 위치 59 까지 (RM0008), 이름도 조금 다릅니다 (<code>USB_LP_CAN1_RX0_IRQn</code> 등).</li></ul>
+<h2 id="nvic-우선순위">NVIC 우선순위<a class="anchor" href="#nvic-우선순위">#</a></h2>
+<p><strong>NVIC(Nested Vectored Interrupt Controller)</strong> 는 코어 안에 있으며, 각 IRQ 의 인에이블 · pending · 우선순위를 관리하고 가장 급한 것을 코어에 넘깁니다.</p>
+<div class="table-wrap"><table><thead><tr><th>레지스터</th><th>역할</th><th>CMSIS 함수</th></tr></thead><tbody><tr><td>ISER / ICER</td><td>인에이블 set / clear (IRQ 당 1비트)</td><td><code>NVIC_EnableIRQ</code> / <code>NVIC_DisableIRQ</code></td></tr><tr><td>ISPR / ICPR</td><td>pending set / clear</td><td><code>NVIC_SetPendingIRQ</code> / <code>NVIC_ClearPendingIRQ</code></td></tr><tr><td>IABR</td><td>활성(실행 중) 표시, 읽기 전용</td><td><code>NVIC_GetActive</code></td></tr><tr><td>IPR[n]</td><td>우선순위 (IRQ 당 8비트, ST 는 상위 4비트 사용)</td><td><code>NVIC_SetPriority</code></td></tr><tr><td>SCB-&gt;SHP</td><td>시스템 예외(SysTick 등) 우선순위</td><td><code>NVIC_SetPriority</code> (음수 IRQn)</td></tr><tr><td>SCB-&gt;AIRCR.PRIGROUP</td><td>프리엠션/서브 비트 나누기</td><td><code>NVIC_SetPriorityGrouping</code></td></tr></tbody></table></div>
+<h3 id="4비트-16-단계">4비트, 16 단계<a class="anchor" href="#4비트-16-단계">#</a></h3>
+<p>STM32 는 우선순위 8비트 중 <strong>상위 4비트만 구현</strong>하므로 0 ~ 15 의 16 단계이고, <strong>숫자가 작을수록 급합니다.</strong> 0 이 가장 높고 15 가 가장 낮습니다. 이 4비트를 <strong>프리엠션(preemption) 우선순위</strong>와 <strong>서브(sub) 우선순위</strong>로 나누는 것이 우선순위 그룹입니다.</p>
+<div class="table-wrap"><table><thead><tr><th>그룹</th><th>프리엠션 비트</th><th>서브 비트</th><th>프리엠션 단계</th><th>서브 단계</th></tr></thead><tbody><tr><td><code>NVIC_PRIORITYGROUP_0</code></td><td>0</td><td>4</td><td>1</td><td>16</td></tr><tr><td><code>NVIC_PRIORITYGROUP_1</code></td><td>1</td><td>3</td><td>2</td><td>8</td></tr><tr><td><code>NVIC_PRIORITYGROUP_2</code></td><td>2</td><td>2</td><td>4</td><td>4</td></tr><tr><td><code>NVIC_PRIORITYGROUP_3</code></td><td>3</td><td>1</td><td>8</td><td>2</td></tr><tr><td>**<code>NVIC_PRIORITYGROUP_4</code>**</td><td><strong>4</strong></td><td><strong>0</strong></td><td><strong>16</strong></td><td>1</td></tr></tbody></table></div>
+<ul><li><strong>프리엠션 우선순위가 더 높은(숫자가 작은) 인터럽트만 실행 중인 핸들러를 끼어들 수 있습니다</strong> (중첩).</li><li><strong>서브 우선순위</strong>는 프리엠션이 같은 인터럽트 둘이 <strong>동시에 대기 중일 때</strong> 어느 것을 먼저 할지만 정합니다. 끼어들지는 못합니다.</li><li>둘 다 같으면 IRQ 번호가 작은 것이 먼저입니다.</li><li><code>HAL_Init()</code> 이 그룹 4 로 설정하므로 <strong>HAL 프로젝트에서 서브 우선순위는 언제나 0</strong> 이고, <code>HAL_NVIC_SetPriority(IRQn, pre, sub)</code> 의 <code>sub</code> 는 무시됩니다. CubeMX 의 NVIC 탭에서 보이는 두 열이 이것입니다.</li></ul>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-h">HAL_NVIC_SetPriorityGrouping</span>(<span class="tk-m">NVIC_PRIORITYGROUP_4</span>);      <span class="tk-c">/* HAL_Init 이 이미 함 */</span>
+<span class="tk-h">HAL_NVIC_SetPriority</span>(EXTI15_10_IRQn, <span class="tk-n">5</span>, <span class="tk-n">0</span>);              <span class="tk-c">/* 버튼: 중간 */</span>
+<span class="tk-h">HAL_NVIC_EnableIRQ</span>(EXTI15_10_IRQn);
+<span class="tk-h">HAL_NVIC_SetPriority</span>(TIM3_IRQn, <span class="tk-n">2</span>, <span class="tk-n">0</span>);                   <span class="tk-c">/* 제어 주기 타이머: 더 급함 → 버튼 ISR 을 끼어들 수 있음 */</span>
+<span class="tk-h">HAL_NVIC_EnableIRQ</span>(TIM3_IRQn);
+<span class="tk-h">HAL_NVIC_SetPriority</span>(USART2_IRQn, <span class="tk-n">6</span>, <span class="tk-n">0</span>);                 <span class="tk-c">/* 수신: 버튼보다 낮음 */</span>
+<span class="tk-h">HAL_NVIC_EnableIRQ</span>(USART2_IRQn);</code></pre></div>
+<p><code>HAL_NVIC_SetPriority</code> 는 <code>NVIC_EncodePriority(그룹, pre, sub)</code> 로 4비트 값을 만든 뒤 <code>NVIC_SetPriority</code> 를 부릅니다. 그룹 4 에서는 그냥 <code>pre</code> 가 그대로 4비트 값이 됩니다.</p>
+<div class="callout callout-warn"><div class="callout-title">우선순위를 정하지 않으면</div><div class="callout-body"><p>CubeMX 기본값은 모든 인터럽트가 <strong>프리엠션 0</strong> 입니다. 그러면 모두 같은 급이라 서로 끼어들지 못하고, 실행 중인 핸들러가 끝날 때까지 다른 것은 기다립니다. 간단한 프로그램은 이대로도 동작하지만, 긴 ISR(UART 로 여러 바이트 보내기 등)이 있으면 타이머 인터럽트가 밀립니다. <strong>급한 것에 작은 숫자</strong>를 주는 습관을 들이세요. FreeRTOS 를 쓰면 <code>configMAX_SYSCALL_INTERRUPT_PRIORITY</code>(보통 5) 보다 급한 인터럽트에서는 RTOS API 를 부를 수 없다는 규칙이 추가됩니다.</p></div></div>
+<h3 id="테일체이닝과-late-arrival">테일체이닝과 late arrival<a class="anchor" href="#테일체이닝과-late-arrival">#</a></h3>
+<ul><li><strong>테일체이닝(tail-chaining)</strong>: 핸들러 A 가 끝났는데 B 가 대기 중이면, A 의 8워드 pop 과 B 의 push 를 생략하고 곧바로 B 로 갑니다. 6 사이클이면 됩니다. 연속된 인터럽트를 효율적으로 처리하는 하드웨어 최적화이며 소프트웨어가 신경 쓸 것은 없습니다.</li><li><strong>late arrival</strong>: A 로 진입하기 위해 스태킹하는 도중 더 급한 B 가 오면, 스태킹은 그대로 쓰고 벡터만 B 로 바꿔 B 를 먼저 실행한 뒤 A 를 테일체이닝합니다.</li><li><strong>pop preemption</strong>: A 의 복귀(언스태킹) 중에 새 인터럽트가 오면 언스태킹을 버리고 바로 진입합니다.</li></ul>
+<p>이 세 가지 덕분에 Cortex-M 은 인터럽트 사이의 오버헤드가 작고 예측 가능합니다. 12 사이클 진입 · 12 사이클 복귀 · 6 사이클 테일체인이라는 숫자를 기억해 두세요.</p>
+<h2 id="exti-핀-인터럽트">EXTI: 핀 → 인터럽트<a class="anchor" href="#exti-핀-인터럽트">#</a></h2>
+<p>GPIO 핀은 NVIC 에 직접 연결되지 않고 <strong>EXTI(External Interrupt/event controller)</strong> 를 거칩니다.</p>
+<div class="table-wrap regmap"><table><thead><tr><th>EXTI 라인</th><th>연결</th><th>IRQ (F411)</th></tr></thead><tbody><tr><td>0 ~ 15</td><td>GPIO 핀 번호 (PA0 · PB0 · … 중 SYSCFG_EXTICR 로 하나 선택)</td><td>EXTI0 ~ EXTI4 는 각각, <strong>5~9 는 EXTI9_5 (IRQ 23) 로 공유, 10~15 는 EXTI15_10 (IRQ 40) 로 공유</strong></td></tr><tr><td>16</td><td>PVD (전압 감시)</td><td>PVD_IRQn</td></tr><tr><td>17</td><td>RTC 알람</td><td>RTC_Alarm_IRQn</td></tr><tr><td>18</td><td>USB OTG FS 웨이크업</td><td>OTG_FS_WKUP_IRQn</td></tr><tr><td>21</td><td>RTC 탬퍼 · 타임스탬프</td><td>TAMP_STAMP_IRQn</td></tr><tr><td>22</td><td>RTC 웨이크업</td><td>RTC_WKUP_IRQn</td></tr></tbody></table></div>
+<p>핵심 규칙 두 가지입니다.</p>
+<ol><li><strong>핀 번호 = EXTI 라인 번호.</strong> PC13 은 라인 13, PA0 은 라인 0 입니다.</li><li><strong>같은 번호의 핀은 한 번에 하나만.</strong> PA5 와 PB5 는 둘 다 라인 5 이므로 동시에 EXTI 로 쓸 수 없습니다. 어느 포트를 라인에 붙일지 <code>SYSCFG-&gt;EXTICR[n]</code> (4비트 필드, 0 = PA, 1 = PB, 2 = PC …) 이 정합니다. F1 은 <code>AFIO-&gt;EXTICR</code> 입니다.</li></ol>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* HAL_GPIO_Init 이 PC13 을 GPIO_MODE_IT_FALLING 으로 설정할 때 하는 일 (요약) */</span>
+<span class="tk-h">__HAL_RCC_SYSCFG_CLK_ENABLE</span>();
+<span class="tk-m">SYSCFG</span>-&gt;<span class="tk-m">EXTICR</span>[<span class="tk-n">3</span>] = (<span class="tk-m">SYSCFG</span>-&gt;<span class="tk-m">EXTICR</span>[<span class="tk-n">3</span>] &amp; ~(<span class="tk-n">0xF</span> &lt;&lt; <span class="tk-n">4</span>)) | (<span class="tk-n">2</span> &lt;&lt; <span class="tk-n">4</span>);   <span class="tk-c">/* 라인 13 ← 포트 C (EXTICR4, 필드 1) */</span>
+<span class="tk-m">EXTI</span>-&gt;<span class="tk-m">FTSR</span> |=  (<span class="tk-n">1</span> &lt;&lt; <span class="tk-n">13</span>);     <span class="tk-c">/* 하강 에지 감지 */</span>
+<span class="tk-m">EXTI</span>-&gt;<span class="tk-m">RTSR</span> &amp;= ~(<span class="tk-n">1</span> &lt;&lt; <span class="tk-n">13</span>);     <span class="tk-c">/* 상승 에지 끔 */</span>
+<span class="tk-m">EXTI</span>-&gt;<span class="tk-m">IMR</span>  |=  (<span class="tk-n">1</span> &lt;&lt; <span class="tk-n">13</span>);     <span class="tk-c">/* 인터럽트 마스크 해제 */</span>
+<span class="tk-c">/* 그 다음 사용자가 (또는 CubeMX 가) NVIC 를 켬 */</span>
+<span class="tk-h">HAL_NVIC_SetPriority</span>(EXTI15_10_IRQn, <span class="tk-n">0</span>, <span class="tk-n">0</span>);
+<span class="tk-h">HAL_NVIC_EnableIRQ</span>(EXTI15_10_IRQn);</code></pre></div>
+<h3 id="pending-과-clear">pending 과 clear<a class="anchor" href="#pending-과-clear">#</a></h3>
+<p>에지가 감지되면 <code>EXTI-&gt;PR</code> 의 해당 비트가 1 이 되고(pending), IMR 이 열려 있으면 NVIC 에 요청이 갑니다. <strong>PR 비트는 소프트웨어가 1 을 써서 지워야 합니다.</strong> 지우지 않으면 핸들러를 나가자마자 요청이 살아 있으므로 같은 핸들러가 다시 불려 무한히 반복됩니다. <code>HAL_GPIO_EXTI_IRQHandler()</code> 가 이 일을 하므로 HAL 사용자는 보통 잊어도 되지만, 레지스터로 직접 쓸 때는 첫 줄이 <code>EXTI-&gt;PR = (1 &lt;&lt; 13);</code> 이어야 합니다 (<code>|=</code> 가 아니라 <code>=</code> 인 이유: 다른 비트에 1 을 쓰면 그것도 지워집니다).</p>
+<p>NVIC 쪽 pending (ISPR) 은 핸들러 진입 때 하드웨어가 지웁니다. 그러나 주변장치 쪽 플래그(EXTI-&gt;PR, TIMx-&gt;SR 의 UIF, USART-&gt;SR 의 RXNE 등)는 <strong>주변장치마다 지우는 방법이 다르므로</strong> 레퍼런스 매뉴얼을 봐야 합니다. UIF 는 0 을 쓰고, RXNE 는 DR 을 읽으면 지워집니다.</p>
+<h2 id="hal-인터럽트-흐름">HAL 인터럽트 흐름<a class="anchor" href="#hal-인터럽트-흐름">#</a></h2>
+<p>HAL 프로젝트에서 인터럽트는 세 층을 지납니다. 사용자는 <strong>맨 아래 콜백만</strong> 씁니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* 1) stm32f4xx_it.c — CubeMX 생성. 벡터 테이블이 가리키는 진짜 핸들러 */</span>
+<span class="tk-t">void</span> <span class="tk-f">EXTI15_10_IRQHandler</span>(<span class="tk-t">void</span>)
+{
+  <span class="tk-h">HAL_GPIO_EXTI_IRQHandler</span>(<span class="tk-m">GPIO_PIN_13</span>);          <span class="tk-c">/* 어느 핀인지 알려 줌 */</span>
+}
+
+<span class="tk-c">/* 2) stm32f4xx_hal_gpio.c — HAL 라이브러리. 플래그 확인 · 클리어 후 콜백 */</span>
+<span class="tk-t">void</span> <span class="tk-h">HAL_GPIO_EXTI_IRQHandler</span>(<span class="tk-t">uint16_t</span> GPIO_Pin)
+{
+  <span class="tk-k">if</span> (<span class="tk-h">__HAL_GPIO_EXTI_GET_IT</span>(GPIO_Pin) != <span class="tk-m">RESET</span>) {   <span class="tk-c">/* EXTI-&gt;PR 비트 확인 */</span>
+    <span class="tk-h">__HAL_GPIO_EXTI_CLEAR_IT</span>(GPIO_Pin);              <span class="tk-c">/* EXTI-&gt;PR = GPIO_Pin  (1 써서 클리어) */</span>
+    <span class="tk-h">HAL_GPIO_EXTI_Callback</span>(GPIO_Pin);
+  }
+}
+
+<span class="tk-c">/* 3) main.c — 사용자. weak 함수를 덮어씀 */</span>
+<span class="tk-t">void</span> <span class="tk-h">HAL_GPIO_EXTI_Callback</span>(<span class="tk-t">uint16_t</span> GPIO_Pin)
+{
+  <span class="tk-k">if</span> (GPIO_Pin == <span class="tk-m">GPIO_PIN_13</span>) { button_flag = <span class="tk-n">1</span>; }
+}</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>주변장치</th><th>1) IRQHandler</th><th>2) HAL IRQHandler</th><th>3) 콜백</th></tr></thead><tbody><tr><td>EXTI</td><td><code>EXTI15_10_IRQHandler</code></td><td><code>HAL_GPIO_EXTI_IRQHandler(pin)</code></td><td><code>HAL_GPIO_EXTI_Callback(pin)</code></td></tr><tr><td>타이머</td><td><code>TIM3_IRQHandler</code></td><td><code>HAL_TIM_IRQHandler(&amp;htim3)</code></td><td><code>HAL_TIM_PeriodElapsedCallback(htim)</code>, <code>HAL_TIM_IC_CaptureCallback</code> …</td></tr><tr><td>UART</td><td><code>USART2_IRQHandler</code></td><td><code>HAL_UART_IRQHandler(&amp;huart2)</code></td><td><code>HAL_UART_RxCpltCallback</code>, <code>TxCpltCallback</code>, <code>ErrorCallback</code></td></tr><tr><td>ADC</td><td><code>ADC_IRQHandler</code></td><td><code>HAL_ADC_IRQHandler(&amp;hadc1)</code></td><td><code>HAL_ADC_ConvCpltCallback</code></td></tr><tr><td>DMA</td><td><code>DMA1_Stream5_IRQHandler</code></td><td><code>HAL_DMA_IRQHandler(&amp;hdma_usart2_rx)</code></td><td>연결된 주변장치의 Cplt 콜백</td></tr><tr><td>SysTick</td><td><code>SysTick_Handler</code></td><td><code>HAL_IncTick()</code></td><td>(없음)</td></tr></tbody></table></div>
+<p><code>EXTI9_5_IRQHandler</code> 처럼 여러 핀이 공유하는 핸들러에서는 <code>HAL_GPIO_EXTI_IRQHandler</code> 를 핀마다 부릅니다. CubeMX 가 설정된 핀들을 모두 나열해 줍니다. 콜백은 <strong>모든 인스턴스가 공유</strong>하므로 <code>htim-&gt;Instance == TIM3</code>, <code>GPIO_Pin == GPIO_PIN_13</code> 으로 구분하는 것을 잊지 마세요.</p>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l05-exti" data-sim-src="../sim/index.html?ex=l05-exti&amp;embed=1" data-sim-id="l05-exti"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">EXTI 로 LED 토글 예제 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l05-exti" target="_blank" rel="noopener">새 창</a><code class="sim-id">l05-exti</code></div>
+<p>시뮬레이터의 콘솔 탭에는 EXTI 가 발생하고 콜백이 불리는 로그가 남습니다. 버튼을 누르는 순간 메인 루프의 <code>HAL_Delay</code> 가 끝나기 전에 콜백이 먼저 실행되는 것을 확인해 보세요.</p>
+<h2 id="isr-작성-규칙">ISR 작성 규칙<a class="anchor" href="#isr-작성-규칙">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>규칙</th><th>이유</th></tr></thead><tbody><tr><td><strong>짧게.</strong> 플래그만 세우고 처리는 메인 루프에서</td><td>긴 ISR 은 같은 급 · 낮은 급의 인터럽트를 막고 시간 정확도를 무너뜨림. 기준: 수십 µs 이내</td></tr><tr><td>**공유 변수는 <code>volatile</code>**</td><td>컴파일러가 메인 루프에서 변수를 레지스터에 캐시해 ISR 의 변경을 못 볼 수 있음</td></tr><tr><td><strong>32비트보다 큰 공유 데이터는 임계 구역으로</strong></td><td><code>uint64_t</code> · 구조체 · 배열은 여러 명령으로 읽으므로 중간에 ISR 이 바꾸면 반쪽만 읽힘. 32비트 이하 정렬된 변수는 한 명령이라 안전</td></tr><tr><td><strong>읽기-수정-쓰기 공유는 원자적으로</strong></td><td><code>count++</code> 는 세 명령. 메인과 ISR 이 둘 다 하면 증가가 사라짐. 한쪽만 쓰게 하거나 <code>__disable_irq()</code> 보호</td></tr><tr><td>**<code>HAL_Delay</code> · <code>printf</code> · <code>malloc</code> 금지**</td><td>HAL_Delay 는 SysTick 을 기다리고(아래 함정), printf 는 느리고 재진입 불가, malloc 은 재진입 불가</td></tr><tr><td>**블로킹 HAL 함수(<code>HAL_UART_Transmit</code> 등) 피하기**</td><td>수 ms 동안 인터럽트 안에 머묾. 꼭 필요하면 <code>_IT</code> · <code>_DMA</code> 버전</td></tr><tr><td><strong>플래그 클리어 확인</strong></td><td>지우지 않으면 무한 재진입 (HAL 이 대신 해 줌)</td></tr><tr><td><strong>우선순위를 의식</strong></td><td>급한 것(모터 제어 주기, 통신 수신)에 작은 숫자</td></tr></tbody></table></div>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-k">volatile</span> <span class="tk-t">uint32_t</span> rx_count;            <span class="tk-c">/* ISR 이 쓰고 메인이 읽음 */</span>
+<span class="tk-k">volatile</span> <span class="tk-t">uint8_t</span>  cmd_ready;
+
+<span class="tk-t">void</span> <span class="tk-h">HAL_UART_RxCpltCallback</span>(<span class="tk-t">UART_HandleTypeDef</span> *huart)   <span class="tk-c">/* ISR 문맥 */</span>
+{
+  rx_buf[rx_idx++] = rx_byte;
+  <span class="tk-k">if</span> (rx_byte == <span class="tk-s">'\n'</span>) { cmd_ready = <span class="tk-n">1</span>; rx_idx = <span class="tk-n">0</span>; }    <span class="tk-c">/* 플래그만 */</span>
+  <span class="tk-h">HAL_UART_Receive_IT</span>(huart, &amp;rx_byte, <span class="tk-n">1</span>);               <span class="tk-c">/* 다음 바이트 예약 */</span>
+}
+
+<span class="tk-t">int</span> <span class="tk-f">main</span>(<span class="tk-t">void</span>) {
+  ...
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>) {
+    <span class="tk-k">if</span> (cmd_ready) {                                     <span class="tk-c">/* 메인에서 처리 */</span>
+      cmd_ready = <span class="tk-n">0</span>;
+      <span class="tk-f">handle_command</span>(rx_buf);                            <span class="tk-c">/* printf, 긴 처리 모두 여기서 */</span>
+    }
+  }
+}</code></pre></div>
+<h3 id="우선순위-역전">우선순위 역전<a class="anchor" href="#우선순위-역전">#</a></h3>
+<p>우선순위가 낮은 ISR 이 긴 작업을 하는 동안, 그보다 급한 인터럽트가 <strong>같은 프리엠션 우선순위</strong>이면 끼어들지 못하고 기다립니다. 결과적으로 급한 일이 늦어지는 것이 우선순위 역전입니다. RTOS 에서는 뮤텍스를 쥔 낮은 태스크 때문에 높은 태스크가 막히는 형태로 나타나며, 베어메탈에서는 "모든 인터럽트가 0" 인 CubeMX 기본 설정이 원인일 때가 많습니다.</p>
+<h3 id="systick-우선순위-함정">SysTick 우선순위 함정<a class="anchor" href="#systick-우선순위-함정">#</a></h3>
+<p><code>HAL_Delay()</code> 는 <code>uwTick</code> 이 늘어나기를 기다리고, <code>uwTick</code> 은 <code>SysTick_Handler</code> 가 늘립니다. SysTick 의 우선순위가 지금 실행 중인 핸들러보다 <strong>급하지 않으면</strong> SysTick 이 실행되지 못하므로 <code>HAL_Delay</code> 는 영원히 끝나지 않습니다.</p>
+<ul><li>CubeMX 기본에서 SysTick 과 EXTI 가 모두 0 이면 EXTI 콜백 안의 <code>HAL_Delay(50)</code> (디바운스 목적으로 흔히 시도) 은 <strong>멈춥니다.</strong></li><li>SysTick 을 0, EXTI 를 1 이상으로 두면 동작은 하지만 여전히 ISR 안에서 50 ms 를 낭비하는 나쁜 설계입니다. 디바운스는 <code>HAL_GetTick()</code> 시각 비교로 하세요 (<a href="l05.html">L05</a>).</li><li>HAL 문서는 SysTick 을 <strong>가장 높은 우선순위로</strong> 두라고 권합니다. FreeRTOS 는 반대로 SysTick 을 가장 낮은 15 로 쓰고 커널 틱으로 삼습니다. 이 경우 <code>HAL_Delay</code> 대신 <code>osDelay</code> 를 씁니다.</li><li>I2C · UART 의 폴링 HAL 함수(<code>HAL_I2C_Master_Transmit(..., timeout)</code>)도 타임아웃 계산에 <code>HAL_GetTick()</code> 을 쓰므로 같은 함정에 걸립니다.</li></ul>
+<p><code>TICK_INT_PRIORITY</code> 는 <code>stm32f4xx_hal_conf.h</code> 에 있고 CubeMX 의 NVIC 탭 "Time base: System tick timer" 항목으로 바꿉니다.</p>
+<h2 id="폴링-vs-인터럽트-vs-dma">폴링 vs 인터럽트 vs DMA<a class="anchor" href="#폴링-vs-인터럽트-vs-dma">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th></th><th>폴링</th><th>인터럽트</th><th>DMA</th></tr></thead><tbody><tr><td>방식</td><td>루프에서 플래그 · 핀을 계속 읽음</td><td>이벤트가 나면 코어가 핸들러로 점프</td><td>하드웨어가 메모리 ↔ 주변장치를 직접 복사, 끝나면 인터럽트</td></tr><tr><td>반응 시간</td><td>루프 한 바퀴 (수 µs ~ 수 ms, 불규칙)</td><td>약 12 사이클 + 우선순위 대기 (수백 ns)</td><td>즉시 (코어 개입 없음)</td></tr><tr><td>CPU 부담</td><td>계속 소모 (기다리는 동안 다른 일 어려움)</td><td>이벤트 때만</td><td>거의 없음</td></tr><tr><td>복잡도</td><td>가장 단순</td><td>공유 데이터 · 우선순위 관리 필요</td><td>설정 복잡, 버퍼 관리, 캐시(M7)</td></tr><tr><td>알맞은 곳</td><td>초기화, 간단한 순차 작업, 드문 이벤트</td><td>버튼, 수신 바이트, 주기 작업, 캡처</td><td>대량 · 연속 데이터: ADC 스캔, UART 대량 송수신, SPI 디스플레이, 오디오</td></tr><tr><td>HAL 함수</td><td><code>HAL_UART_Receive</code></td><td><code>HAL_UART_Receive_IT</code> + 콜백</td><td><code>HAL_UART_Receive_DMA</code> + 콜백</td></tr></tbody></table></div>
+<p>이 강좌의 진행이 이 순서입니다. <a href="l04.html">L04</a> 폴링 → <a href="l05.html">L05</a> EXTI 인터럽트 → <a href="l06.html">L06</a> UART 수신 인터럽트 → <a href="l09.html">L09</a> ADC DMA. 경험칙은 "<strong>초당 수천 번 이하의 이벤트는 인터럽트, 그 이상이거나 바이트가 연속으로 오면 DMA</strong>" 입니다.</p>
+<div class="callout callout-check"><div class="callout-title">스스로 확인</div><div class="callout-body"><ul><li>PA5 와 PB5 를 동시에 EXTI 로 쓸 수 있습니까? PA5 와 PA6 은?</li><li>그룹 4 에서 <code>HAL_NVIC_SetPriority(x, 3, 2)</code> 의 2 는 어떤 효과가 있습니까?</li><li>EXTI 콜백 안에서 <code>HAL_Delay(20)</code> 을 부르면 어떤 조건에서 멈춥니까?</li><li>메인 루프에서 <code>uint64_t total</code> 을 읽고 ISR 이 그 변수를 더할 때 어떤 문제가 생길 수 있습니까?</li></ul></div></div>
+<h2 id="자주-나는-오류와-해결">자주 나는 오류와 해결<a class="anchor" href="#자주-나는-오류와-해결">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인</th><th>해결</th></tr></thead><tbody><tr><td>인터럽트를 켜자마자 프로그램이 멈춤 (<code>Default_Handler</code>)</td><td>핸들러 이름 오타, <code>stm32f4xx_it.c</code> 에 핸들러 없음</td><td><code>IRQn_Type</code> 이름과 정확히 맞추기 (<code>EXTI15_10_IRQHandler</code>), CubeMX NVIC 탭에서 켜서 자동 생성</td></tr><tr><td>콜백이 한 번도 안 불림</td><td>NVIC 인에이블 누락, EXTI 라인이 다른 포트에 배정됨, IMR 닫힘</td><td><code>HAL_NVIC_EnableIRQ</code>, CubeMX 에서 같은 번호 핀 중복 확인</td></tr><tr><td>콜백이 무한히 반복됨</td><td>pending 플래그를 지우지 않음 (레지스터 직접 코드)</td><td><code>EXTI-&gt;PR = (1 &lt;&lt; n)</code>, <code>TIMx-&gt;SR &amp;= ~TIM_SR_UIF</code></td></tr><tr><td><code>HAL_Delay</code> 가 ISR 안에서 멈춤</td><td>SysTick 우선순위가 같거나 낮음</td><td>ISR 에서 HAL_Delay 제거, SysTick 을 가장 높게</td></tr><tr><td>메인 루프가 ISR 의 변수 변경을 못 봄 (-O2 에서만)</td><td><code>volatile</code> 없음</td><td><code>volatile</code> 선언</td></tr><tr><td>카운터가 가끔 하나씩 빠짐</td><td>메인과 ISR 이 모두 <code>count++</code></td><td>한쪽만 쓰기, 또는 임계 구역</td></tr><tr><td>버튼 한 번에 콜백 여러 번</td><td>접점 바운스</td><td><code>HAL_GetTick()</code> 으로 20 ms 안의 재진입 무시</td></tr><tr><td>타이머 ISR 이 늦게 불림</td><td>더 긴 ISR 이 같은 우선순위로 앞을 막음</td><td>타이머에 더 작은 숫자, 긴 ISR 줄이기</td></tr><tr><td>USART 수신이 몇 바이트 뒤 멈춤</td><td>ORE(오버런) 플래그를 지우지 않음, 콜백에서 <code>Receive_IT</code> 재호출 누락</td><td><code>HAL_UART_ErrorCallback</code> 처리, 콜백 끝에 <code>HAL_UART_Receive_IT</code></td></tr><tr><td>FreeRTOS 에서 ISR 안 API 호출 시 assert</td><td>우선순위가 <code>configMAX_SYSCALL_INTERRUPT_PRIORITY</code> 보다 급함</td><td>그 ISR 의 우선순위 숫자를 5 이상으로</td></tr></tbody></table></div>
+<h2 id="과제">과제<a class="anchor" href="#과제">#</a></h2>
+<ol><li>F411 에서 EXTI0 · EXTI4 · EXTI9_5 · EXTI15_10 · TIM2 · USART1 의 IRQ 번호와 벡터 테이블 오프셋을 <code>stm32f411xe.h</code> 또는 RM0383 의 벡터 표에서 찾아 적으세요.</li><li>모터 제어 주기 타이머(TIM3, 1 kHz), 버튼 EXTI, UART 수신, SysTick 네 인터럽트의 우선순위를 정하고 이유를 쓰세요. 그룹 4 기준입니다.</li><li>시뮬레이터의 L05 예제에서 콜백 안에 <code>HAL_Delay(200)</code> 을 넣어 보고 무슨 일이 생기는지 관찰하세요 (시뮬레이터는 실물과 다를 수 있으니, 실물에서는 어떻게 될지 우선순위 표로 예측하세요).</li><li><code>EXTI-&gt;PR</code> 을 <code>|=</code> 로 지우는 코드가 왜 다른 라인의 인터럽트를 잃게 하는지 비트 수준에서 설명하세요.</li><li>L06 의 명령어 예제에서 ISR 이 하는 일과 메인 루프가 하는 일을 나누어 적고, ISR 작성 규칙 표의 어느 항목을 지키고 있는지 표시하세요.</li></ol>
+<h2 id="참고자료">참고자료<a class="anchor" href="#참고자료">#</a></h2>
+<ul><li>ST, <em>PM0214 — Cortex-M4 programming manual</em>, 2.3 Exception model, 4.3 Nested vectored interrupt controller (NVIC)</li><li>ST, <em>RM0383 — STM32F411xC/E Reference Manual</em>, 10장 Interrupts and events (벡터 표, EXTI, SYSCFG_EXTICR)</li><li>ST, <em>RM0008 — STM32F1 Reference Manual</em>, 10장 Interrupts and events (F1 벡터 표, AFIO_EXTICR)</li><li>ST, <em>UM1725 — Description of STM32F4 HAL and LL drivers</em>, HAL GPIO · TIM · UART 의 IRQHandler · Callback 절</li><li>ST, <em>AN4838 — Managing memory protection unit in STM32 MCUs</em> (참고), <em>AN4989 — STM32 microcontroller debug toolbox</em> (폴트 · 인터럽트 디버깅)</li><li>Arm, <em>Cortex-M4 Devices Generic User Guide</em>, Exception entry and return</li><li>이 사이트의 <a href="l05.html">L05 외부 인터럽트 EXTI</a>, <a href="l06.html">L06 UART</a>, <a href="t02.html">T02 Cortex-M 코어 구조</a></li></ul>
+      <nav class="pager"><a class="pager-prev" href="t05.html"><span>이전 · T05</span>GPIO 내부 구조와 전기 특성</a><a class="pager-next" href="t07.html"><span>다음 · T07</span>타이머 구조</a></nav>
+    </div>
+    <aside class="lesson-toc"><div class="toc-title">이 레슨의 내용</div><div class="toc-links"><a class="toc-l2" href="#학습-목표">학습 목표</a><a class="toc-l2" href="#벡터-테이블">벡터 테이블</a><a class="toc-l2" href="#nvic-우선순위">NVIC 우선순위</a><a class="toc-l3" href="#4비트-16-단계">4비트, 16 단계</a><a class="toc-l3" href="#테일체이닝과-late-arrival">테일체이닝과 late arrival</a><a class="toc-l2" href="#exti-핀-인터럽트">EXTI: 핀 → 인터럽트</a><a class="toc-l3" href="#pending-과-clear">pending 과 clear</a><a class="toc-l2" href="#hal-인터럽트-흐름">HAL 인터럽트 흐름</a><a class="toc-l2" href="#isr-작성-규칙">ISR 작성 규칙</a><a class="toc-l3" href="#우선순위-역전">우선순위 역전</a><a class="toc-l3" href="#systick-우선순위-함정">SysTick 우선순위 함정</a><a class="toc-l2" href="#폴링-vs-인터럽트-vs-dma">폴링 vs 인터럽트 vs DMA</a><a class="toc-l2" href="#자주-나는-오류와-해결">자주 나는 오류와 해결</a><a class="toc-l2" href="#과제">과제</a><a class="toc-l2" href="#참고자료">참고자료</a></div></aside>
+  </div>
+</article>
+
+</main>
+<script src="../assets/js/site.js"></script>
+</body>
+</html>

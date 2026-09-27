@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 322" role="img" aria-label="SPI 4가지 모드 (CPOL, CPHA) 와 샘플링 에지" font-family="var(--sans)" font-size="12">
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--text-dim)"/></marker></defs>
+<text x="360" y="24" font-size="11" fill="var(--text)" text-anchor="middle" font-weight="700">CPOL = SCK 유휴 레벨 · CPHA = 0 이면 첫 에지에서 샘플, 1 이면 두 번째 에지에서 샘플</text>
+<text x="60" y="52" font-size="11" fill="var(--text)" text-anchor="end" font-weight="700">NSS (CS)</text>
+<path d="M70 40 V40 H170 V56 H514 V40 H544" fill="none" stroke="var(--text-dim)" stroke-width="1.8" stroke-linejoin="round" />
+<text x="342.0" y="36" font-size="9.5" fill="var(--text-faint)" text-anchor="middle">LOW 인 동안 전송</text>
+<text x="14" y="92" font-size="12.5" fill="var(--text)" font-weight="700">모드 0</text>
+<text x="14" y="108" font-size="10" fill="var(--text-dim)" font-family="var(--mono)">CPOL=0 CPHA=0</text>
+<text x="180" y="92" font-size="10" fill="var(--text-dim)" text-anchor="end" font-family="var(--mono)">SCK</text>
+<path d="M90 96 V96 H190 V78 H228.0 V96 H266.0 V78 H304.0 V96 H342.0 V78 H380.0 V96 H418.0 V78 H456.0 V96 H494.0 V96 H534.0" fill="none" stroke="var(--text)" stroke-width="2" stroke-linejoin="round" />
+<circle cx="190" cy="87.0" r="4" fill="var(--accent)"/><circle cx="266" cy="87.0" r="4" fill="var(--accent)"/><circle cx="342" cy="87.0" r="4" fill="var(--accent)"/><circle cx="418" cy="87.0" r="4" fill="var(--accent)"/><text x="146" y="117" font-size="10" fill="var(--text-dim)" text-anchor="end" font-family="var(--mono)">MOSI</text>
+<rect x="153.0" y="104" width="74" height="18" rx="3" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="190.0" y="117" font-size="10" fill="var(--text)" text-anchor="middle" font-family="var(--mono)">b7</text>
+<rect x="229.0" y="104" width="74" height="18" rx="3" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="266.0" y="117" font-size="10" fill="var(--text)" text-anchor="middle" font-family="var(--mono)">b6</text>
+<rect x="305.0" y="104" width="74" height="18" rx="3" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="342.0" y="117" font-size="10" fill="var(--text)" text-anchor="middle" font-family="var(--mono)">b5</text>
+<rect x="381.0" y="104" width="74" height="18" rx="3" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="418.0" y="117" font-size="10" fill="var(--text)" text-anchor="middle" font-family="var(--mono)">b4</text>
+<text x="540" y="92" font-size="9.5" fill="var(--text-dim)">샘플 ↑ · 변경 ↓ (가장 흔함)</text>
+<text x="540" y="108" font-size="9.5" fill="var(--text-faint)" font-family="var(--mono)">HAL: POLARITY_LOW · PHASE_1EDGE</text>
+<text x="14" y="150" font-size="12.5" fill="var(--text)" font-weight="700">모드 1</text>
+<text x="14" y="166" font-size="10" fill="var(--text-dim)" font-family="var(--mono)">CPOL=0 CPHA=1</text>
+<text x="180" y="150" font-size="10" fill="var(--text-dim)" text-anchor="end" font-family="var(--mono)">SCK</text>
+<path d="M90 154 V154 H190 V136 H228.0 V154 H266.0 V136 H304.0 V154 H342.0 V136 H380.0 V154 H418.0 V136 H456.0 V154 H494.0 V154 H534.0" fill="none" stroke="var(--text)" stroke-width="2" stroke-linejoin="round" />
+<circle cx="228.0" cy="145.0" r="4" fill="var(--accent)"/><circle cx="304.0" cy="145.0" r="4" fill="var(--accent)"/><circle cx="380.0" cy="145.0" r="4" fill="var(--accent)"/><circle cx="456.0" cy="145.0" r="4" fill="var(--accent)"/><text x="146" y="175" font-size="10" fill="var(--text-dim)" text-anchor="end" font-family="var(--mono)">MOSI</text>
+<rect x="191" y="162" width="74" height="18" rx="3" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="228.0" y="175" font-size="10" fill="var(--text)" text-anchor="middle" font-family="var(--mono)">b7</text>
+<rect x="267" y="162" width="74" height="18" rx="3" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="304.0" y="175" font-size="10" fill="var(--text)" text-anchor="middle" font-family="var(--mono)">b6</text>
+<rect x="343" y="162" width="74" height="18" rx="3" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="380.0" y="175" font-size="10" fill="var(--text)" text-anchor="middle" font-family="var(--mono)">b5</text>
+<rect x="419" y="162" width="74" height="18" rx="3" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="456.0" y="175" font-size="10" fill="var(--text)" text-anchor="middle" font-family="var(--mono)">b4</text>
+<text x="540" y="150" font-size="9.5" fill="var(--text-dim)">샘플 ↓ · 변경 ↑</text>
+<text x="540" y="166" font-size="9.5" fill="var(--text-faint)" font-family="var(--mono)">HAL: POLARITY_LOW · PHASE_2EDGE</text>
+<text x="14" y="208" font-size="12.5" fill="var(--text)" font-weight="700">모드 2</text>
+<text x="14" y="224" font-size="10" fill="var(--text-dim)" font-family="var(--mono)">CPOL=1 CPHA=0</text>
+<text x="180" y="208" font-size="10" fill="var(--text-dim)" text-anchor="end" font-family="var(--mono)">SCK</text>
+<path d="M90 194 V194 H190 V212 H228.0 V194 H266.0 V212 H304.0 V194 H342.0 V212 H380.0 V194 H418.0 V212 H456.0 V194 H494.0 V194 H534.0" fill="none" stroke="var(--text)" stroke-width="2" stroke-linejoin="round" />
+<circle cx="190" cy="203.0" r="4" fill="var(--accent)"/><circle cx="266" cy="203.0" r="4" fill="var(--accent)"/><circle cx="342" cy="203.0" r="4" fill="var(--accent)"/><circle cx="418" cy="203.0" r="4" fill="var(--accent)"/><text x="146" y="233" font-size="10" fill="var(--text-dim)" text-anchor="end" font-family="var(--mono)">MOSI</text>
+<rect x="153.0" y="220" width="74" height="18" rx="3" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="190.0" y="233" font-size="10" fill="var(--text)" text-anchor="middle" font-family="var(--mono)">b7</text>
+<rect x="229.0" y="220" width="74" height="18" rx="3" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="266.0" y="233" font-size="10" fill="var(--text)" text-anchor="middle" font-family="var(--mono)">b6</text>
+<rect x="305.0" y="220" width="74" height="18" rx="3" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="342.0" y="233" font-size="10" fill="var(--text)" text-anchor="middle" font-family="var(--mono)">b5</text>
+<rect x="381.0" y="220" width="74" height="18" rx="3" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="418.0" y="233" font-size="10" fill="var(--text)" text-anchor="middle" font-family="var(--mono)">b4</text>
+<text x="540" y="208" font-size="9.5" fill="var(--text-dim)">샘플 ↓ · 변경 ↑ (유휴 HIGH)</text>
+<text x="540" y="224" font-size="9.5" fill="var(--text-faint)" font-family="var(--mono)">HAL: POLARITY_HIGH · PHASE_1EDGE</text>
+<text x="14" y="266" font-size="12.5" fill="var(--text)" font-weight="700">모드 3</text>
+<text x="14" y="282" font-size="10" fill="var(--text-dim)" font-family="var(--mono)">CPOL=1 CPHA=1</text>
+<text x="180" y="266" font-size="10" fill="var(--text-dim)" text-anchor="end" font-family="var(--mono)">SCK</text>
+<path d="M90 252 V252 H190 V270 H228.0 V252 H266.0 V270 H304.0 V252 H342.0 V270 H380.0 V252 H418.0 V270 H456.0 V252 H494.0 V252 H534.0" fill="none" stroke="var(--text)" stroke-width="2" stroke-linejoin="round" />
+<circle cx="228.0" cy="261.0" r="4" fill="var(--accent)"/><circle cx="304.0" cy="261.0" r="4" fill="var(--accent)"/><circle cx="380.0" cy="261.0" r="4" fill="var(--accent)"/><circle cx="456.0" cy="261.0" r="4" fill="var(--accent)"/><text x="146" y="291" font-size="10" fill="var(--text-dim)" text-anchor="end" font-family="var(--mono)">MOSI</text>
+<rect x="191" y="278" width="74" height="18" rx="3" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="228.0" y="291" font-size="10" fill="var(--text)" text-anchor="middle" font-family="var(--mono)">b7</text>
+<rect x="267" y="278" width="74" height="18" rx="3" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="304.0" y="291" font-size="10" fill="var(--text)" text-anchor="middle" font-family="var(--mono)">b6</text>
+<rect x="343" y="278" width="74" height="18" rx="3" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="380.0" y="291" font-size="10" fill="var(--text)" text-anchor="middle" font-family="var(--mono)">b5</text>
+<rect x="419" y="278" width="74" height="18" rx="3" fill="var(--bg-elev-2)" stroke="var(--border)" />
+<text x="456.0" y="291" font-size="10" fill="var(--text)" text-anchor="middle" font-family="var(--mono)">b4</text>
+<text x="540" y="266" font-size="9.5" fill="var(--text-dim)">샘플 ↑ · 변경 ↓ (유휴 HIGH)</text>
+<text x="540" y="282" font-size="9.5" fill="var(--text-faint)" font-family="var(--mono)">HAL: POLARITY_HIGH · PHASE_2EDGE</text>
+<text x="360" y="314" font-size="10" fill="var(--text-faint)" text-anchor="middle">● = 샘플 시점. 마스터·슬레이브의 모드가 다르면 비트가 한 칸 밀려 엉뚱한 값을 읽습니다. 데이터시트의 타이밍 그림으로 모드를 확인하세요.</text>
+</svg>
