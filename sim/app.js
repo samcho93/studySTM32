@@ -21,7 +21,8 @@
     app.project = P; app.chip = C.CHIPS[P.mcu]; app.board = P.board ? C.BOARDS[P.board] : null;
     app.onClockChange();
     app.selPin = null; app.selPeriph = null;
-    if (!P.mainc) P.mainc = G.genMainC(P, P.user ? G.userFromExample(P.user) : {});
+    if (!P.mainc) P.mainc = G.genMainC(P, P.sections || (P.user ? G.userFromExample(P.user) : {}));
+    delete P.sections;
     app.openFiles();
     app.refreshHeader(); app.refreshDesign(); app.props.set({ kind: 'project' });
     app.makeMachine();
@@ -36,7 +37,25 @@
     np.name = P.name; np.nodes = P.nodes.filter(function (n) { return !D.DEVICES[n.type].builtin; });
     var ids = {}; np.nodes.forEach(function (n) { ids[n.id] = 1; });
     np.wires = P.wires.filter(function (w) { return ids[w[1].split('.')[0]]; });
-    np.user = G.extractUser(P.mainc); np.mainc = null; np.settings = P.settings; np.lesson = P.lesson;
+    np.sections = G.extractUser(app.editor.get('Core/Src/main.c') || P.mainc); np.mainc = null; np.settings = P.settings; np.lesson = P.lesson;
+    var oldLeds = (app.board ? app.board.builtin : []).filter(function (b) { return b.type === 'board-led'; }).map(function (b) { return b.id; });
+    var newLed = board && C.BOARDS[board] ? (C.BOARDS[board].builtin.filter(function (b) { return b.type === 'board-led'; })[0] || {}).id : null;
+    // 보드 LED 이름이 바뀌면(LD2 → LD4 등) USER CODE 의 매크로 이름도 따라 바꾼다
+    if (newLed) oldLeds.forEach(function (o) {
+      if (o === newLed) return;
+      Object.keys(np.sections).forEach(function (k) { np.sections[k] = np.sections[k].replace(new RegExp('\\b' + o + '_(Pin|GPIO_Port)\\b', 'g'), newLed + '_$1'); });
+    });
+    // 사용자가 설정한 핀·주변장치는 새 MCU 에 같은 핀/신호가 있으면 옮긴다
+    var nc = C.CHIPS[np.mcu], oldBoardPins = app.board ? app.board.defaults.pins : {};
+    Object.keys(P.pins).forEach(function (pin) {
+      var cfg = P.pins[pin];
+      if (np.pins[pin]) return;                                                                         // 새 보드 기본값 우선
+      if (oldBoardPins[pin] && JSON.stringify(oldBoardPins[pin]) === JSON.stringify(cfg)) return;     // 옛 보드 전용 설정은 버림
+      if (C.pinSignals(nc, pin).indexOf(cfg.signal) >= 0) np.pins[pin] = JSON.parse(JSON.stringify(cfg));
+    });
+    Object.keys(P.periph).forEach(function (k) { if (nc.periph[k] && !np.periph[k]) np.periph[k] = JSON.parse(JSON.stringify(P.periph[k])); });
+    Object.keys(P.nvic).forEach(function (k) { if (!P.nvic[k]) return; if (/^EXTI/.test(k)) return; if (Object.keys(nc.periph).some(function (p) { return nc.periph[p].irq === k; })) np.nvic[k] = true; });
+    Object.keys(np.pins).forEach(function (pin) { if (np.pins[pin].signal === 'GPIO_EXTI' && Object.keys(P.nvic).some(function (k) { return /^EXTI/.test(k) && P.nvic[k]; })) np.nvic[C.extiLine(nc, +pin.slice(2))] = true; });
     app.loadProject(np); app.regen(); app.dirty();
     app.toast(C.CHIPS[np.mcu].part + (np.board ? ' · ' + C.BOARDS[np.board].title : ' (MCU 만)'));
   };
