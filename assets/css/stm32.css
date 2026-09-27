@@ -11,6 +11,7 @@
   --track-comm:    #0e7490;   /* PART 2 통신·타이머·아날로그 — cyan   */
   --track-periph:  #9333ea;   /* PART 3 주변기기            — purple */
   --track-project: #a16207;   /* PART 4 프로젝트            — yellow */
+  --track-adv:     #1457b8;   /* PART 5 중급 활용           — blue   */
   --track-ref:     #1f9d55;   /* HAL 레퍼런스               — green  */
   --track-safety:  #be123c;   /* 실물 안전 표시              — rose   */
   --topbar-h: 56px;
@@ -21,6 +22,7 @@
   --track-comm:    #22d3ee;
   --track-periph:  #c084fc;
   --track-project: #f2c14e;
+  --track-adv:     #79c0ff;
   --track-ref:     #4cc983;
   --track-safety:  #fb7185;
 }
@@ -31,6 +33,7 @@
     --track-comm:    #22d3ee;
     --track-periph:  #c084fc;
     --track-project: #f2c14e;
+    --track-adv:     #79c0ff;
     --track-ref:     #4cc983;
     --track-safety:  #fb7185;
   }
@@ -41,6 +44,7 @@
 .track-comm    { --tc: var(--track-comm); }
 .track-periph  { --tc: var(--track-periph); }
 .track-project { --tc: var(--track-project); }
+.track-adv     { --tc: var(--track-adv); }
 .track-ref     { --tc: var(--track-ref); }
 
 html { scroll-padding-top: calc(var(--topbar-h) + 16px); }
@@ -90,10 +94,11 @@ html { scroll-padding-top: calc(var(--topbar-h) + 16px); }
 .nav-track[data-track="comm"]    { --tc: var(--track-comm); }
 .nav-track[data-track="periph"]  { --tc: var(--track-periph); }
 .nav-track[data-track="project"] { --tc: var(--track-project); }
+.nav-track[data-track="adv"]     { --tc: var(--track-adv); }
 
 /* ---------------------------------------------------------------- 레슨 머리 */
 .track-pill.track-theory, .track-pill.track-basics, .track-pill.track-comm, .track-pill.track-periph,
-.track-pill.track-project, .track-pill.track-ref {
+.track-pill.track-project, .track-pill.track-adv, .track-pill.track-ref {
   font-family: var(--mono); font-size: 12px; letter-spacing: .04em;
   color: var(--tc); background: color-mix(in srgb, var(--tc) 12%, transparent);
 }
@@ -102,6 +107,7 @@ html { scroll-padding-top: calc(var(--topbar-h) + 16px); }
 .track-page-comm    .lesson  { --tc: var(--track-comm); }
 .track-page-periph  .lesson  { --tc: var(--track-periph); }
 .track-page-project .lesson  { --tc: var(--track-project); }
+.track-page-adv     .lesson  { --tc: var(--track-adv); }
 .ref-page .lesson            { --tc: var(--track-ref); }
 .lesson .lesson-head .lesson-no { color: var(--tc); background: color-mix(in srgb, var(--tc) 12%, transparent); }
 .requires { margin-top: 10px; font-size: 13px; color: var(--text-faint); }
@@ -148,6 +154,7 @@ html { scroll-padding-top: calc(var(--topbar-h) + 16px); }
 .track-block[data-track="comm"]    { --tc: var(--track-comm); }
 .track-block[data-track="periph"]  { --tc: var(--track-periph); }
 .track-block[data-track="project"] { --tc: var(--track-project); }
+.track-block[data-track="adv"]     { --tc: var(--track-adv); }
 .track-block .lesson-card.done .lc-no { color: var(--ok); background: var(--ok-soft); }
 
 /* ---------------------------------------------------------------- 콜아웃 추가 */

@@ -149,6 +149,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 }
 ```
 
+길이를 모르는 수신(IDLE 감지)과 DMA 송수신은 [UART DMA · IDLE](#uart-dma-idle) 을 보세요.
+
 ### printf 리타깃
 
 printf 는 **리타깃 함수가 있어야** UART 로 나갑니다. stdout 은 줄 버퍼라 `\n` 에서 내보내며, `%f` 는 실수 printf 설정(`-u _printf_float` / 시뮬레이터 `printfFloat`)이 필요합니다.
@@ -209,7 +211,9 @@ HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
 __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 250);
 ```
 
-관련 레슨: L07, L08, L13 · 시뮬레이터 미지원: `HAL_TIM_IC_Start_IT`(입력 캡처), `HAL_TIM_Encoder_Start`, `HAL_TIM_OC_Start`, `HAL_TIMEx_PWMN_Start`, `__HAL_TIM_CLEAR_FLAG`
+입력 캡처(`HAL_TIM_IC_Start_IT`)는 아래 [TIM 입력 캡처](#tim-입력-캡처) 를 보세요.
+
+관련 레슨: L07, L08, L13, L19 · 시뮬레이터 미지원: `HAL_TIM_Encoder_Start`, `HAL_TIM_OC_Start`, `HAL_TIMEx_PWMN_Start`, `__HAL_TIM_CLEAR_FLAG`
 
 ## ADC
 
@@ -221,7 +225,9 @@ HAL_StatusTypeDef HAL_ADC_Stop(ADC_HandleTypeDef *hadc);
 HAL_StatusTypeDef HAL_ADC_ConfigChannel(ADC_HandleTypeDef *hadc, ADC_ChannelConfTypeDef *sConfig);
 HAL_StatusTypeDef HAL_ADC_Start_IT(ADC_HandleTypeDef *hadc);
 HAL_StatusTypeDef HAL_ADC_Start_DMA(ADC_HandleTypeDef *hadc, uint32_t *pData, uint32_t Length);
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc);   /* 사용자 정의 */
+HAL_StatusTypeDef HAL_ADC_Stop_DMA(ADC_HandleTypeDef *hadc);
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc);       /* 사용자 정의 — 변환 끝 / DMA 전체 완료 */
+void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc);   /* 사용자 정의 — DMA 절반 완료 */
 ```
 
 12비트: 0 ~ 4095, 전압 = 값 × 3.3 / 4095. 여러 채널을 켜고 폴링하면 Start/Poll/GetValue 한 번마다 **rank 순서대로 다음 채널** 값이 나옵니다.
@@ -236,6 +242,8 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc);   /* 사용자 정의 */
 | `HAL_ADC_ConfigChannel` | 채널·rank·샘플링 시간 변경 | `HAL_OK` |
 | `HAL_ADC_Start_IT` | 변환 끝나면 `HAL_ADC_ConvCpltCallback` | `HAL_OK` |
 | `HAL_ADC_Start_DMA(&hadc1, (uint32_t *)buf, n)` | 여러 채널을 rank 순서로 `buf` 에 계속 채움 (스캔 + 연속 + 순환 DMA) | `HAL_OK` |
+| `HAL_ADC_ConvHalfCpltCallback` / `ConvCpltCallback` | 원형 DMA 에서 배열 앞 절반 / 뒤 절반이 찼을 때 (DMA 인터럽트 필요) | — |
+| `HAL_ADC_Stop_DMA` | DMA 변환 정지 | `HAL_OK` |
 
 ```c
 HAL_ADC_Start(&hadc1);
@@ -249,7 +257,7 @@ uint16_t adc_buf[2];
 HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc_buf, 2);   // adc_buf[0] = rank1, [1] = rank2
 ```
 
-관련 레슨: L09 · 시뮬레이터 미지원: `HAL_ADCEx_Calibration_Start`(F1), 주입(Injected) 채널, 아날로그 워치독
+관련 레슨: L09, L18 · 시뮬레이터 미지원: `HAL_ADCEx_Calibration_Start`(F1), 주입(Injected) 채널, 아날로그 워치독
 
 ## I2C
 
@@ -303,6 +311,252 @@ HAL_GPIO_WritePin(FLASH_CS_GPIO_Port, FLASH_CS_Pin, GPIO_PIN_SET);     // 해제
 
 관련 레슨: L11 · 시뮬레이터 미지원: `HAL_SPI_Transmit_IT` / `_DMA`, 하드웨어 NSS
 
+## UART DMA · IDLE
+
+```c
+HAL_StatusTypeDef HAL_UARTEx_ReceiveToIdle_IT (UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size);
+HAL_StatusTypeDef HAL_UARTEx_ReceiveToIdle_DMA(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size);
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size);   /* 사용자 정의 */
+HAL_StatusTypeDef HAL_UART_Transmit_DMA(UART_HandleTypeDef *huart, const uint8_t *pData, uint16_t Size);
+HAL_StatusTypeDef HAL_UART_Receive_DMA(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size);
+HAL_StatusTypeDef HAL_UART_DMAStop(UART_HandleTypeDef *huart);
+```
+
+@table[api]
+| 함수 | 동작 | 끝나면 |
+|---|---|---|
+| `HAL_UARTEx_ReceiveToIdle_IT(&huart2, buf, 64)` | 최대 64바이트를 받되, 수신선이 1문자 시간 조용하면(IDLE) 거기서 끝 | `HAL_UARTEx_RxEventCallback(huart, Size)` — `Size` = 받은 바이트 수 |
+| `HAL_UARTEx_ReceiveToIdle_DMA(&huart2, buf, 64)` | 위와 같고 바이트 복사를 DMA 가 함 | 같은 콜백 (DMA 절반 완료 때도 불림) |
+| `HAL_UART_Transmit_DMA(&huart2, buf, n)` | 전송 예약 후 바로 돌아옴 | `HAL_UART_TxCpltCallback` |
+| `HAL_UART_Receive_DMA(&huart2, buf, n)` | 정확히 n 바이트 수신 | `HAL_UART_RxCpltCallback` |
+| `HAL_UART_DMAStop(&huart2)` | DMA 송수신 중단 | — |
+
+- 수신 이벤트는 UART 인터럽트로 알리므로 **NVIC 의 USART2 global interrupt** 를 켭니다. 수신은 한 번 끝나면 멈추므로 처리 후 다시 호출합니다.
+- DMA 판은 CubeMX 에서 USART2_RX DMA(F4: DMA1 Stream5 Channel4)를 추가해야 하고, 절반 완료 콜백을 막으려면 `__HAL_DMA_DISABLE_IT(&hdma_usart2_rx, DMA_IT_HT)`(실물).
+- 시뮬레이터: `_DMA` 판은 `_IT` 판과 같게 동작하며, CubeMX 화면에 UART DMA 설정은 없습니다.
+
+```c
+uint8_t rx_buf[64];
+volatile uint16_t rx_len = 0;
+HAL_UARTEx_ReceiveToIdle_IT(&huart2, rx_buf, sizeof(rx_buf));     // USER CODE 2
+
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
+{
+  if (huart->Instance == USART2) rx_len = Size;                   // 처리는 메인 루프에서, 처리 후 다시 ReceiveToIdle
+}
+```
+
+ADC 의 원형 DMA 는 [ADC](#adc) 의 `HAL_ADC_Start_DMA` 와 `HAL_ADC_ConvHalfCpltCallback` 을 보세요. 관련 레슨: L18
+
+## TIM 입력 캡처
+
+```c
+HAL_StatusTypeDef HAL_TIM_IC_Start(TIM_HandleTypeDef *htim, uint32_t Channel);
+HAL_StatusTypeDef HAL_TIM_IC_Start_IT(TIM_HandleTypeDef *htim, uint32_t Channel);
+HAL_StatusTypeDef HAL_TIM_IC_Stop(TIM_HandleTypeDef *htim, uint32_t Channel);
+HAL_StatusTypeDef HAL_TIM_IC_Stop_IT(TIM_HandleTypeDef *htim, uint32_t Channel);
+uint32_t HAL_TIM_ReadCapturedValue(TIM_HandleTypeDef *htim, uint32_t Channel);
+__HAL_TIM_SET_CAPTUREPOLARITY(htim, Channel, Polarity);          /* 매크로 */
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim);          /* 사용자 정의 */
+```
+
+에지가 들어오는 순간 카운터(CNT) 값이 CCRx 에 복사됩니다. 두 캡처 값의 차이 × 틱 = 주기 또는 펄스 폭. 틱 = (PSC + 1) / 타이머 클럭.
+
+@table[api]
+| 함수 / 상수 | 설명 |
+|---|---|
+| `HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1)` | 카운터 시작 + CH1 캡처 인터럽트. 에지마다 `HAL_TIM_IC_CaptureCallback` |
+| `HAL_TIM_IC_Start` | 인터럽트 없이 캡처만 (`ReadCapturedValue` 로 폴링) |
+| `HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1)` | 마지막 캡처 값(CCR1) |
+| `__HAL_TIM_SET_CAPTUREPOLARITY(htim, ch, pol)` | 다음 캡처 에지 바꾸기 |
+| `TIM_INPUTCHANNELPOLARITY_RISING` / `_FALLING` / `_BOTHEDGE` | 상승 / 하강 / 양쪽 (F1 은 양쪽 미지원) |
+| `htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1` | 콜백에서 어느 채널인지 구분 (`TIM_CHANNEL_1` 과 값이 다름) |
+
+CubeMX: TIMx → Channel1 **Input Capture direct mode**, Prescaler, Counter Period(**최댓값** 0xFFFF / 0xFFFFFFFF), Polarity, NVIC TIMx global interrupt.
+생성 코드는 `TIM_IC_InitTypeDef sConfigIC` 와 `HAL_TIM_IC_ConfigChannel()` 입니다.
+
+```c
+/* TIM2: PSC 83 → 1 µs 틱, ARR 0xFFFFFFFF. HIGH 폭 재기 (극성 바꾸기) */
+volatile uint32_t rise, width_us;
+volatile uint8_t wait_fall = 0;
+
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
+{
+  if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
+    uint32_t cap = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
+    if (!wait_fall) { rise = cap; __HAL_TIM_SET_CAPTUREPOLARITY(htim, TIM_CHANNEL_1, TIM_INPUTCHANNELPOLARITY_FALLING); }
+    else            { width_us = cap - rise; __HAL_TIM_SET_CAPTUREPOLARITY(htim, TIM_CHANNEL_1, TIM_INPUTCHANNELPOLARITY_RISING); }
+    wait_fall = !wait_fall;
+  }
+}
+```
+
+관련 레슨: L19 · 시뮬레이터: 타이머 자신의 PWM 출력은 캡처 에지를 만들지 않습니다(장치 · 버튼이 핀을 움직일 때 캡처). PWM 입력 모드(슬레이브 리셋)는 미지원.
+
+## IWDG (워치독)
+
+```c
+HAL_StatusTypeDef HAL_IWDG_Init(IWDG_HandleTypeDef *hiwdg);       /* MX_IWDG_Init() 이 호출 — 이때부터 카운트 시작 */
+HAL_StatusTypeDef HAL_IWDG_Refresh(IWDG_HandleTypeDef *hiwdg);    /* 카운터 다시 채우기 */
+__HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST);                             /* 리셋 원인 플래그 읽기 (1 / 0) */
+__HAL_RCC_CLEAR_RESET_FLAGS();                                    /* 리셋 플래그 모두 지우기 */
+void NVIC_SystemReset(void);                                      /* 소프트웨어 리셋 (돌아오지 않음) */
+```
+
+**제한 시간 = 4 × 2^PR × (Reload + 1) / LSI** — `hiwdg.Init.Prescaler = IWDG_PRESCALER_4 ~ 256`, `hiwdg.Init.Reload = 0 ~ 4095`. LSI 는 F4 약 32 kHz(17~47 kHz), F1 약 40 kHz.
+
+@table[api]
+| 설정 (LSI 32 kHz) | 제한 시간 |
+|---|---|
+| `IWDG_PRESCALER_32`, Reload 999 | 1.0 s |
+| `IWDG_PRESCALER_64`, Reload 4095 | 8.2 s |
+| `IWDG_PRESCALER_256`, Reload 4095 | 32.8 s (최대) |
+
+@table[api]
+| 리셋 플래그 | 원인 |
+|---|---|
+| `RCC_FLAG_IWDGRST` / `RCC_FLAG_WWDGRST` | 독립 / 창 워치독 |
+| `RCC_FLAG_SFTRST` | `NVIC_SystemReset()` |
+| `RCC_FLAG_PORRST` / `RCC_FLAG_BORRST` | 전원 켜짐 / 브라운아웃 |
+| `RCC_FLAG_PINRST` | NRST 핀 (다른 리셋에서도 함께 켜짐 → 마지막에 검사) |
+
+```c
+/* USER CODE 2: 리셋 원인 → 지우기 */
+if (__HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST)) printf("reset by IWDG\r\n");
+__HAL_RCC_CLEAR_RESET_FLAGS();
+
+/* 메인 루프 끝: 한 바퀴가 정상일 때만 */
+HAL_IWDG_Refresh(&hiwdg);
+```
+
+관련 레슨: L20 · 시뮬레이터 미지원: WWDG(`HAL_WWDG_Init`, `HAL_WWDG_Refresh`), `__HAL_DBGMCU_FREEZE_IWDG`
+
+## RTC
+
+```c
+HAL_StatusTypeDef HAL_RTC_Init(RTC_HandleTypeDef *hrtc);
+HAL_StatusTypeDef HAL_RTC_SetTime(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, uint32_t Format);
+HAL_StatusTypeDef HAL_RTC_GetTime(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, uint32_t Format);
+HAL_StatusTypeDef HAL_RTC_SetDate(RTC_HandleTypeDef *hrtc, RTC_DateTypeDef *sDate, uint32_t Format);
+HAL_StatusTypeDef HAL_RTC_GetDate(RTC_HandleTypeDef *hrtc, RTC_DateTypeDef *sDate, uint32_t Format);
+HAL_StatusTypeDef HAL_RTCEx_SetWakeUpTimer_IT(RTC_HandleTypeDef *hrtc, uint32_t WakeUpCounter, uint32_t WakeUpClock);
+HAL_StatusTypeDef HAL_RTCEx_DeactivateWakeUpTimer(RTC_HandleTypeDef *hrtc);
+void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc);  /* 사용자 정의 */
+```
+
+@table[api]
+| 항목 | 설명 |
+|---|---|
+| `RTC_TimeTypeDef` | `Hours` `Minutes` `Seconds` `SubSeconds` |
+| `RTC_DateTypeDef` | `Year`(0~99) `Month`(1~12) `Date`(1~31) `WeekDay`(1 = 월 ~ 7 = 일) |
+| `RTC_FORMAT_BIN` / `RTC_FORMAT_BCD` | 23 / `0x23`. CubeMX 생성 코드는 BCD 로 설정 |
+| **GetTime 다음 GetDate** | 시각을 읽으면 날짜를 읽을 때까지 그림자 레지스터가 잠김. 날짜가 필요 없어도 GetDate 호출 |
+| `SetWakeUpTimer_IT(&hrtc, n, RTC_WAKEUPCLOCK_CK_SPRE_16BITS)` | (n + 1) 초마다 웨이크업 인터럽트 (NVIC: RTC_WKUP) |
+| `RTC_WAKEUPCLOCK_RTCCLK_DIV16` | 한 칸 488 µs (LSE 기준), 최대 약 32 s |
+
+```c
+RTC_TimeTypeDef t; RTC_DateTypeDef d;
+HAL_RTC_GetTime(&hrtc, &t, RTC_FORMAT_BIN);
+HAL_RTC_GetDate(&hrtc, &d, RTC_FORMAT_BIN);
+printf("20%02d-%02d-%02d %02d:%02d:%02d\r\n", d.Year, d.Month, d.Date, t.Hours, t.Minutes, t.Seconds);
+```
+
+관련 레슨: L21 · 시뮬레이터 미지원: 알람(`HAL_RTC_SetAlarm_IT`), 백업 레지스터(`HAL_RTCEx_BKUPRead` / `Write`), 탬퍼 · 타임스탬프
+
+## PWR (저전력)
+
+```c
+void HAL_PWR_EnterSLEEPMode(uint32_t Regulator, uint8_t SLEEPEntry);   /* PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI */
+void HAL_PWR_EnterSTOPMode(uint32_t Regulator, uint8_t STOPEntry);     /* PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI */
+void HAL_PWR_EnterSTANDBYMode(void);                                     /* 돌아오지 않음 — 깨어나면 리셋 */
+void HAL_PWR_EnableWakeUpPin(uint32_t WakeUpPinx);                       /* PWR_WAKEUP_PIN1 = PA0 (F411) */
+void HAL_SuspendTick(void);   void HAL_ResumeTick(void);                 /* SysTick 인터럽트 멈춤 / 재개 */
+__HAL_PWR_GET_FLAG(PWR_FLAG_SB);  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
+```
+
+@table[api]
+| 모드 | 깨우는 원인 | 깨어난 뒤 |
+|---|---|---|
+| SLEEP | 아무 인터럽트 (SysTick 포함 → `HAL_SuspendTick()` 먼저) | 다음 줄부터 |
+| STOP | EXTI 라인: GPIO EXTI, RTC 웨이크업 · 알람 | 다음 줄부터, 클럭 = HSI → **`SystemClock_Config()` 다시 호출** |
+| STANDBY | WKUP 핀, RTC 알람 · 웨이크업, NRST, IWDG | 리셋 → `main()` 처음, `PWR_FLAG_SB` = 1 |
+
+```c
+HAL_SuspendTick();
+HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+SystemClock_Config();          /* PLL 다시 켜기 */
+HAL_ResumeTick();
+```
+
+관련 레슨: L21 · 대표 소비 전류는 데이터시트의 Supply current 표를 확인하세요. 시뮬레이터의 전류 추정은 대략적인 값입니다.
+
+## CMSIS-RTOS2 (FreeRTOS)
+
+CubeMX 의 FREERTOS(Interface **CMSIS_V2**)를 켜면 `#include "cmsis_os.h"` 와 태스크 핸들 · 속성, `osKernelInitialize` → `osThreadNew` → `osKernelStart` 가 생성됩니다.
+함수 대부분은 `osStatus_t` 를 돌려줍니다: `osOK`(0), `osErrorTimeout`(−2), `osErrorResource`(−3), `osErrorParameter`(−4), `osErrorISR`(−6).
+`timeout` 은 틱(1 ms) 단위, `osWaitForever` = 무한 대기, **ISR 에서는 0**.
+
+```c
+/* 커널 · 태스크 */
+osStatus_t   osKernelInitialize(void);
+osStatus_t   osKernelStart(void);                                   /* 돌아오지 않음 */
+uint32_t     osKernelGetTickCount(void);
+osThreadId_t osThreadNew(osThreadFunc_t func, void *argument, const osThreadAttr_t *attr);
+osThreadId_t osThreadGetId(void);          const char *osThreadGetName(osThreadId_t id);
+osStatus_t   osThreadYield(void);          osStatus_t osThreadSuspend(osThreadId_t id);
+osStatus_t   osThreadResume(osThreadId_t id);   osStatus_t osThreadTerminate(osThreadId_t id);   void osThreadExit(void);
+osStatus_t   osDelay(uint32_t ticks);      osStatus_t osDelayUntil(uint32_t ticks);
+
+/* 동기화 · 통신 */
+osMutexId_t        osMutexNew(const osMutexAttr_t *attr);
+osStatus_t         osMutexAcquire(osMutexId_t id, uint32_t timeout);   osStatus_t osMutexRelease(osMutexId_t id);
+osSemaphoreId_t    osSemaphoreNew(uint32_t max_count, uint32_t initial_count, const osSemaphoreAttr_t *attr);
+osStatus_t         osSemaphoreAcquire(osSemaphoreId_t id, uint32_t timeout);   osStatus_t osSemaphoreRelease(osSemaphoreId_t id);
+uint32_t           osSemaphoreGetCount(osSemaphoreId_t id);
+osMessageQueueId_t osMessageQueueNew(uint32_t msg_count, uint32_t msg_size, const osMessageQueueAttr_t *attr);
+osStatus_t         osMessageQueuePut(osMessageQueueId_t id, const void *msg_ptr, uint8_t msg_prio, uint32_t timeout);
+osStatus_t         osMessageQueueGet(osMessageQueueId_t id, void *msg_ptr, uint8_t *msg_prio, uint32_t timeout);
+uint32_t           osMessageQueueGetCount(osMessageQueueId_t id);
+uint32_t osThreadFlagsSet(osThreadId_t id, uint32_t flags);   uint32_t osThreadFlagsWait(uint32_t flags, uint32_t options, uint32_t timeout);
+uint32_t osThreadFlagsClear(uint32_t flags);
+osEventFlagsId_t osEventFlagsNew(const osEventFlagsAttr_t *attr);
+uint32_t osEventFlagsSet(osEventFlagsId_t id, uint32_t flags);   uint32_t osEventFlagsClear(osEventFlagsId_t id, uint32_t flags);
+uint32_t osEventFlagsWait(osEventFlagsId_t id, uint32_t flags, uint32_t options, uint32_t timeout);
+osTimerId_t osTimerNew(osTimerFunc_t func, osTimerType_t type, void *argument, const osTimerAttr_t *attr);
+osStatus_t  osTimerStart(osTimerId_t id, uint32_t ticks);   osStatus_t osTimerStop(osTimerId_t id);
+```
+
+@table[api]
+| 도구 | ISR 에서 | 메모 |
+|---|---|---|
+| `osDelay` / `osDelayUntil` | 불가 | 태스크를 Blocked 로. 태스크 안에서는 `HAL_Delay` 대신 사용 |
+| `osMessageQueuePut` / `Get` | Put · Get 가능 (timeout 0) | 값을 복사. 큐가 차면 ISR 은 `osErrorResource` |
+| `osMutexAcquire` / `Release` | **불가** | 소유자 있음, 우선순위 상속. 공유 자원 보호 |
+| `osSemaphoreAcquire` / `Release` | Release 가능 (Acquire 는 timeout 0) | 이진(최대 1) · 카운팅 |
+| `osThreadFlagsSet` / `Wait` | Set 가능 | 특정 태스크 깨우기. `Wait` 옵션 `osFlagsWaitAny` / `osFlagsWaitAll` / `osFlagsNoClear` |
+| `osEventFlagsSet` / `Wait` | Set 가능 | 여러 태스크가 보는 비트 모음 |
+| `osTimerNew(fn, osTimerOnce / osTimerPeriodic, arg, NULL)` | — | 콜백은 타이머 서비스 태스크에서 실행 — 짧게, 대기 금지 |
+
+우선순위: `osPriorityIdle`(1) · `Low`(8) · `BelowNormal`(16) · **`Normal`(24)** · `AboveNormal`(32) · `High`(40) · `Realtime`(48).
+RTOS 함수를 부르는 인터럽트는 NVIC 우선순위를 **5 이상(숫자)** 으로 둡니다(CubeMX 기본 `LIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY` = 5).
+
+```c
+/* ISR → 태스크: 세마포어 */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) { if (GPIO_Pin == B1_Pin) osSemaphoreRelease(buttonSemHandle); }
+
+void StartButtonTask(void *argument)
+{
+  for (;;) {
+    osSemaphoreAcquire(buttonSemHandle, osWaitForever);
+    osMutexAcquire(uartMutexHandle, osWaitForever);
+    printf("B1\r\n");
+    osMutexRelease(uartMutexHandle);
+  }
+}
+```
+
+관련 레슨: L22, L23 · 시뮬레이터: 태스크 함수 이름을 값으로 넘기는 것은 되지만 함수 포인터 변수는 미지원. HAL 타임베이스(TIM6) 코드는 생략. 미지원: `osThreadGetStackSpace`, 메모리 풀, 스택 넘침 검사 훅.
+
 ## 레지스터 직접 접근
 
 HAL 함수 대신 레지스터에 직접 쓰면 빠르고 코드가 짧습니다. 시뮬레이터가 지원하는 레지스터입니다.
@@ -336,6 +590,8 @@ __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 500);    TIM3->CCR1 = 500;   /* = h
 
 **지원 상수**: `HAL_OK` `HAL_ERROR` `HAL_BUSY` `HAL_TIMEOUT` `HAL_MAX_DELAY` `GPIO_PIN_0`~`GPIO_PIN_15` `GPIO_PIN_SET` `GPIO_PIN_RESET`
 `TIM_CHANNEL_1`~`4` `ADC_CHANNEL_0`~`17` `I2C_MEMADD_SIZE_8BIT` `NULL` `true` `false`
+`TIM_INPUTCHANNELPOLARITY_*` `HAL_TIM_ACTIVE_CHANNEL_1`~`4` `IWDG_PRESCALER_4`~`256` `RCC_FLAG_*` `RTC_FORMAT_BIN` `RTC_FORMAT_BCD` `RTC_WAKEUPCLOCK_*` `RTC_MONTH_*` `RTC_WEEKDAY_*`
+`PWR_*` `osOK` `osError*` `osWaitForever` `osPriority*` `osFlagsWaitAny` `osFlagsWaitAll` `osFlagsNoClear` `osTimerOnce` `osTimerPeriodic`
 
 **C 문법 범위**: 정수·실수형(`uint8_t`~`uint32_t`, `int8_t`~`int32_t`, `float`, `double`, `bool`), 1·2차원 배열, 문자열, 포인터(`*p++`, `p[i]`, `&변수`),
 `struct` / `typedef struct`, `enum`, `#define`(상수·함수형 매크로), `static` 지역 변수, `const` `volatile`, 모든 제어문, 삼항·비트 연산·캐스트·`sizeof`.
@@ -348,19 +604,23 @@ __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 500);    TIM3->CCR1 = 500;   /* = h
 @table[api]
 | 모듈 | API (시뮬레이터 미지원) | 대신 쓸 수 있는 방법 |
 |---|---|---|
-| 코어 | `HAL_SuspendTick`, `HAL_PWR_EnterSLEEPMode`, `HAL_IWDG_Refresh` | — |
+| 코어 · 전원 | `HAL_WWDG_Init` / `Refresh`, `__HAL_DBGMCU_FREEZE_IWDG`, `HAL_PWREx_EnableFlashPowerDown` | IWDG |
 | GPIO | `HAL_GPIO_LockPin`, `HAL_GPIO_DeInit` | — |
-| UART | `HAL_UART_Transmit_DMA`, `HAL_UART_Receive_DMA`, `HAL_UARTEx_ReceiveToIdle_IT`, `HAL_UART_ErrorCallback` | `Receive_IT` 1바이트 반복 + 버퍼 |
-| TIM | `HAL_TIM_IC_Start_IT`, `HAL_TIM_Encoder_Start`, `HAL_TIM_OC_Start`, `__HAL_TIM_CLEAR_FLAG` | `__HAL_TIM_GET_COUNTER` 로 시간 측정 |
+| UART | `HAL_UART_ErrorCallback`, `__HAL_DMA_DISABLE_IT`, CubeMX 의 UART DMA 설정 | `HAL_UARTEx_ReceiveToIdle_IT` |
+| TIM | `HAL_TIM_Encoder_Start`, `HAL_TIM_OC_Start`, PWM 입력 모드, `__HAL_TIM_CLEAR_FLAG` | 입력 캡처, `__HAL_TIM_GET_COUNTER` |
 | ADC | `HAL_ADCEx_Calibration_Start`, 주입 채널 | 일반 채널 + 평균 |
 | I2C | `HAL_I2C_Master_Transmit_IT` / `_DMA` | 블로킹 함수 |
 | SPI | `HAL_SPI_Transmit_IT` / `_DMA` | 블로킹 함수 |
 | LL | `LL_GPIO_TogglePin` 등 LL 드라이버 전체 | HAL 또는 레지스터 직접 접근 |
-| 기타 | DAC, RTC, CAN, USB, FreeRTOS | — |
+| RTC | `HAL_RTC_SetAlarm_IT`, `HAL_RTCEx_BKUPRead` / `Write`, `HAL_RTC_WaitForSynchro` | 웨이크업 타이머 |
+| RTOS | `osThreadGetStackSpace`, 메모리 풀, FreeRTOS 네이티브 API(`xQueueSend` 등) | CMSIS-RTOS2 함수 |
+| 기타 | DAC, CAN, USB | — |
 
 ## 참고자료
 
 - ST, *UM1725 — Description of STM32F4 HAL and low-layer drivers*
 - ST, *UM1850 — Description of STM32F1 HAL and low-layer drivers*
 - ST, *RM0383 — STM32F411xC/E Reference Manual*
+- ARM, *CMSIS-RTOS2 API documentation* (`os…` 함수의 원형과 ISR 사용 가능 여부)
+- FreeRTOS, *Mastering the FreeRTOS Real Time Kernel*
 - 시뮬레이터 프로젝트 탐색기의 `Drivers/STM32F4xx_HAL_Driver/Inc/*.h` (지원 함수 원형과 한국어 주석)

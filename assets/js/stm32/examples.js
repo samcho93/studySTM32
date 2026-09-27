@@ -1663,7 +1663,8 @@ void delay_us(uint16_t us)
     board: 'NUCLEO-F411RE',
     pins: {
       PB8: { signal: 'I2C1_SCL' },
-      PB9: { signal: 'I2C1_SDA' }
+      PB9: { signal: 'I2C1_SDA' },
+      PC13: { signal: 'GPIO_Input', label: 'B1', pull: 'none' }
     },
     periph: { I2C1: { mode: 'i2c', speed: 400000 } },
     nvic: {},
@@ -1705,7 +1706,7 @@ void oled_init(void)
 {
   HAL_Delay(100);                        // 전원 안정화
   oled_cmd(0xAE);                        // 디스플레이 OFF
-  oled_cmd(0x20); oled_cmd(0x00);        // 메모리 주소 모드: 수평
+  oled_cmd(0x20); oled_cmd(0x02);        // 메모리 주소 모드: 페이지 (0xB0~0xB7 로 줄 선택)
   oled_cmd(0xB0);                        // 페이지 0
   oled_cmd(0xC8);                        // COM 스캔 방향: 역방향 (위아래 뒤집힘 보정)
   oled_cmd(0x00); oled_cmd(0x10);        // 열 주소 0
@@ -1786,7 +1787,8 @@ void oled_puts(uint8_t x, uint8_t page, const char *s)
       PA2: { signal: 'USART2_TX' },
       PA3: { signal: 'USART2_RX' },
       PA8: { signal: 'GPIO_Output', label: 'TRIG', level: 0 },
-      PA9: { signal: 'GPIO_Input', label: 'ECHO', pull: 'down' }
+      PA9: { signal: 'GPIO_Input', label: 'ECHO', pull: 'down' },
+      PC13: { signal: 'GPIO_Input', label: 'B1', pull: 'none' }
     },
     periph: {
       USART2: { mode: 'async', baud: 115200 },
@@ -1860,7 +1862,8 @@ int32_t hcsr04_read_cm(void)
       PC4: { signal: 'GPIO_Input', label: 'COL1', pull: 'up' },
       PC5: { signal: 'GPIO_Input', label: 'COL2', pull: 'up' },
       PC6: { signal: 'GPIO_Input', label: 'COL3', pull: 'up' },
-      PC7: { signal: 'GPIO_Input', label: 'COL4', pull: 'up' }
+      PC7: { signal: 'GPIO_Input', label: 'COL4', pull: 'up' },
+      PC13: { signal: 'GPIO_Input', label: 'B1', pull: 'none' }
     },
     periph: { USART2: { mode: 'async', baud: 115200 } },
     nvic: {},
@@ -1947,7 +1950,8 @@ char keypad_scan(void)
       PC0: { signal: 'GPIO_Output', label: 'DIG1', level: 1 },
       PC1: { signal: 'GPIO_Output', label: 'DIG2', level: 1 },
       PC2: { signal: 'GPIO_Output', label: 'DIG3', level: 1 },
-      PC3: { signal: 'GPIO_Output', label: 'DIG4', level: 1 }
+      PC3: { signal: 'GPIO_Output', label: 'DIG4', level: 1 },
+      PC13: { signal: 'GPIO_Input', label: 'B1', pull: 'none' }
     },
     periph: {},
     nvic: {},
@@ -2004,7 +2008,8 @@ void fnd_show(uint8_t pos, uint8_t num)
     pins: {
       PA1: { signal: 'GPIO_Output', label: 'DHT', level: 1 },
       PA2: { signal: 'USART2_TX' },
-      PA3: { signal: 'USART2_RX' }
+      PA3: { signal: 'USART2_RX' },
+      PC13: { signal: 'GPIO_Input', label: 'B1', pull: 'none' }
     },
     periph: {
       USART2: { mode: 'async', baud: 115200 },
@@ -2153,7 +2158,8 @@ int __io_putchar(int ch);
       PA3: { signal: 'USART2_RX' },
       PA8: { signal: 'GPIO_Input', label: 'ENC_CLK', pull: 'up' },
       PA9: { signal: 'GPIO_Input', label: 'ENC_DT', pull: 'up' },
-      PA10: { signal: 'GPIO_Input', label: 'ENC_SW', pull: 'up' }
+      PA10: { signal: 'GPIO_Input', label: 'ENC_SW', pull: 'up' },
+      PC13: { signal: 'GPIO_Input', label: 'B1', pull: 'none' }
     },
     periph: { USART2: { mode: 'async', baud: 115200 } },
     nvic: {},
@@ -2208,7 +2214,8 @@ int __io_putchar(int ch);
       PA1: { signal: 'ADC1_IN1' },
       PA2: { signal: 'USART2_TX' },
       PA3: { signal: 'USART2_RX' },
-      PB5: { signal: 'GPIO_Input', label: 'JOY_SW', pull: 'up' }
+      PB5: { signal: 'GPIO_Input', label: 'JOY_SW', pull: 'up' },
+      PC13: { signal: 'GPIO_Input', label: 'B1', pull: 'none' }
     },
     periph: {
       USART2: { mode: 'async', baud: 115200 },
@@ -2260,6 +2267,937 @@ const char *joy_dir(uint32_t x, uint32_t y)
 `,
       u4: PUTCHAR
     }
+  };
+
+  // ======================================================================= L18 DMA
+  STM32_EXAMPLES['l18-adc-dma'] = {
+    title: 'ADC 2채널 + 원형 DMA — 절반/전체 콜백',
+    desc: '가변저항(PA0 = IN0)과 조도센서(PA1 = IN1)를 연속 변환하고, DMA 가 32칸 배열을 원형으로 채웁니다. 절반 완료 콜백은 앞 16칸을, 전체 완료 콜백은 뒤 16칸을 평균냅니다.',
+    lesson: 'l18',
+    board: 'NUCLEO-F411RE',
+    pins: {
+      PA0: { signal: 'ADC1_IN0' },
+      PA1: { signal: 'ADC1_IN1' },
+      PA2: { signal: 'USART2_TX' },
+      PA3: { signal: 'USART2_RX' },
+      PC13: { signal: 'GPIO_Input', label: 'B1', pull: 'none' }
+    },
+    periph: {
+      USART2: { mode: 'async', baud: 115200 },
+      ADC1: { channels: [0, 1], continuous: true, dma: 'circular' }
+    },
+    nvic: { DMA2_Stream0: true },
+    nodes: [
+      { id: 'pot1', type: 'pot', x: 720, y: 60, props: { value: 1200 } },
+      { id: 'ldr1', type: 'ldr', x: 720, y: 200, props: { lux: 300 } }
+    ],
+    wires: [['PA0', 'pot1.out'], ['PA1', 'ldr1.out']],
+    user: {
+      includes: C`
+#include <stdio.h>
+`,
+      pv: C`
+#define ADC_CH      2                        // 스캔하는 채널 수 (rank 1 = IN0, rank 2 = IN1)
+#define ADC_SAMPLES 16                       // 채널마다 모을 샘플 수
+#define ADC_BUF_LEN (ADC_CH * ADC_SAMPLES)   // 32칸: [IN0, IN1, IN0, IN1, ...]
+uint16_t adc_buf[ADC_BUF_LEN];               // DMA 가 계속 덮어쓰는 배열
+volatile uint32_t avg_pot = 0, avg_ldr = 0;  // 콜백이 계산한 평균
+volatile uint32_t blocks = 0;                // 처리한 반쪽 블록 수
+uint32_t last_print = 0;
+`,
+      pfp: C`
+int __io_putchar(int ch);
+`,
+      u0: C`
+/* adc_buf[start] 부터 절반(16칸)을 채널별로 평균냅니다 */
+void average_block(uint32_t start)
+{
+  uint32_t sum0 = 0, sum1 = 0;
+  for (uint32_t i = start; i < start + ADC_BUF_LEN / 2; i += ADC_CH) {
+    sum0 += adc_buf[i];          // 짝수 칸 = IN0 (가변저항)
+    sum1 += adc_buf[i + 1];      // 홀수 칸 = IN1 (조도센서)
+  }
+  avg_pot = sum0 / (ADC_SAMPLES / 2);
+  avg_ldr = sum1 / (ADC_SAMPLES / 2);
+  blocks++;
+}
+`,
+      u2: C`
+  printf("ADC + DMA circular start\r\n");
+  HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc_buf, ADC_BUF_LEN);   // 한 번 시작하면 CPU 없이 계속
+`,
+      loop: C`
+    if (HAL_GetTick() - last_print >= 500) {
+      last_print = HAL_GetTick();
+      uint32_t mv = avg_pot * 3300 / 4095;
+      printf("POT=%4lu (%lu mV)  LDR=%4lu  blocks=%lu\r\n", avg_pot, mv, avg_ldr, blocks);
+    }
+    /* 메인 루프는 다른 일을 해도 됩니다. 변환 결과는 DMA 가 알아서 채웁니다. */
+`,
+      u4: PUTCHAR + C`
+
+/* DMA 가 배열의 앞 절반을 채웠을 때 — 뒤 절반은 지금 채워지는 중 */
+void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc)
+{
+  if (hadc->Instance == ADC1) average_block(0);
+}
+
+/* DMA 가 배열 끝까지 채웠을 때 — 다음 바퀴는 다시 앞 절반부터 */
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
+{
+  if (hadc->Instance == ADC1) average_block(ADC_BUF_LEN / 2);
+}
+`
+    }
+  };
+
+  STM32_EXAMPLES['l18-uart-idle'] = {
+    title: 'UART 가변 길이 수신 — ReceiveToIdle',
+    desc: 'HAL_UARTEx_ReceiveToIdle_IT 로 길이를 모르는 명령 한 줄을 받습니다. 줄이 끝나고 선이 조용해지면(IDLE) HAL_UARTEx_RxEventCallback 이 받은 바이트 수와 함께 불립니다. "led on", "led off", "status" 명령을 처리합니다.',
+    lesson: 'l18',
+    board: 'NUCLEO-F411RE',
+    pins: {
+      PA2: { signal: 'USART2_TX' },
+      PA3: { signal: 'USART2_RX' },
+      PA5: { signal: 'GPIO_Output', label: 'LD2', level: 0 },
+      PC13: { signal: 'GPIO_Input', label: 'B1', pull: 'none' }
+    },
+    periph: { USART2: { mode: 'async', baud: 115200 } },
+    nvic: { USART2: true },
+    nodes: [],
+    wires: [],
+    user: {
+      includes: C`
+#include <stdio.h>
+#include <string.h>
+`,
+      pv: C`
+#define RX_BUF_SIZE 64
+uint8_t rx_buf[RX_BUF_SIZE];        // HAL 이 채우는 수신 버퍼
+char cmd[RX_BUF_SIZE + 1];          // 처리용 복사본 (문자열)
+volatile uint16_t rx_len = 0;       // 받은 길이 (0 = 새 명령 없음)
+uint32_t cmd_count = 0;
+`,
+      pfp: C`
+int __io_putchar(int ch);
+`,
+      u0: C`
+/* 끝의 \r \n 공백을 지웁니다 */
+void trim_end(char *s)
+{
+  int n = strlen(s);
+  while (n > 0 && (s[n - 1] == '\r' || s[n - 1] == '\n' || s[n - 1] == ' ')) s[--n] = 0;
+}
+
+void handle_command(char *s)
+{
+  cmd_count++;
+  if (strcmp(s, "led on") == 0) {
+    HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+    printf("OK: LED on\r\n");
+  } else if (strcmp(s, "led off") == 0) {
+    HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+    printf("OK: LED off\r\n");
+  } else if (strcmp(s, "status") == 0) {
+    printf("LED=%d, commands=%lu, tick=%lu\r\n", HAL_GPIO_ReadPin(LD2_GPIO_Port, LD2_Pin), cmd_count, HAL_GetTick());
+  } else {
+    printf("Unknown: '%s' (%d bytes)\r\n", s, strlen(s));
+  }
+}
+`,
+      u2: C`
+  printf("Type: led on / led off / status\r\n");
+  HAL_UARTEx_ReceiveToIdle_IT(&huart2, rx_buf, RX_BUF_SIZE);   // 한 줄(또는 버퍼가 찰 때까지) 받기 시작
+`,
+      loop: C`
+    if (rx_len > 0) {
+      uint16_t n = rx_len;
+      memcpy(cmd, rx_buf, n);
+      cmd[n] = 0;
+      rx_len = 0;
+      HAL_UARTEx_ReceiveToIdle_IT(&huart2, rx_buf, RX_BUF_SIZE);  // 다음 줄을 받도록 다시 시작
+      trim_end(cmd);
+      if (cmd[0] != 0) handle_command(cmd);
+    }
+`,
+      u4: PUTCHAR + C`
+
+/* 선이 1문자 시간 이상 조용해지거나(IDLE) 버퍼가 가득 차면 불립니다. Size = 이번에 받은 바이트 수 */
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
+{
+  if (huart->Instance == USART2) {
+    rx_len = Size;              // 처리는 메인 루프에서
+  }
+}
+`
+    }
+  };
+
+  // ======================================================================= L19 입력 캡처
+  STM32_EXAMPLES['l19-ic-ultrasonic'] = {
+    title: 'HC-SR04 ECHO 폭을 입력 캡처로 재기',
+    desc: 'ECHO 를 PA0(TIM2_CH1)에 연결하고 TIM2 를 1 MHz 로 돌립니다. 상승 에지에서 CCR1 을 저장하고 극성을 하강으로 바꾼 뒤, 하강 에지 값과의 차이로 펄스 폭(µs)을 구합니다. 기다리는 동안 CPU 는 자유롭습니다.',
+    lesson: 'l19',
+    board: 'NUCLEO-F411RE',
+    pins: {
+      PA0: { signal: 'TIM2_CH1' },
+      PA2: { signal: 'USART2_TX' },
+      PA3: { signal: 'USART2_RX' },
+      PA8: { signal: 'GPIO_Output', label: 'TRIG', level: 0 },
+      PC13: { signal: 'GPIO_Input', label: 'B1', pull: 'none' }
+    },
+    periph: {
+      USART2: { mode: 'async', baud: 115200 },
+      TIM2: { psc: 83, arr: 4294967295, ch: { 1: 'ic' }, icPol: { 1: 'rising' } }
+    },
+    nvic: { TIM2: true },
+    nodes: [
+      { id: 'us1', type: 'ultrasonic', x: 720, y: 120, props: { distance: 25 } }
+    ],
+    wires: [['PA8', 'us1.trig'], ['PA0', 'us1.echo']],
+    user: {
+      includes: C`
+#include <stdio.h>
+`,
+      pv: C`
+volatile uint32_t ic_rise = 0;       // 상승 에지 때의 카운터 값
+volatile uint32_t echo_us = 0;       // ECHO HIGH 폭 (µs)
+volatile uint8_t  wait_fall = 0;     // 0 = 상승 에지 기다림, 1 = 하강 에지 기다림
+volatile uint8_t  echo_done = 0;     // 새 측정값 있음
+`,
+      pfp: C`
+int __io_putchar(int ch);
+`,
+      u0: C`
+/* TRIG 에 10 µs 펄스. TIM2 는 캡처용으로 계속 돌고 있으므로 카운터를 0 으로 되돌리지 않습니다. */
+void hcsr04_trigger(void)
+{
+  HAL_GPIO_WritePin(TRIG_GPIO_Port, TRIG_Pin, GPIO_PIN_SET);
+  uint32_t t0 = __HAL_TIM_GET_COUNTER(&htim2);
+  while (__HAL_TIM_GET_COUNTER(&htim2) - t0 <= 10) { }   // 10 µs 이상 (카운터 한 칸 = 1 µs)
+  HAL_GPIO_WritePin(TRIG_GPIO_Port, TRIG_Pin, GPIO_PIN_RESET);
+}
+`,
+      u2: C`
+  HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);    // 카운터 시작 + CH1 캡처 인터럽트
+  printf("HC-SR04 input capture ready\r\n");
+`,
+      loop: C`
+    echo_done = 0;
+    wait_fall = 0;
+    __HAL_TIM_SET_CAPTUREPOLARITY(&htim2, TIM_CHANNEL_1, TIM_INPUTCHANNELPOLARITY_RISING);
+    hcsr04_trigger();
+    HAL_Delay(60);                                // 4 m 왕복(약 23 ms)보다 넉넉히. 이 동안 다른 일을 해도 됨
+    if (echo_done) {
+      uint32_t mm = echo_us * 10 / 58;            // cm = µs / 58 → mm 단위로 정수 계산
+      printf("Echo %5lu us  ->  %lu.%lu cm\r\n", echo_us, mm / 10, mm % 10);
+    } else {
+      printf("No echo\r\n");
+    }
+    HAL_Delay(140);
+`,
+      u4: PUTCHAR + C`
+
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
+{
+  if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
+    uint32_t cap = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
+    if (wait_fall == 0) {                         // 1) 상승 에지: 시작 시각 저장, 다음은 하강 에지
+      ic_rise = cap;
+      wait_fall = 1;
+      __HAL_TIM_SET_CAPTUREPOLARITY(htim, TIM_CHANNEL_1, TIM_INPUTCHANNELPOLARITY_FALLING);
+    } else {                                      // 2) 하강 에지: 폭 = 차이 (32비트 뺄셈이라 넘침도 안전)
+      echo_us = cap - ic_rise;
+      wait_fall = 0;
+      echo_done = 1;
+      __HAL_TIM_SET_CAPTUREPOLARITY(htim, TIM_CHANNEL_1, TIM_INPUTCHANNELPOLARITY_RISING);
+    }
+  }
+}
+`
+    }
+  };
+
+  STM32_EXAMPLES['l19-ic-button'] = {
+    title: '버튼 누른 시간 재기 — 양쪽 에지 캡처',
+    desc: '버튼 모듈을 PA0(TIM2_CH1)에 연결하고 TIM2 를 10 kHz(0.1 ms)로 돌려 양쪽 에지를 모두 캡처합니다. 20 ms 안의 에지는 채터링으로 버리고, 누른 순간과 뗀 순간의 차이로 누른 시간을 구해 짧게/길게 누름을 구분합니다.',
+    lesson: 'l19',
+    board: 'NUCLEO-F411RE',
+    pins: {
+      PA0: { signal: 'TIM2_CH1', label: 'BTN' },
+      PA2: { signal: 'USART2_TX' },
+      PA3: { signal: 'USART2_RX' },
+      PA5: { signal: 'GPIO_Output', label: 'LD2', level: 0 },
+      PC13: { signal: 'GPIO_Input', label: 'B1', pull: 'none' }
+    },
+    periph: {
+      USART2: { mode: 'async', baud: 115200 },
+      TIM2: { psc: 8399, arr: 4294967295, ch: { 1: 'ic' }, icPol: { 1: 'both' } }
+    },
+    nvic: { TIM2: true },
+    nodes: [
+      { id: 'sw1', type: 'button', x: 720, y: 120, props: { wiring: 'module', mode: 'push', label: 'SW1' } }
+    ],
+    wires: [['PA0', 'sw1.out']],
+    user: {
+      includes: C`
+#include <stdio.h>
+`,
+      pv: C`
+#define DEBOUNCE_TICKS 200               // 20 ms (1 tick = 0.1 ms)
+#define LONG_PRESS_MS  1000
+volatile uint32_t last_edge = 0;         // 마지막으로 받아들인 에지의 카운터 값
+volatile uint32_t press_start = 0;
+volatile uint32_t press_ticks = 0;
+volatile uint8_t  is_pressed = 0;
+volatile uint8_t  result_ready = 0;
+`,
+      pfp: C`
+int __io_putchar(int ch);
+`,
+      u0: '',
+      u2: C`
+  HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
+  printf("Press SW1 (long press > %d ms)\r\n", LONG_PRESS_MS);
+`,
+      loop: C`
+    if (result_ready) {
+      result_ready = 0;
+      uint32_t ms = press_ticks / 10;
+      printf("Pressed %lu.%lu ms -> %s\r\n", ms, press_ticks % 10, ms >= LONG_PRESS_MS ? "LONG" : "SHORT");
+      if (ms >= LONG_PRESS_MS) HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);   // 길게 누르면 LED 토글
+    }
+    HAL_Delay(10);
+`,
+      u4: PUTCHAR + C`
+
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
+{
+  if (htim->Instance != TIM2 || htim->Channel != HAL_TIM_ACTIVE_CHANNEL_1) return;
+  uint32_t cap = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
+  if (cap - last_edge < DEBOUNCE_TICKS) return;       // 앞 에지와 20 ms 안 = 채터링
+  last_edge = cap;
+
+  /* 양쪽 에지 캡처는 어느 쪽 에지인지 알려 주지 않으므로 핀 레벨로 구분 */
+  if (HAL_GPIO_ReadPin(BTN_GPIO_Port, BTN_Pin) == GPIO_PIN_RESET) {   // 눌림 (HIGH → LOW)
+    press_start = cap;
+    is_pressed = 1;
+  } else if (is_pressed) {                                             // 뗌 (LOW → HIGH)
+    press_ticks = cap - press_start;
+    is_pressed = 0;
+    result_ready = 1;
+  }
+}
+`
+    }
+  };
+
+  // ======================================================================= L20 워치독
+  STM32_EXAMPLES['l20-iwdg'] = {
+    title: 'IWDG — 멈추면 스스로 리셋',
+    desc: 'IWDG 제한 시간은 32 × 1000 / 32 kHz = 1 s. 메인 루프가 200 ms 마다 Refresh 하다가 B1 을 누르면 무한 루프에 빠진 척합니다. 1 초 뒤 리셋되고, 다시 시작한 main 이 리셋 원인(IWDG)을 출력합니다. 터미널에 r 을 보내면 NVIC_SystemReset() 으로 소프트웨어 리셋합니다.',
+    lesson: 'l20',
+    board: 'NUCLEO-F411RE',
+    pins: {
+      PA2: { signal: 'USART2_TX' },
+      PA3: { signal: 'USART2_RX' },
+      PA5: { signal: 'GPIO_Output', label: 'LD2', level: 0 },
+      PC13: { signal: 'GPIO_Input', label: 'B1', pull: 'none' }
+    },
+    periph: {
+      USART2: { mode: 'async', baud: 115200 },
+      IWDG: { prescaler: 32, reload: 999 }
+    },
+    nvic: {},
+    nodes: [],
+    wires: [],
+    user: {
+      includes: C`
+#include <stdio.h>
+`,
+      pv: C`
+uint32_t loops = 0;
+uint8_t rx_ch;
+`,
+      pfp: C`
+int __io_putchar(int ch);
+`,
+      u0: C`
+/* 리셋 원인 출력. 여러 플래그가 함께 켜질 수 있어 구체적인 것부터 검사합니다. */
+void print_reset_cause(void)
+{
+  if (__HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST))      printf("Reset cause: IWDG (independent watchdog)\r\n");
+  else if (__HAL_RCC_GET_FLAG(RCC_FLAG_WWDGRST)) printf("Reset cause: WWDG (window watchdog)\r\n");
+  else if (__HAL_RCC_GET_FLAG(RCC_FLAG_SFTRST))  printf("Reset cause: software (NVIC_SystemReset)\r\n");
+  else if (__HAL_RCC_GET_FLAG(RCC_FLAG_PORRST))  printf("Reset cause: power-on\r\n");
+  else if (__HAL_RCC_GET_FLAG(RCC_FLAG_PINRST))  printf("Reset cause: NRST pin (reset button)\r\n");
+  else                                           printf("Reset cause: unknown\r\n");
+  __HAL_RCC_CLEAR_RESET_FLAGS();                  // 지우지 않으면 다음 리셋 때도 남아 있음
+}
+`,
+      u2: C`
+  print_reset_cause();
+  printf("IWDG running: refresh every 200 ms. B1 = hang, 'r' = software reset\r\n");
+`,
+      loop: C`
+    HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+    loops++;
+
+    if (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == GPIO_PIN_RESET) {
+      printf("B1: main loop stuck after %lu loops...\r\n", loops);
+      while (1) { }                               // 버그로 멈춘 상황 흉내 — Refresh 가 더는 불리지 않음
+    }
+    if (HAL_UART_Receive(&huart2, &rx_ch, 1, 0) == HAL_OK && rx_ch == 'r') {
+      printf("Software reset\r\n");
+      NVIC_SystemReset();                         // 즉시 리셋 (돌아오지 않음)
+    }
+
+    HAL_IWDG_Refresh(&hiwdg);                     // 한 바퀴가 정상으로 끝났을 때만 Refresh
+    HAL_Delay(200);
+`,
+      u4: PUTCHAR
+    }
+  };
+
+  // ======================================================================= L21 RTC · 저전력
+  STM32_EXAMPLES['l21-rtc-clock'] = {
+    title: 'RTC 달력 시계 (UART)',
+    desc: 'CubeMX 에서 2026-12-31 23:59:50 으로 초기화한 RTC 를 100 ms 마다 읽어 초가 바뀔 때만 출력합니다. 해가 바뀌는 순간을 확인하고, B1 을 누르면 같은 시각을 BCD 형식으로도 읽어 비교합니다.',
+    lesson: 'l21',
+    board: 'NUCLEO-F411RE',
+    pins: {
+      PA2: { signal: 'USART2_TX' },
+      PA3: { signal: 'USART2_RX' },
+      PA5: { signal: 'GPIO_Output', label: 'LD2', level: 0 },
+      PC13: { signal: 'GPIO_Input', label: 'B1', pull: 'none' }
+    },
+    periph: {
+      USART2: { mode: 'async', baud: 115200 },
+      RTC: { hours: 23, minutes: 59, seconds: 50, year: 26, month: 12, date: 31 }
+    },
+    nvic: {},
+    nodes: [],
+    wires: [],
+    user: {
+      includes: C`
+#include <stdio.h>
+`,
+      pv: C`
+RTC_TimeTypeDef now_time;
+RTC_DateTypeDef now_date;
+uint8_t last_sec = 99;
+uint8_t last_btn = 1;
+const char *WEEKDAY[8] = {"", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
+`,
+      pfp: C`
+int __io_putchar(int ch);
+`,
+      u0: '',
+      u2: C`
+  printf("RTC clock (LSE 32.768 kHz / 128 / 256 = 1 Hz)\r\n");
+`,
+      loop: C`
+    /* 규칙: GetTime 다음에 반드시 GetDate (그림자 레지스터 잠금 해제) */
+    HAL_RTC_GetTime(&hrtc, &now_time, RTC_FORMAT_BIN);
+    HAL_RTC_GetDate(&hrtc, &now_date, RTC_FORMAT_BIN);
+
+    if (now_time.Seconds != last_sec) {
+      last_sec = now_time.Seconds;
+      printf("20%02d-%02d-%02d (%s) %02d:%02d:%02d\r\n", now_date.Year, now_date.Month, now_date.Date,
+             WEEKDAY[now_date.WeekDay], now_time.Hours, now_time.Minutes, now_time.Seconds);
+      HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+    }
+
+    uint8_t btn = HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin);
+    if (last_btn == 1 && btn == 0) {                   // B1: 같은 값을 BCD 로 읽어 보기
+      RTC_TimeTypeDef t;
+      RTC_DateTypeDef d;
+      HAL_RTC_GetTime(&hrtc, &t, RTC_FORMAT_BCD);
+      HAL_RTC_GetDate(&hrtc, &d, RTC_FORMAT_BCD);
+      printf("  BCD raw: Hours=0x%02X Minutes=0x%02X Seconds=0x%02X (BIN %d)\r\n", t.Hours, t.Minutes, t.Seconds, now_time.Seconds);
+    }
+    last_btn = btn;
+    HAL_Delay(100);
+`,
+      u4: PUTCHAR
+    }
+  };
+
+  STM32_EXAMPLES['l21-stop-wakeup'] = {
+    title: 'STOP 모드 + RTC 1초 웨이크업 + B1',
+    desc: 'RTC 웨이크업 타이머(1 s)와 B1(EXTI13) 두 가지로 STOP 모드에서 깨어납니다. 깨어나면 SystemClock_Config() 로 클럭을 되살리고, 깨운 원인과 RTC 시각을 출력한 뒤 다시 잠듭니다.',
+    lesson: 'l21',
+    board: 'NUCLEO-F411RE',
+    pins: {
+      PA2: { signal: 'USART2_TX' },
+      PA3: { signal: 'USART2_RX' },
+      PA5: { signal: 'GPIO_Output', label: 'LD2', level: 0 },
+      PC13: { signal: 'GPIO_EXTI', label: 'B1', trigger: 'falling' }
+    },
+    periph: {
+      USART2: { mode: 'async', baud: 115200 },
+      RTC: { hours: 8, minutes: 0, seconds: 0, wakeup: 1 }
+    },
+    nvic: { RTC_WKUP: true, EXTI15_10: true },
+    nodes: [],
+    wires: [],
+    user: {
+      includes: C`
+#include <stdio.h>
+`,
+      pv: C`
+volatile uint8_t wake_src = 0;          // 1 = RTC, 2 = B1
+volatile uint32_t rtc_wakes = 0, btn_wakes = 0;
+RTC_TimeTypeDef tm;
+RTC_DateTypeDef dt;
+`,
+      pfp: C`
+int __io_putchar(int ch);
+`,
+      u0: '',
+      u2: C`
+  printf("STOP mode demo: RTC wake-up every 1 s, B1 also wakes\r\n");
+`,
+      loop: C`
+    /* 1) 잠들기 전: 할 일을 끝내고 UART 전송도 끝났는지 확인 (HAL_UART_Transmit 은 끝날 때까지 기다림) */
+    HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+    HAL_SuspendTick();                                  // SysTick 인터럽트가 깨우지 않게
+    HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+
+    /* 2) 여기서 깨어남: STOP 에서는 PLL 이 꺼지고 HSI 로 돌아오므로 클럭부터 복구 */
+    SystemClock_Config();
+    HAL_ResumeTick();
+
+    HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+    HAL_RTC_GetTime(&hrtc, &tm, RTC_FORMAT_BIN);
+    HAL_RTC_GetDate(&hrtc, &dt, RTC_FORMAT_BIN);
+    printf("[%02d:%02d:%02d] woke by %s (rtc=%lu, btn=%lu)\r\n", tm.Hours, tm.Minutes, tm.Seconds,
+           wake_src == 2 ? "B1" : "RTC", rtc_wakes, btn_wakes);
+    wake_src = 0;
+`,
+      u4: PUTCHAR + C`
+
+/* RTC 웨이크업 타이머: 1 초마다 */
+void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
+{
+  rtc_wakes++;
+  if (wake_src == 0) wake_src = 1;
+}
+
+/* B1 (EXTI13) */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  if (GPIO_Pin == B1_Pin) {
+    btn_wakes++;
+    wake_src = 2;
+  }
+}
+`
+    }
+  };
+
+  // ======================================================================= L22 FreeRTOS 기초
+  // 태스크 본문(user.tasks)은 build.py 가 읽는 user 블록 밖에서 붙입니다. 레슨에는 같은 코드를 직접 싣습니다.
+  STM32_EXAMPLES['l22-rtos-blink'] = {
+    title: 'FreeRTOS 태스크 두 개 — 깜빡이 + 보고',
+    desc: 'CubeMX 의 FREERTOS(CMSIS_V2)로 defaultTask(보통 우선순위)와 blinkTask(낮은 우선순위)를 만듭니다. blinkTask 는 osDelay(250) 으로 LD2 를 깜빡이고, defaultTask 는 osDelay(1000) 마다 틱과 깜빡임 횟수를 출력합니다.',
+    lesson: 'l22',
+    board: 'NUCLEO-F411RE',
+    pins: {
+      PA2: { signal: 'USART2_TX' },
+      PA3: { signal: 'USART2_RX' },
+      PA5: { signal: 'GPIO_Output', label: 'LD2', level: 0 },
+      PC13: { signal: 'GPIO_Input', label: 'B1', pull: 'none' }
+    },
+    periph: {
+      USART2: { mode: 'async', baud: 115200 },
+      FREERTOS: { tasks: [
+        { name: 'defaultTask', fn: 'StartDefaultTask', prio: 'osPriorityNormal', stack: 128 },
+        { name: 'blinkTask', fn: 'StartBlinkTask', prio: 'osPriorityLow', stack: 128 }
+      ] }
+    },
+    nvic: {},
+    nodes: [],
+    wires: [],
+    user: {
+      includes: C`
+#include <stdio.h>
+`,
+      pv: C`
+volatile uint32_t blink_count = 0;      // 두 태스크가 함께 보는 변수
+`,
+      pfp: C`
+int __io_putchar(int ch);
+`,
+      u0: '',
+      u2: C`
+  printf("FreeRTOS start\r\n");
+`,
+      u4: PUTCHAR
+    }
+  };
+  STM32_EXAMPLES['l22-rtos-blink'].user.tasks = {
+    StartDefaultTask: C`
+  /* Infinite loop */
+  for(;;)
+  {
+    printf("[%5lu] %s: blink_count=%lu\r\n", osKernelGetTickCount(), osThreadGetName(osThreadGetId()), blink_count);
+    osDelay(1000);                      // 1000 틱(1 s) 동안 Blocked — 그동안 다른 태스크가 CPU 사용
+  }
+`,
+    StartBlinkTask: C`
+  /* Infinite loop */
+  for(;;)
+  {
+    HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+    blink_count++;
+    osDelay(250);
+  }
+`
+  };
+
+  STM32_EXAMPLES['l22-rtos-prio'] = {
+    title: 'FreeRTOS 우선순위 — 선점과 굶주림',
+    desc: 'lowTask(낮음)는 양보 없이 계속 세고, highTask(높음)는 100 ms 마다 LD2 를 토글합니다. defaultTask(보통)는 osDelayUntil 로 1 초마다 보고합니다. B1 을 누르고 있는 동안 highTask 가 양보하지 않고 CPU 를 붙잡으면 보고가 늦어지고 lowTask 는 멈춥니다.',
+    lesson: 'l22',
+    board: 'NUCLEO-F411RE',
+    pins: {
+      PA2: { signal: 'USART2_TX' },
+      PA3: { signal: 'USART2_RX' },
+      PA5: { signal: 'GPIO_Output', label: 'LD2', level: 0 },
+      PC13: { signal: 'GPIO_Input', label: 'B1', pull: 'none' }
+    },
+    periph: {
+      USART2: { mode: 'async', baud: 115200 },
+      FREERTOS: { tasks: [
+        { name: 'defaultTask', fn: 'StartDefaultTask', prio: 'osPriorityNormal', stack: 256 },
+        { name: 'lowTask', fn: 'StartLowTask', prio: 'osPriorityLow', stack: 128 },
+        { name: 'highTask', fn: 'StartHighTask', prio: 'osPriorityAboveNormal', stack: 128 }
+      ] }
+    },
+    nvic: {},
+    nodes: [],
+    wires: [],
+    user: {
+      includes: C`
+#include <stdio.h>
+`,
+      pv: C`
+volatile uint32_t low_count = 0;        // lowTask 가 돈 횟수 (CPU 를 얼마나 받았나)
+volatile uint32_t high_runs = 0;        // highTask 가 깨어난 횟수
+`,
+      pfp: C`
+int __io_putchar(int ch);
+`,
+      u0: '',
+      u2: C`
+  printf("Priority demo: hold B1 to make highTask hog the CPU\r\n");
+`,
+      u4: PUTCHAR
+    }
+  };
+  STM32_EXAMPLES['l22-rtos-prio'].user.tasks = {
+    StartDefaultTask: C`
+  uint32_t next = osKernelGetTickCount();
+  /* Infinite loop */
+  for(;;)
+  {
+    next += 1000;
+    osDelayUntil(next);                 // 절대 시각까지 대기 → 주기가 밀리지 않음
+    uint32_t now = osKernelGetTickCount();
+    printf("[%5lu] late=%lu ms  low_count=%lu  high_runs=%lu\r\n", now, now - next, low_count, high_runs);
+    low_count = 0;
+    high_runs = 0;
+  }
+`,
+    StartLowTask: C`
+  /* Infinite loop — osDelay 없음: 더 높은 태스크가 모두 쉴 때만 돈다 */
+  for(;;)
+  {
+    low_count++;
+  }
+`,
+    StartHighTask: C`
+  /* Infinite loop */
+  for(;;)
+  {
+    HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+    high_runs++;
+    while (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == GPIO_PIN_RESET) { }   // 누르는 동안 양보 없이 바쁜 대기 (나쁜 예)
+    osDelay(100);                       // 정상: 100 ms 동안 Blocked → 낮은 태스크에게 CPU
+  }
+`
+  };
+
+  // ======================================================================= L23 FreeRTOS 통신·동기화
+  STM32_EXAMPLES['l23-queue'] = {
+    title: '메시지 큐 — 버튼 ISR 에서 태스크로',
+    desc: 'B1 EXTI 콜백은 버튼 코드(0xFF) 1바이트를 메시지 큐에 넣기만 합니다(대기 시간 0). sensorTask 는 500 ms 마다 센서 값(0~100)을 같은 큐에 넣습니다. defaultTask 는 osMessageQueueGet(osWaitForever) 로 잠들어 있다가 메시지가 오면 깨어나 처리합니다.',
+    lesson: 'l23',
+    board: 'NUCLEO-F411RE',
+    pins: {
+      PA2: { signal: 'USART2_TX' },
+      PA3: { signal: 'USART2_RX' },
+      PA5: { signal: 'GPIO_Output', label: 'LD2', level: 0 },
+      PC13: { signal: 'GPIO_EXTI', label: 'B1', trigger: 'falling' }
+    },
+    periph: {
+      USART2: { mode: 'async', baud: 115200 },
+      FREERTOS: { tasks: [
+        { name: 'defaultTask', fn: 'StartDefaultTask', prio: 'osPriorityNormal', stack: 256 },
+        { name: 'sensorTask', fn: 'StartSensorTask', prio: 'osPriorityBelowNormal', stack: 128 }
+      ] }
+    },
+    nvic: { EXTI15_10: true },
+    nodes: [],
+    wires: [],
+    user: {
+      includes: C`
+#include <stdio.h>
+`,
+      pv: C`
+/* 메시지 = uint8_t 하나: 0~100 = 센서 값(%), 0xFF = 버튼 눌림 */
+#define MSG_BUTTON  0xFF
+osMessageQueueId_t eventQueueHandle;
+volatile uint32_t last_press = 0;
+volatile uint32_t press_tick = 0;        // 마지막으로 누른 시각 (ms)
+volatile uint32_t dropped = 0;           // 큐가 가득 차서 버린 메시지
+`,
+      pfp: C`
+int __io_putchar(int ch);
+`,
+      u0: '',
+      u2: C`
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);   // RTOS API 를 부르는 ISR 은 우선순위 5 이상(숫자)
+  printf("Queue demo: press B1\r\n");
+`,
+      rtos_queues: C`
+  /* 1바이트 메시지 8개를 담는 큐 */
+  eventQueueHandle = osMessageQueueNew(8, sizeof(uint8_t), NULL);
+`,
+      u4: PUTCHAR + C`
+
+/* ISR: 절대 기다리지 않는다 → timeout 0. 실패하면 세기만 하고 돌아감 */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  if (GPIO_Pin != B1_Pin) return;
+  uint32_t now = HAL_GetTick();
+  if (now - last_press < 50) return;             // 50 ms 안의 채터링 무시
+  last_press = now;
+  press_tick = now;
+  uint8_t msg = MSG_BUTTON;
+  if (osMessageQueuePut(eventQueueHandle, &msg, 0, 0) != osOK) dropped++;
+}
+`
+    }
+  };
+  STM32_EXAMPLES['l23-queue'].user.tasks = {
+    StartDefaultTask: C`
+  uint8_t msg;
+  /* Infinite loop */
+  for(;;)
+  {
+    if (osMessageQueueGet(eventQueueHandle, &msg, NULL, osWaitForever) == osOK) {   // 메시지가 올 때까지 Blocked
+      if (msg == MSG_BUTTON) {
+        osDelay(20);                                                   // 채터링이 가라앉은 뒤
+        if (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == GPIO_PIN_RESET) { // 아직 눌려 있으면 진짜 누름 (뗄 때 튄 에지는 무시)
+          HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+          printf("[%5lu] BUTTON (pressed at %lu ms, waiting=%lu, dropped=%lu)\r\n",
+                 osKernelGetTickCount(), press_tick, osMessageQueueGetCount(eventQueueHandle), dropped);
+        }
+      } else {
+        printf("[%5lu] SENSOR %u %%\r\n", osKernelGetTickCount(), msg);
+      }
+    }
+  }
+`,
+    StartSensorTask: C`
+  uint8_t value = 40;
+  /* Infinite loop */
+  for(;;)
+  {
+    value = (value + 7) % 101;                                       // 센서를 읽었다고 치고 0~100 값
+    uint8_t msg = value;
+    osMessageQueuePut(eventQueueHandle, &msg, 0, osWaitForever);   // 태스크는 큐가 빌 때까지 기다려도 됨
+    osDelay(500);
+  }
+`
+  };
+
+  STM32_EXAMPLES['l23-mutex'] = {
+    title: '뮤텍스 — printf(UART) 함께 쓰기',
+    desc: '같은 우선순위의 두 태스크가 UART 로 여러 줄짜리 보고서를 출력합니다. uartMutex 를 잡은 태스크만 출력하므로 두 보고서의 줄이 섞이지 않습니다. 공유 카운터 total 도 같은 뮤텍스로 보호합니다.',
+    lesson: 'l23',
+    board: 'NUCLEO-F411RE',
+    pins: {
+      PA2: { signal: 'USART2_TX' },
+      PA3: { signal: 'USART2_RX' },
+      PA5: { signal: 'GPIO_Output', label: 'LD2', level: 0 },
+      PC13: { signal: 'GPIO_Input', label: 'B1', pull: 'none' }
+    },
+    periph: {
+      USART2: { mode: 'async', baud: 115200 },
+      FREERTOS: { tasks: [
+        { name: 'defaultTask', fn: 'StartDefaultTask', prio: 'osPriorityNormal', stack: 256 },
+        { name: 'taskA', fn: 'StartTaskA', prio: 'osPriorityNormal', stack: 256 },
+        { name: 'taskB', fn: 'StartTaskB', prio: 'osPriorityNormal', stack: 256 }
+      ] }
+    },
+    nvic: {},
+    nodes: [],
+    wires: [],
+    user: {
+      includes: C`
+#include <stdio.h>
+`,
+      pv: C`
+osMutexId_t uartMutexHandle;
+uint32_t total = 0;                      // 두 태스크가 함께 바꾸는 값 → 뮤텍스로 보호
+`,
+      pfp: C`
+int __io_putchar(int ch);
+`,
+      u0: C`
+/* 태스크 이름과 함께 3줄짜리 보고서. 뮤텍스를 잡은 동안 다른 태스크는 기다립니다. */
+void report(const char *who, uint32_t n)
+{
+  osMutexAcquire(uartMutexHandle, osWaitForever);
+  total++;
+  printf("---- %s report #%lu ----\r\n", who, n);
+  osDelay(5);                           // 보고서 중간에 쉬어도(다른 태스크로 전환돼도) 줄이 섞이지 않음
+  printf("  tick  : %lu\r\n", osKernelGetTickCount());
+  printf("  total : %lu\r\n", total);
+  osMutexRelease(uartMutexHandle);
+}
+`,
+      u2: C`
+  printf("Mutex demo\r\n");
+`,
+      rtos_mutex: C`
+  uartMutexHandle = osMutexNew(NULL);
+`,
+      u4: PUTCHAR
+    }
+  };
+  STM32_EXAMPLES['l23-mutex'].user.tasks = {
+    StartDefaultTask: C`
+  /* Infinite loop */
+  for(;;)
+  {
+    HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+    osDelay(500);
+  }
+`,
+    StartTaskA: C`
+  uint32_t n = 0;
+  /* Infinite loop */
+  for(;;)
+  {
+    report("taskA", ++n);
+    osDelay(700);
+  }
+`,
+    StartTaskB: C`
+  uint32_t n = 0;
+  /* Infinite loop */
+  for(;;)
+  {
+    report("taskB", ++n);
+    osDelay(1100);
+  }
+`
+  };
+
+  STM32_EXAMPLES['l23-semaphore-isr'] = {
+    title: '세마포어 — ISR 이 태스크를 깨우기 + 소프트웨어 타이머',
+    desc: 'B1 EXTI 콜백은 이진 세마포어를 Release 하기만 하고, buttonTask 가 Acquire 로 깨어나 50 ms 디바운스 후 처리합니다. 소프트웨어 타이머(주기 500 ms)가 LD2 를 깜빡입니다.',
+    lesson: 'l23',
+    board: 'NUCLEO-F411RE',
+    pins: {
+      PA2: { signal: 'USART2_TX' },
+      PA3: { signal: 'USART2_RX' },
+      PA5: { signal: 'GPIO_Output', label: 'LD2', level: 0 },
+      PC13: { signal: 'GPIO_EXTI', label: 'B1', trigger: 'falling' }
+    },
+    periph: {
+      USART2: { mode: 'async', baud: 115200 },
+      FREERTOS: { tasks: [
+        { name: 'defaultTask', fn: 'StartDefaultTask', prio: 'osPriorityNormal', stack: 128 },
+        { name: 'buttonTask', fn: 'StartButtonTask', prio: 'osPriorityAboveNormal', stack: 256 }
+      ] }
+    },
+    nvic: { EXTI15_10: true },
+    nodes: [],
+    wires: [],
+    user: {
+      includes: C`
+#include <stdio.h>
+`,
+      pv: C`
+osSemaphoreId_t buttonSemHandle;
+osTimerId_t blinkTimerHandle;
+volatile uint32_t isr_count = 0;         // ISR 이 불린 횟수 (채터링 포함)
+uint32_t presses = 0;                    // 태스크가 처리한 누름 횟수
+`,
+      pfp: C`
+int __io_putchar(int ch);
+void BlinkTimerCallback(void *argument);
+`,
+      u0: '',
+      u2: C`
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);   // RTOS API 를 부르는 ISR 은 우선순위 5 이상(숫자)
+  printf("Semaphore demo: press B1\r\n");
+`,
+      rtos_sem: C`
+  /* 이진 세마포어: 최대 1, 처음 0 (아직 신호 없음) */
+  buttonSemHandle = osSemaphoreNew(1, 0, NULL);
+`,
+      rtos_timers: C`
+  blinkTimerHandle = osTimerNew(BlinkTimerCallback, osTimerPeriodic, NULL, NULL);
+`,
+      rtos_threads: C`
+  osTimerStart(blinkTimerHandle, 500);   // 500 틱마다 콜백
+`,
+      u4: PUTCHAR + C`
+
+/* ISR: 신호만 주고 바로 끝 */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  if (GPIO_Pin == B1_Pin) {
+    isr_count++;
+    osSemaphoreRelease(buttonSemHandle);
+  }
+}
+
+/* 소프트웨어 타이머 콜백: 타이머 서비스 태스크에서 실행 → 짧게, 기다리지 않기 */
+void BlinkTimerCallback(void *argument)
+{
+  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+}
+`
+    }
+  };
+  STM32_EXAMPLES['l23-semaphore-isr'].user.tasks = {
+    StartDefaultTask: C`
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1000);
+  }
+`,
+    StartButtonTask: C`
+  /* Infinite loop */
+  for(;;)
+  {
+    osSemaphoreAcquire(buttonSemHandle, osWaitForever);        // ISR 이 Release 할 때까지 Blocked
+    osDelay(50);                                               // 채터링이 가라앉을 때까지
+    while (osSemaphoreAcquire(buttonSemHandle, 0) == osOK) { } // 그동안 쌓인 신호는 버림
+    if (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == GPIO_PIN_RESET) {
+      presses++;
+      printf("[%5lu] B1 press #%lu (ISR calls so far: %lu)\r\n", osKernelGetTickCount(), presses, isr_count);
+    }
+  }
+`
   };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = STM32_EXAMPLES;

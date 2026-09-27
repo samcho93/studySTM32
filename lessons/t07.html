@@ -6,12 +6,12 @@
 <title>T07. 타이머 구조 · studySTM32</title>
 <meta name="description" content="고급·범용·기본 타이머와 비트 폭, PSC·CNT·ARR 카운터 블록과 주기 공식, 프리로드·섀도 레지스터, 출력 비교와 PWM 모드, 입력 캡처, 인코더, 원샷, 데드타임, 마스터·슬레이브, 워치독과 RTC 를 정리합니다.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
-<link rel="stylesheet" href="../assets/css/main.css?v=20260928b">
-<link rel="stylesheet" href="../assets/css/stm32.css?v=20260928b">
-<link rel="stylesheet" href="../assets/css/ml-theme.css?v=20260928b">
+<link rel="stylesheet" href="../assets/css/main.css?v=20260928d">
+<link rel="stylesheet" href="../assets/css/stm32.css?v=20260928d">
+<link rel="stylesheet" href="../assets/css/ml-theme.css?v=20260928d">
 <link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
 <link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
-<script src="../assets/js/theme.js?v=20260928b"></script>
+<script src="../assets/js/theme.js?v=20260928d"></script>
 </head>
 <body class="lesson-page track-page-theory">
 <button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
@@ -68,6 +68,18 @@
 <li><a href="../lessons/l16.html" data-slug="l16"><span class="nav-no">L16</span>실물 보드로 옮기기</a></li>
 </ul>
 </div>
+<div class="nav-track" data-track="adv">
+<div class="nav-track-title track-adv"><span class="nav-part-no">PART 5</span>중급 활용</div>
+<ul>
+<li><a href="../lessons/l17.html" data-slug="l17"><span class="nav-no">L17</span>주변기기 모듈 활용</a></li>
+<li><a href="../lessons/l18.html" data-slug="l18"><span class="nav-no">L18</span>DMA — CPU 없이 옮기기</a></li>
+<li><a href="../lessons/l19.html" data-slug="l19"><span class="nav-no">L19</span>입력 캡처 — 펄스 재기</a></li>
+<li><a href="../lessons/l20.html" data-slug="l20"><span class="nav-no">L20</span>워치독과 리셋</a></li>
+<li><a href="../lessons/l21.html" data-slug="l21"><span class="nav-no">L21</span>RTC 와 저전력 모드</a></li>
+<li><a href="../lessons/l22.html" data-slug="l22"><span class="nav-no">L22</span>FreeRTOS 기초</a></li>
+<li><a href="../lessons/l23.html" data-slug="l23"><span class="nav-no">L23</span>FreeRTOS 통신과 동기화</a></li>
+</ul>
+</div>
 </nav>
 </aside>
 <div class="sidebar-scrim" id="scrim"></div>
@@ -92,7 +104,7 @@
 <h2 id="타이머의-종류">타이머의 종류<a class="anchor" href="#타이머의-종류">#</a></h2>
 <p>STM32 의 타이머는 세 등급이고, 위 등급은 아래 등급의 기능을 모두 포함합니다.</p>
 <div class="table-wrap regmap"><table><thead><tr><th>등급</th><th>F411</th><th>F103 (C8 · RB)</th><th>비트</th><th>채널</th><th>특징</th></tr></thead><tbody><tr><td><strong>고급 (advanced)</strong></td><td>TIM1</td><td>TIM1</td><td>16</td><td>4 + 상보 3</td><td>상보 출력 · 데드타임 · 브레이크 입력 · 반복 카운터 → 3상 모터, 디지털 전원</td></tr><tr><td><strong>범용 (general-purpose)</strong></td><td>TIM2, TIM5</td><td>—</td><td><strong>32</strong></td><td>4</td><td>긴 주기, 입력 캡처 · 인코더</td></tr><tr><td></td><td>TIM3, TIM4</td><td>TIM2, TIM3, TIM4</td><td>16</td><td>4</td><td>가장 많이 쓰는 타이머</td></tr><tr><td></td><td>TIM9</td><td>—</td><td>16</td><td>2</td><td>마스터/슬레이브 일부</td></tr><tr><td></td><td>TIM10, TIM11</td><td>—</td><td>16</td><td>1</td><td>단순 PWM · 시간 기준</td></tr><tr><td><strong>기본 (basic)</strong></td><td>(없음)</td><td>(없음, F103 고밀도부터 TIM6 · 7)</td><td>16</td><td>0</td><td>입출력 없음. DAC 트리거 · 시간 기준 전용</td></tr></tbody></table></div>
-<ul><li>F411 의 TIM1 · TIM9~11 은 APB2, TIM2~5 는 APB1 에 있지만 <a href="t04.html">T04</a> 의 ×2 규칙으로 <strong>이 강좌 설정에서는 모두 84 MHz</strong> 를 받습니다.</li><li>16비트 타이머는 PSC · ARR · CCR 이 0~65535, 32비트(TIM2 · TIM5)는 ARR · CCR 이 0~4 294 967 295 입니다. PSC 는 항상 16비트입니다.</li><li>F103 에는 TIM5 · TIM9 이상이 없고 TIM2 가 16비트입니다. 코드를 옮길 때 32비트 ARR 을 믿고 쓴 긴 주기가 깨질 수 있습니다.</li><li>그 밖에 코어의 <strong>SysTick</strong>(24비트 다운카운터, <a href="t04.html">T04</a>), <strong>IWDG · WWDG</strong>(워치독), <strong>RTC</strong> 가 시간 관련 블록입니다.</li></ul>
+<ul><li>F411 의 TIM1 · TIM9~11 은 APB2, TIM2~5 는 APB1 에 있지만 <a href="t04.html">T04</a> 의 ×2 규칙으로 <strong>이 강좌 설정에서는 모두 84 MHz</strong> 를 받습니다.</li><li>16비트 타이머는 PSC · ARR · CCR 이 0~65535, 32비트(TIM2 · TIM5)는 ARR · CCR 이 0~4 294 967 295 입니다. PSC 는 항상 16비트입니다.</li><li>F103 (C8 · RB) 에는 TIM5 · TIM9 이상이 없고 TIM2 가 16비트입니다. 코드를 옮길 때 32비트 ARR 을 믿고 쓴 긴 주기가 깨질 수 있습니다.</li><li>그 밖에 코어의 <strong>SysTick</strong>(24비트 다운카운터, <a href="t04.html">T04</a>), <strong>IWDG · WWDG</strong>(워치독), <strong>RTC</strong> 가 시간 관련 블록입니다.</li></ul>
 <h2 id="카운터-블록">카운터 블록<a class="anchor" href="#카운터-블록">#</a></h2>
 <figure class="fig" id="fig-timer-block"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 392" role="img" aria-label="타이머 카운터 블록과 PWM 파형 (TIM3, 84 MHz, PSC 83, ARR 999, CCR1 600)" font-family="var(--sans)" font-size="12">
 <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--text-dim)"/></marker></defs>
@@ -157,7 +169,7 @@
 <ol><li>입력 클럭 CK_INT (84 MHz) 를 PSC + 1 로 나눠 CK_CNT 를 만듭니다. PSC = 83 이면 1 MHz.</li><li>CNT 가 CK_CNT 마다 1 씩 셉니다.</li><li>CNT 가 ARR 에 이르면 다음 클럭에 <strong>0 으로 돌아가며 업데이트 이벤트(UEV)</strong> 를 냅니다. ARR = 999 면 1000 틱마다.</li><li>UEV 는 UIF 플래그를 세우고(인터럽트 · DMA 요청), 프리로드된 값을 섀도 레지스터로 옮깁니다.</li></ol>
 <p><span class="math">f_{UEV} = f_{CK\_INT} / ((PSC + 1) × (ARR + 1))</span>, <span class="math">T_{UEV} = (PSC + 1)(ARR + 1) / f_{CK\_INT}</span></p>
 <h3 id="84-mhz-계산표">84 MHz 계산표<a class="anchor" href="#84-mhz-계산표">#</a></h3>
-<div class="table-wrap regmap"><table><thead><tr><th>목표</th><th>PSC</th><th>ARR</th><th>틱</th><th>실제</th><th>비고</th></tr></thead><tbody><tr><td>1 Hz</td><td>8399</td><td>9999</td><td>100 µs</td><td>1.000 s</td><td><a href="l07.html">L07</a> 예제</td></tr><tr><td>2 Hz</td><td>8399</td><td>4999</td><td>100 µs</td><td>0.5 s</td><td></td></tr><tr><td>10 Hz</td><td>8399</td><td>999</td><td>100 µs</td><td>100 ms</td><td></td></tr><tr><td>100 Hz</td><td>839</td><td>999</td><td>10 µs</td><td>10 ms</td><td></td></tr><tr><td>1 kHz</td><td>83</td><td>999</td><td>1 µs</td><td>1 ms</td><td>PWM LED, <a href="l08.html">L08</a></td></tr><tr><td>50 Hz</td><td>83</td><td>19999</td><td>1 µs</td><td>20 ms</td><td>서보 (CCR 500~2500 = 0.5~2.5 ms)</td></tr><tr><td>20 kHz</td><td>3</td><td>1049</td><td>47.6 ns</td><td>20.0 kHz</td><td>모터 PWM (가청 주파수 위)</td></tr><tr><td>25 kHz</td><td>0</td><td>3359</td><td>11.9 ns</td><td>25.0 kHz</td><td>4핀 PC 팬 규격</td></tr><tr><td>1 MHz</td><td>0</td><td>83</td><td>11.9 ns</td><td>1.0 MHz</td><td>최고 분해능 (듀티 84단계)</td></tr><tr><td>10 s</td><td>8399</td><td>99999</td><td>100 µs</td><td>10 s</td><td><strong>32비트 TIM2 · 5 만</strong> (16비트는 65535 초과)</td></tr><tr><td>1 시간</td><td>65535</td><td>4614</td><td>780 µs</td><td>3600.0 s</td><td>16비트로 가능하지만 오차 있음 → RTC 권장</td></tr></tbody></table></div>
+<div class="table-wrap regmap"><table><thead><tr><th>목표</th><th>PSC</th><th>ARR</th><th>틱</th><th>실제</th><th>비고</th></tr></thead><tbody><tr><td>1 Hz</td><td>8399</td><td>9999</td><td>100 µs</td><td>1.000 s</td><td><a href="l07.html">L07</a> 예제</td></tr><tr><td>2 Hz</td><td>8399</td><td>4999</td><td>100 µs</td><td>0.5 s</td><td></td></tr><tr><td>10 Hz</td><td>8399</td><td>999</td><td>100 µs</td><td>100 ms</td><td></td></tr><tr><td>100 Hz</td><td>839</td><td>999</td><td>10 µs</td><td>10 ms</td><td></td></tr><tr><td>1 kHz</td><td>83</td><td>999</td><td>1 µs</td><td>1 ms</td><td>PWM LED, <a href="l08.html">L08</a></td></tr><tr><td>50 Hz</td><td>83</td><td>19999</td><td>1 µs</td><td>20 ms</td><td>서보 (CCR 500~2500 = 0.5~2.5 ms)</td></tr><tr><td>20 kHz</td><td>3</td><td>1049</td><td>47.6 ns</td><td>20.0 kHz</td><td>모터 PWM (가청 주파수 위)</td></tr><tr><td>25 kHz</td><td>0</td><td>3359</td><td>11.9 ns</td><td>25.0 kHz</td><td>4핀 PC 팬 규격</td></tr><tr><td>1 MHz</td><td>0</td><td>83</td><td>11.9 ns</td><td>1.0 MHz</td><td>최고 분해능 (듀티 84단계)</td></tr><tr><td>10 s</td><td>8399</td><td>99999</td><td>100 µs</td><td>10 s</td><td><strong>32비트 TIM2 · 5 만</strong> (16비트는 65535 초과)</td></tr><tr><td>1 시간</td><td>8399</td><td>35 999 999</td><td>100 µs</td><td>3600 s</td><td><strong>32비트 TIM2 · 5 만</strong>. 16비트 타이머의 최대 주기는 65536 × 65536 / 84 MHz ≈ 51 s 라 불가능 → 보통 RTC 권장</td></tr></tbody></table></div>
 <p>계산 요령은 <a href="l07.html">L07</a> 과 같습니다. <strong>PSC 로 딱 떨어지는 틱(1 µs, 10 µs, 100 µs)을 만들고 ARR 로 주기를 정합니다.</strong> PWM 에서는 ARR + 1 이 곧 <strong>듀티 분해능</strong>이므로, 주파수가 높을수록 분해능이 줄어드는 트레이드오프가 있습니다 (1 MHz PWM 은 84 단계뿐).</p>
 <h3 id="카운트-모드">카운트 모드<a class="anchor" href="#카운트-모드">#</a></h3>
 <div class="table-wrap"><table><thead><tr><th>모드</th><th>CR1 비트</th><th>동작</th><th>쓰임</th></tr></thead><tbody><tr><td>업</td><td>DIR = 0, CMS = 00</td><td>0 → ARR → 0 … UEV 는 오버플로에서</td><td>기본</td></tr><tr><td>다운</td><td>DIR = 1</td><td>ARR → 0 → ARR … UEV 는 언더플로에서</td><td>드묾</td></tr><tr><td>센터 정렬 1 · 2 · 3</td><td>CMS = 01 · 10 · 11</td><td>0 → ARR → 0 을 오르내림. 주기가 2 × ARR 틱</td><td>모터 PWM (양쪽 에지 대칭, 스위칭 잡음 분산). 인터럽트 위치가 모드별로 다름</td></tr></tbody></table></div>
@@ -185,17 +197,17 @@
 <h3 id="원샷-one-pulse-mode">원샷 (One-pulse mode)<a class="anchor" href="#원샷-one-pulse-mode">#</a></h3>
 <p>CR1 의 <strong>OPM</strong> 비트를 켜면 한 번 UEV 가 난 뒤 CEN 이 자동으로 꺼집니다. 트리거(외부 에지 또는 소프트웨어)로 시작해 CCR 만큼 지연 후 ARR − CCR 폭의 펄스 하나를 내는 데 씁니다. 초음파 센서 트리거 10 µs 펄스, 정확한 지연 후 한 번만 실행 등에 알맞습니다.</p>
 <h3 id="데드타임과-브레이크-고급-타이머">데드타임과 브레이크 (고급 타이머)<a class="anchor" href="#데드타임과-브레이크-고급-타이머">#</a></h3>
-<p>TIM1 의 채널 1~3 은 <strong>상보 출력 CHxN</strong> 을 가집니다. 하프브리지의 위쪽 · 아래쪽 스위치를 한 채널로 몰 때, 두 스위치가 잠시라도 동시에 켜지면 전원이 단락(shoot-through)됩니다. BDTR 의 <strong>DTG[7:0]</strong> 이 두 출력 사이에 데드타임을 넣습니다. tDTS = 1 / 84 MHz ≈ 11.9 ns 일 때,</p>
+<p>TIM1 의 채널 1~3 은 <strong>상보 출력 CHxN</strong> 을 가집니다. 하프브리지의 위쪽 · 아래쪽 스위치를 한 채널로 몰 때, 두 스위치가 잠시라도 동시에 켜지면 전원이 단락(shoot-through)됩니다. BDTR 의 <strong>DTG[7:0]</strong> 이 두 출력 사이에 데드타임을 넣습니다 (RM0383 12.4.18 TIMx_BDTR). CR1 의 CKD = 00 이라 tDTS = 1 / 84 MHz ≈ 11.9 ns 일 때,</p>
 <div class="table-wrap"><table><thead><tr><th>DTG[7:5]</th><th>데드타임</th><th>범위</th></tr></thead><tbody><tr><td>0xx</td><td>DTG[6:0] × tDTS</td><td>0 ~ 1.51 µs (11.9 ns 단위)</td></tr><tr><td>10x</td><td>(64 + DTG[5:0]) × 2 tDTS</td><td>1.52 ~ 3.02 µs</td></tr><tr><td>110</td><td>(32 + DTG[4:0]) × 8 tDTS</td><td>3.05 ~ 6.0 µs</td></tr><tr><td>111</td><td>(32 + DTG[4:0]) × 16 tDTS</td><td>6.1 ~ 12.0 µs</td></tr></tbody></table></div>
 <p>MOSFET 게이트 드라이버의 지연에 맞춰 보통 0.5 ~ 2 µs 를 넣습니다. <strong>브레이크 입력(BKIN)</strong> 은 과전류 비교기 출력 등을 받아 하드웨어가 즉시 모든 출력을 안전 상태로 끊는 기능이고, <strong>반복 카운터(RCR)</strong> 는 N 주기마다 한 번만 UEV 를 내 전류 제어 루프 주기를 PWM 주기의 배수로 만듭니다.</p>
 <h3 id="마스터-슬레이브-트리거">마스터 / 슬레이브 트리거<a class="anchor" href="#마스터-슬레이브-트리거">#</a></h3>
 <p>타이머는 서로 신호(TRGO)를 주고받을 수 있습니다.</p>
 <div class="table-wrap"><table><thead><tr><th>역할</th><th>레지스터</th><th>선택</th><th>예</th></tr></thead><tbody><tr><td>마스터 출력 TRGO</td><td>CR2 의 MMS</td><td>리셋 · 인에이블 · <strong>업데이트</strong> · 비교 펄스 · OCxREF</td><td>TIM2 UEV 마다 ADC 변환 트리거 (정확한 샘플링 주기)</td></tr><tr><td>슬레이브 입력</td><td>SMCR 의 TS (ITR0~3, TI1, ETR) + SMS</td><td>리셋 · 게이트 · 트리거 · 외부 클럭</td><td>TIM1 이 TIM3 을 시작시켜 두 타이머를 동기</td></tr></tbody></table></div>
-<p>F411 에서 TIM2 의 ITR0 = TIM1, ITR2 = TIM3, ITR3 = TIM4 처럼 <strong>어느 타이머가 어느 ITR 에 연결되는지는 RM0383 표에 고정</strong>되어 있습니다. 가장 흔한 쓰임은 "타이머 → ADC 트리거" 입니다. <a href="l09.html">L09</a> 의 연속 변환보다 정확한 간격으로 샘플링하고 싶을 때 ADC 의 외부 트리거를 TIM2 TRGO 로 설정합니다. <strong>ETR</strong> 핀으로 외부 신호를 타이머 클럭으로 쓰면 펄스 카운터(유량계, 회전수)가 됩니다.</p>
+<p>F411 에서 TIM2 의 ITR0 = TIM1, ITR2 = TIM3, ITR3 = TIM4 (ITR1 은 예약) 처럼 <strong>어느 타이머가 어느 ITR 에 연결되는지는 RM0383 표에 고정</strong>되어 있습니다 (13장 "TIMx internal trigger connection" 표). 가장 흔한 쓰임은 "타이머 → ADC 트리거" 입니다. <a href="l09.html">L09</a> 의 연속 변환보다 정확한 간격으로 샘플링하고 싶을 때 ADC 의 외부 트리거를 TIM2 TRGO 로 설정합니다. <strong>ETR</strong> 핀으로 외부 신호를 타이머 클럭으로 쓰면 펄스 카운터(유량계, 회전수)가 됩니다.</p>
 <h2 id="워치독">워치독<a class="anchor" href="#워치독">#</a></h2>
 <p>워치독은 "프로그램이 살아 있는가" 를 감시하는 타이머입니다. 정해진 시간 안에 되살리지(refresh) 않으면 <strong>리셋</strong>을 겁니다. 코드가 무한 루프에 빠지거나 인터럽트가 멈춘 상황에서 스스로 회복하는 마지막 수단입니다.</p>
-<div class="table-wrap"><table><thead><tr><th></th><th>IWDG (독립 워치독)</th><th>WWDG (윈도 워치독)</th></tr></thead><tbody><tr><td>클럭</td><td><strong>LSI 32 kHz</strong> (메인 클럭과 무관, 정확도 낮음)</td><td>PCLK1 / 4096</td></tr><tr><td>카운터</td><td>12비트 다운 (0~4095), 프리스케일러 4 ~ 256</td><td>7비트 다운 (0x7F → 0x3F 에서 리셋)</td></tr><tr><td>시간 범위 (F411)</td><td>125 µs ~ <strong>32.8 s</strong></td><td>약 100 µs ~ 50 ms (PCLK1 42 MHz)</td></tr><tr><td>특징</td><td>한 번 켜면 <strong>끌 수 없음</strong>, Stop · Standby 에서도 동작(옵션), 클럭이 죽어도 동작</td><td>되살리는 시점이 <strong>윈도 안</strong>이어야 함 (너무 빨라도 리셋) → 코드가 "너무 빨리 돌아도" 감지. 조기 경고 인터럽트 있음</td></tr><tr><td>쓰임</td><td>거의 모든 제품의 기본 안전장치</td><td>실행 시간이 엄격한 제어 루프</td></tr></tbody></table></div>
-<p>IWDG 타임아웃은 <span class="math">T = 4 × 2^{PR} × (RLR + 1) / f_{LSI}</span> 입니다. PR = 4 (÷64), RLR = 999 → 64 × 1000 / 32 000 = <strong>2 s</strong>.</p>
+<div class="table-wrap"><table><thead><tr><th></th><th>IWDG (독립 워치독)</th><th>WWDG (윈도 워치독)</th></tr></thead><tbody><tr><td>클럭</td><td><strong>LSI 32 kHz</strong> (메인 클럭과 무관, 정확도 낮음)</td><td>PCLK1 / 4096</td></tr><tr><td>카운터</td><td>12비트 다운 (0~4095), 프리스케일러 4 ~ 256</td><td>7비트 다운 (0x7F → 0x3F 에서 리셋)</td></tr><tr><td>시간 범위 (F411)</td><td>125 µs ~ <strong>32.8 s</strong></td><td>약 97.5 µs ~ 49.9 ms (PCLK1 42 MHz, WDGTB 0~3)</td></tr><tr><td>특징</td><td>한 번 켜면 <strong>끌 수 없음</strong>, Stop · Standby 에서도 계속 동작(F4 는 멈추는 옵션이 없음), 클럭이 죽어도 동작</td><td>되살리는 시점이 <strong>윈도 안</strong>이어야 함 (너무 빨라도 리셋) → 코드가 "너무 빨리 돌아도" 감지. 조기 경고 인터럽트 있음</td></tr><tr><td>쓰임</td><td>거의 모든 제품의 기본 안전장치</td><td>실행 시간이 엄격한 제어 루프</td></tr></tbody></table></div>
+<p>WWDG 타임아웃은 <span class="math">t_{WWDG} = t_{PCLK1} × 4096 × 2^{WDGTB} × (T[5:0] + 1)</span> 입니다 (RM0383 16.3). PCLK1 = 42 MHz 면 최소 4096 / 42 MHz ≈ 97.5 µs, 최대 × 8 × 64 ≈ 49.9 ms 입니다. IWDG 타임아웃은 <span class="math">T = 4 × 2^{PR} × (RLR + 1) / f_{LSI}</span> 입니다. PR = 4 (÷64), RLR = 999 → 64 × 1000 / 32 000 = <strong>2 s</strong>.</p>
 <div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* CubeMX: IWDG → Activated, Prescaler 64, Reload 999 */</span>
 <span class="tk-h">HAL_IWDG_Init</span>(&amp;hiwdg);          <span class="tk-c">/* MX_IWDG_Init 안. KR 에 0x5555(접근 허용) → PR·RLR 설정 → 0xCCCC(시작) */</span>
 <span class="tk-k">while</span> (<span class="tk-n">1</span>) {
@@ -205,7 +217,7 @@
 <ul><li>되살리는 코드는 <strong>메인 루프의 한 곳</strong>에만 둡니다. 타이머 ISR 에서 되살리면 메인이 멈춰도 워치독이 리셋하지 못해 의미가 없습니다.</li><li>디버그 중 중단점에서 멈추면 IWDG 가 리셋해 버리므로 <code>__HAL_DBGMCU_FREEZE_IWDG()</code> 로 디버그 중 정지시킵니다. CubeMX 의 SYS → "Debug" 옵션에 있습니다.</li><li>LSI 가 17 ~ 47 kHz 로 흔들리므로 타임아웃은 여유 있게 잡습니다. 리셋 후 <code>RCC-&gt;CSR</code> 의 IWDGRSTF 로 원인을 알 수 있습니다 (<a href="t04.html">T04</a>).</li></ul>
 <h2 id="rtc-개요">RTC 개요<a class="anchor" href="#rtc-개요">#</a></h2>
 <p><strong>RTC(Real-Time Clock)</strong> 는 달력 · 시계용 저전력 타이머입니다. F4 의 RTC 는 F1 과 달리 <strong>BCD 달력</strong>(연 · 월 · 일 · 요일 · 시 · 분 · 초)을 하드웨어로 유지합니다.</p>
-<ul><li>클럭: LSE 32.768 kHz (권장) · LSI · HSE/32 중 선택. 비동기 프리스케일러 128 × 동기 256 = 32768 → 정확히 1 Hz.</li><li>기능: 알람 A · B (특정 시각에 인터럽트 · 깨우기), 웨이크업 타이머 (주기적으로 Stop/Standby 에서 깨움), 타임스탬프 · 탬퍼 감지, 서브초 읽기, 보정 레지스터 (±0.95 ppm 단위).</li><li><strong>백업 도메인</strong>: RTC 와 20개의 32비트 백업 레지스터(F411)는 VBAT 핀(코인 전지)으로 유지되어 메인 전원이 꺼져도 시계가 갑니다. Nucleo 는 VBAT 이 VDD 에 붙어 있어 전원을 끄면 시계도 멈춥니다.</li><li>배터리 기기의 기본 패턴: "RTC 웨이크업 1분 → Stop 에서 깨어남 → 센서 읽고 전송 → 다시 Stop". <a href="t04.html">T04</a> 저전력 절과 함께 보세요.</li></ul>
+<ul><li>클럭: LSE 32.768 kHz (권장) · LSI · HSE/RTCPRE (RCC_CFGR 의 RTCPRE 로 2 ~ 31 분주해 1 MHz 로 맞춤) 중 선택. 비동기 프리스케일러 128 × 동기 256 = 32768 → 정확히 1 Hz.</li><li>기능: 알람 A · B (특정 시각에 인터럽트 · 깨우기), 웨이크업 타이머 (주기적으로 Stop/Standby 에서 깨움), 타임스탬프 · 탬퍼 감지, 서브초 읽기, 보정 레지스터 (±0.95 ppm 단위).</li><li><strong>백업 도메인</strong>: RTC 와 20개의 32비트 백업 레지스터(F411, RTC_BKP0R ~ BKP19R = 80 바이트, RM0383 17장)는 VBAT 핀(코인 전지)으로 유지되어 메인 전원이 꺼져도 시계가 갑니다. Nucleo 는 VBAT 이 VDD 에 붙어 있어 전원을 끄면 시계도 멈춥니다.</li><li>배터리 기기의 기본 패턴: "RTC 웨이크업 1분 → Stop 에서 깨어남 → 센서 읽고 전송 → 다시 Stop". <a href="t04.html">T04</a> 저전력 절과 함께 보세요.</li></ul>
 <div class="callout callout-check"><div class="callout-title">스스로 확인</div><div class="callout-body"><ul><li>84 MHz 에서 25 kHz PWM 을 만들 때 듀티 분해능은 몇 단계입니까? 10비트(1024 단계)가 필요하면 최대 PWM 주파수는?</li><li>ARPE = 0 인 상태에서 CNT = 800 일 때 ARR 을 999 → 500 으로 바꾸면 무슨 일이 생깁니까?</li><li>PWM 모드 1, CCxP = 1, CCR = 250, ARR = 999 일 때 핀의 HIGH 비율은?</li><li>IWDG 를 4 s 로 두려면 프리스케일러와 RLR 은? (LSI 32 kHz)</li></ul></div></div>
 <h2 id="자주-나는-오류와-해결">자주 나는 오류와 해결<a class="anchor" href="#자주-나는-오류와-해결">#</a></h2>
 <div class="table-wrap"><table><thead><tr><th>증상</th><th>원인</th><th>해결</th></tr></thead><tbody><tr><td>PWM 핀에 아무것도 안 나옴</td><td><code>HAL_TIM_PWM_Start</code> 누락, 핀 AF 설정 누락, TIM1 의 MOE</td><td>채널 시작 확인, CubeMX 에서 핀이 TIMx_CHy 로 배정됐는지, 고급 타이머는 HAL 이 MOE 처리</td></tr><tr><td>듀티를 바꾸면 한 주기 파형이 깨짐</td><td>OCxPE (CCR 프리로드) 꺼짐</td><td>CubeMX "Output compare preload" Enable (기본)</td></tr><tr><td>주기를 줄였더니 한참 뒤에 반영</td><td>ARPE = 0 에서 CNT 가 새 ARR 을 지나침</td><td>ARPE = 1, 또는 CNT 를 0 으로 리셋 후 변경</td></tr><tr><td>시작하자마자 콜백이 한 번 불림</td><td>Init 의 UG 가 UIF 를 세움</td><td><code>__HAL_TIM_CLEAR_FLAG(&amp;htim, TIM_FLAG_UPDATE)</code> 후 시작, 또는 URS = 1</td></tr><tr><td>주기가 정확히 2배 · ½</td><td>타이머 클럭 ×2 규칙, 센터 정렬 모드</td><td>클럭 트리 확인, 센터 정렬은 주기가 2 × ARR</td></tr><tr><td>긴 주기(수십 초)가 이상함</td><td>16비트 ARR 초과 (65535)</td><td>32비트 TIM2 · 5 사용, 또는 소프트웨어 카운터</td></tr><tr><td>입력 캡처 값이 튐</td><td>잡음, 필터 없음, 오버플로 미고려</td><td>ICxF 필터, 두 캡처 차를 <code>uint16_t</code>/<code>uint32_t</code> 로 계산 (자동 wrap)</td></tr><tr><td>상보 출력에서 MOSFET 이 뜨거움</td><td>데드타임 부족 (shoot-through)</td><td>DTG 값 증가, 게이트 드라이버 지연 확인</td></tr><tr><td>IWDG 를 켜니 디버거에서 계속 리셋</td><td>중단점 동안 워치독 만료</td><td><code>__HAL_DBGMCU_FREEZE_IWDG()</code></td></tr><tr><td>RTC 시간이 전원 끄면 사라짐</td><td>VBAT 이 VDD 에 연결 (Nucleo), LSE 없음</td><td>코인 전지 회로, LSE 크리스털 장착 (UM1724 솔더 브리지)</td></tr></tbody></table></div>
@@ -220,6 +232,6 @@
 </article>
 
 </main>
-<script src="../assets/js/site.js?v=20260928b"></script>
+<script src="../assets/js/site.js?v=20260928d"></script>
 </body>
 </html>

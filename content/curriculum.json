@@ -41,6 +41,14 @@
       "parts": [
         { "no": "PART 4", "title": "프로젝트", "chapters": ["l15", "l16"] }
       ]
+    },
+    {
+      "id": "adv",
+      "title": "중급 활용",
+      "desc": "OLED·초음파·키패드 같은 센서 모듈을 다루고, DMA·입력 캡처·워치독·RTC·저전력 모드로 CPU 를 효율적으로 쓰며, FreeRTOS 로 여러 일을 태스크로 나누는 법을 익힙니다.",
+      "parts": [
+        { "no": "PART 5", "title": "중급 활용", "chapters": ["l17", "l18", "l19", "l20", "l21", "l22", "l23"] }
+      ]
     }
   ],
   "chapters": {
@@ -71,7 +79,15 @@
     "l14": { "title": "스텝모터", "summary": "28BYJ-48과 ULN2003으로 풀스텝·하프스텝 시퀀스를 구동하고, 스텝 수로 각도를 제어합니다.", "duration": 60, "level": "중급", "tools": ["sim"] },
 
     "l15": { "title": "미니 프로젝트: 스마트 선풍기", "summary": "가변저항 → PWM 모터 속도, 버튼 모드 전환, LCD 표시, UART 로그를 하나의 프로그램으로 묶습니다.", "duration": 120, "level": "중급", "tools": ["sim", "ref"] },
-    "l16": { "title": "실물 보드로 옮기기", "summary": "STM32CubeIDE 설치, .ioc 설정, 빌드와 ST-Link 플래시·디버그, 시뮬레이터와 실물의 차이와 안전한 배선을 정리합니다.", "duration": 90, "level": "중급", "tools": ["sim", "ref"] }
+    "l16": { "title": "실물 보드로 옮기기", "summary": "STM32CubeIDE 설치, .ioc 설정, 빌드와 ST-Link 플래시·디버그, 시뮬레이터와 실물의 차이와 안전한 배선을 정리합니다.", "duration": 90, "level": "중급", "tools": ["sim", "ref"] },
+
+    "l17": { "title": "주변기기 모듈 활용", "summary": "SSD1306 OLED 의 명령과 페이지 주소, HC-SR04 초음파, 4x4 키패드 스캔, 4자리 FND 멀티플렉싱, DHT11 단일 선 타이밍, 릴레이 안전, 로터리 엔코더 직교 신호, 조이스틱을 HAL 로 구동합니다.", "duration": 60, "level": "중급", "tools": ["sim", "ref"] },
+    "l18": { "title": "DMA — CPU 없이 옮기기", "summary": "DMA 스트림·채널과 원형 모드, 절반·전체 완료 콜백으로 ADC 다채널 값을 블록 단위로 처리하고, UART ReceiveToIdle 로 길이를 모르는 명령을 받습니다.", "duration": 55, "level": "중급", "tools": ["sim", "ref"] },
+    "l19": { "title": "입력 캡처 — 펄스 재기", "summary": "타이머 캡처로 주기·펄스 폭을 재는 원리, 오버플로와 양쪽 에지, HC-SR04 ECHO 폭 측정과 버튼 누른 시간 측정을 구현합니다.", "duration": 50, "level": "중급", "tools": ["sim", "ref"] },
+    "l20": { "title": "워치독과 리셋", "summary": "IWDG 제한 시간 계산식과 Refresh 위치 설계, RCC 리셋 플래그로 원인 판별, WWDG 의 창 개념, NVIC_SystemReset 을 익힙니다.", "duration": 45, "level": "중급", "tools": ["sim", "ref"] },
+    "l21": { "title": "RTC 와 저전력 모드", "summary": "RTC 달력(BCD·BIN, GetTime 뒤 GetDate), 웨이크업 타이머, SLEEP·STOP·STANDBY 비교와 STOP 복귀 후 SystemClock_Config 를 실습합니다.", "duration": 60, "level": "중급", "tools": ["sim", "ref"] },
+    "l22": { "title": "FreeRTOS 기초", "summary": "RTOS 가 필요한 이유, 태스크·스케줄러·우선순위·상태, CubeMX FREERTOS(CMSIS_V2) 설정과 생성 코드, osDelay 와 HAL_Delay 의 차이, 스택 크기를 익힙니다.", "duration": 60, "level": "중급", "tools": ["sim", "ref"] },
+    "l23": { "title": "FreeRTOS 통신과 동기화", "summary": "메시지 큐(ISR → 태스크), 뮤텍스로 UART 공유, 세마포어·스레드 플래그로 신호 보내기, 소프트웨어 타이머, 우선순위 역전을 다룹니다.", "duration": 60, "level": "중급", "tools": ["sim", "ref"] }
   },
   "reference": {
     "id": "hal-reference",

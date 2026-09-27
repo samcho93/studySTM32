@@ -424,11 +424,36 @@
   };
 
   // ---------------------------------------------------------------- 변수
+  /** 시스템 정보: RTOS 태스크 · 전력 추정 · 리셋 */
+  Result.prototype.sysInfo = function (m) {
+    if (!m || !m.mod) return '';
+    var h = '', R = m.rtos;
+    if (R && R.running) {
+      var tot = R.threads.reduce(function (a, t) { return a + t.runMs; }, 0) + (R.idle || 0) || 1;
+      h += '<h4 class="vars-h">RTOS 태스크</h4><table><tr><th>이름</th><th>우선순위</th><th>상태</th><th>CPU</th></tr>' + R.threads.map(function (t) {
+        var st = t.state !== 'ready' ? t.state : t.busy > m.t ? 'running(HAL_Delay)' : t.block ? 'blocked' : t.wake > m.t ? 'delayed' : 'ready';
+        return '<tr><td>' + esc(t.name) + '</td><td>' + t.prio + '</td><td>' + st + '</td><td class="v">' + (t.runMs / tot * 100).toFixed(1) + '%</td></tr>';
+      }).join('') + '<tr><td>IDLE</td><td>0</td><td>—</td><td class="v">' + ((R.idle || 0) / tot * 100).toFixed(1) + '%</td></tr></table>';
+    }
+    if (m.powerStats) {
+      var p = m.powerStats(), tt = p.run + p.sleep + p.stop + p.standby || 1;
+      h += '<h4 class="vars-h">전력 추정 <small>(' + esc(m.chip.part) + ' 대표값, 실제는 데이터시트·측정으로 확인)</small></h4><table>' +
+        '<tr><th>모드</th><th>시간 비율</th><th>대표 전류</th></tr>' +
+        '<tr><td>RUN</td><td>' + (p.run / tt * 100).toFixed(1) + '%</td><td class="v">' + p.runMA.toFixed(1) + ' mA</td></tr>' +
+        '<tr><td>SLEEP</td><td>' + (p.sleep / tt * 100).toFixed(1) + '%</td><td class="v">' + p.sleepMA.toFixed(1) + ' mA</td></tr>' +
+        '<tr><td>STOP</td><td>' + (p.stop / tt * 100).toFixed(1) + '%</td><td class="v">' + p.stopUA.toFixed(1) + ' µA</td></tr>' +
+        '<tr><td>STANDBY</td><td>' + (p.standby / tt * 100).toFixed(1) + '%</td><td class="v">' + p.sbUA.toFixed(1) + ' µA</td></tr>' +
+        '<tr><td><b>평균</b></td><td>현재: ' + p.mode.toUpperCase() + '</td><td class="v"><b>' + (p.avgMA >= 1 ? p.avgMA.toFixed(2) + ' mA' : (p.avgMA * 1000).toFixed(1) + ' µA') + '</b></td></tr></table>';
+    }
+    if (m.resetCount) h += '<div class="pdesc">리셋 횟수: ' + m.resetCount + ' (' + Object.keys(m.resetFlags || {}).join(', ') + ')</div>';
+    return h;
+  };
   Result.prototype.updateVars = function () {
     var m = this.app.machine, root = this.varsRoot;
+    var extra = this.sysInfo(m);
     if (!m || !m.mod) { root.innerHTML = '<div class="dev-empty">실행 중에 전역 변수 값이 표시됩니다 (Live Expressions).</div>'; return; }
     var g; try { g = m.mod.globals(); } catch (e) { g = {}; }
-    var keys = Object.keys(g); if (!keys.length) { root.innerHTML = '<div class="dev-empty">전역 변수가 없습니다.</div>'; return; }
+    var keys = Object.keys(g); if (!keys.length) { root.innerHTML = '<div class="dev-empty">전역 변수가 없습니다.</div>' + extra; return; }
     var html = '<table><tr><th>이름</th><th>값</th></tr>';
     keys.forEach(function (k) {
       var v = g[k], s;
@@ -439,7 +464,7 @@
       else s = String(v);
       html += '<tr><td>' + esc(k) + '</td><td class="v">' + esc(s) + '</td></tr>';
     });
-    root.innerHTML = html + '</table>';
+    root.innerHTML = html + '</table>' + extra;
   };
 
   // ---------------------------------------------------------------- 콘솔

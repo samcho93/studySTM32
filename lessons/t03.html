@@ -6,12 +6,12 @@
 <title>T03. 메모리 맵과 버스 · studySTM32</title>
 <meta name="description" content="4 GB 주소 공간 구획, F411 의 실제 주소, 부트 매핑, AHB·APB 버스 매트릭스와 클럭 게이팅, GPIO_TypeDef 구조체와 GPIOA 매크로, 비트밴딩, DMA, 링커 스크립트와 빌드 로그의 text·data·bss 를 해설합니다.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
-<link rel="stylesheet" href="../assets/css/main.css?v=20260928b">
-<link rel="stylesheet" href="../assets/css/stm32.css?v=20260928b">
-<link rel="stylesheet" href="../assets/css/ml-theme.css?v=20260928b">
+<link rel="stylesheet" href="../assets/css/main.css?v=20260928d">
+<link rel="stylesheet" href="../assets/css/stm32.css?v=20260928d">
+<link rel="stylesheet" href="../assets/css/ml-theme.css?v=20260928d">
 <link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
 <link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
-<script src="../assets/js/theme.js?v=20260928b"></script>
+<script src="../assets/js/theme.js?v=20260928d"></script>
 </head>
 <body class="lesson-page track-page-theory">
 <button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
@@ -66,6 +66,18 @@
 <ul>
 <li><a href="../lessons/l15.html" data-slug="l15"><span class="nav-no">L15</span>미니 프로젝트: 스마트 선풍기</a></li>
 <li><a href="../lessons/l16.html" data-slug="l16"><span class="nav-no">L16</span>실물 보드로 옮기기</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="adv">
+<div class="nav-track-title track-adv"><span class="nav-part-no">PART 5</span>중급 활용</div>
+<ul>
+<li><a href="../lessons/l17.html" data-slug="l17"><span class="nav-no">L17</span>주변기기 모듈 활용</a></li>
+<li><a href="../lessons/l18.html" data-slug="l18"><span class="nav-no">L18</span>DMA — CPU 없이 옮기기</a></li>
+<li><a href="../lessons/l19.html" data-slug="l19"><span class="nav-no">L19</span>입력 캡처 — 펄스 재기</a></li>
+<li><a href="../lessons/l20.html" data-slug="l20"><span class="nav-no">L20</span>워치독과 리셋</a></li>
+<li><a href="../lessons/l21.html" data-slug="l21"><span class="nav-no">L21</span>RTC 와 저전력 모드</a></li>
+<li><a href="../lessons/l22.html" data-slug="l22"><span class="nav-no">L22</span>FreeRTOS 기초</a></li>
+<li><a href="../lessons/l23.html" data-slug="l23"><span class="nav-no">L23</span>FreeRTOS 통신과 동기화</a></li>
 </ul>
 </div>
 </nav>
@@ -166,7 +178,7 @@
 <p>리셋 벡터는 0x0000_0004 에서 읽지만, 이후에는 별칭이 아닌 <strong>진짜 주소 0x0800_0000</strong> 에서 실행합니다. <code>SystemInit()</code> 이 SCB-&gt;VTOR 에 0x0800_0000 을 써서 벡터 테이블 위치를 못 박기 때문에, 이후 인터럽트가 나면 코어는 0x0800_0000 + 4 × 번호 에서 핸들러 주소를 읽습니다. 부트로더를 직접 만들 때는 애플리케이션이 시작하면서 VTOR 를 자기 주소(예: 0x0800_8000)로 바꿔야 합니다.</p>
 <h2 id="버스-매트릭스와-클럭-게이팅">버스 매트릭스와 클럭 게이팅<a class="anchor" href="#버스-매트릭스와-클럭-게이팅">#</a></h2>
 <div class="table-wrap regmap"><table><thead><tr><th>버스</th><th>최대 클럭 (F411)</th><th>붙어 있는 주변장치</th><th>주소 시작</th></tr></thead><tbody><tr><td><strong>AHB1</strong></td><td>100 MHz (= HCLK)</td><td>GPIOA~E · H, RCC, Flash 인터페이스, CRC, DMA1 · DMA2</td><td>0x4002_0000</td></tr><tr><td><strong>AHB2</strong></td><td>100 MHz</td><td>USB OTG FS</td><td>0x5000_0000</td></tr><tr><td><strong>APB1</strong></td><td>50 MHz (PCLK1)</td><td>TIM2~5, USART2, I2C1~3, SPI2 · SPI3, WWDG, RTC, PWR</td><td>0x4000_0000</td></tr><tr><td><strong>APB2</strong></td><td>100 MHz (PCLK2)</td><td>TIM1, TIM9~11, USART1 · USART6, ADC1, SPI1 · SPI4 · SPI5, SDIO, SYSCFG, EXTI</td><td>0x4001_0000</td></tr></tbody></table></div>
-<p><strong>AHB(Advanced High-performance Bus)</strong> 는 코어와 DMA 가 직접 쓰는 빠른 버스이고, <strong>APB(Advanced Peripheral Bus)</strong> 는 AHB 에서 브리지를 거쳐 나온 느린 버스입니다. GPIO 가 F4 부터 AHB 에 붙은 이유는 핀 토글 속도를 높이기 위해서입니다 (F1 은 GPIO 가 APB2 에 있어 최대 18 MHz 토글이 한계였습니다).</p>
+<p><strong>AHB(Advanced High-performance Bus)</strong> 는 코어와 DMA 가 직접 쓰는 빠른 버스이고, <strong>APB(Advanced Peripheral Bus)</strong> 는 AHB 에서 브리지를 거쳐 나온 느린 버스입니다. GPIO 가 F4 부터 AHB 에 붙은 이유는 핀 토글 속도를 높이기 위해서입니다 (F1 은 GPIO 가 APB2 에 있어 데이터시트 표기로 최대 18 MHz 토글이 한계였습니다. F411 은 최대 100 MHz 급 fast I/O).</p>
 <p>코어 · DMA1 · DMA2 가 <strong>마스터</strong>, 플래시 · SRAM · 각 버스가 <strong>슬레이브</strong>이고, 이들을 잇는 <strong>버스 매트릭스</strong>가 서로 다른 슬레이브에 대한 접근을 동시에 처리합니다. 예를 들어 코어가 플래시에서 명령을 가져오는 동안 DMA 가 SRAM 에서 USART2 로 데이터를 옮길 수 있습니다. 같은 SRAM 을 두 마스터가 동시에 원하면 라운드 로빈으로 번갈아 씁니다.</p>
 <h3 id="클럭-게이팅">클럭 게이팅<a class="anchor" href="#클럭-게이팅">#</a></h3>
 <p>STM32 의 모든 주변장치는 <strong>리셋 직후 클럭이 꺼져 있습니다.</strong> 전력을 아끼기 위해서인데, 클럭이 꺼진 주변장치의 레지스터는 읽으면 0, 써도 무시됩니다(또는 BusFault). 그래서 GPIO 하나를 쓰려 해도 먼저 RCC 의 인에이블 비트를 세워야 합니다. CubeMX 가 만든 <code>MX_GPIO_Init()</code> 첫 줄이 그것입니다.</p>
@@ -219,8 +231,8 @@
 <span class="tk-f">BITBAND_PERI</span>(<span class="tk-n">0x40020014</span>, <span class="tk-n">5</span>) = <span class="tk-n">1</span>;    <span class="tk-c">/* PA5 = 1 (GPIOA-&gt;ODR bit 5) */</span></code></pre></div>
 <p>M0 · M0+ · M7 · M33 에는 비트밴딩이 없으므로 이식성이 있는 코드에서는 쓰지 않습니다. GPIO 는 BSRR 이 같은 목적을 더 이식성 있게 해결합니다 (<a href="t05.html">T05</a>).</p>
 <h2 id="dma-개념">DMA 개념<a class="anchor" href="#dma-개념">#</a></h2>
-<p><strong>DMA(Direct Memory Access)</strong> 는 코어를 거치지 않고 메모리 ↔ 주변장치, 메모리 ↔ 메모리 사이에서 데이터를 옮기는 별도의 마스터입니다. F411 에는 DMA1 · DMA2 두 컨트롤러가 있고 각각 <strong>8개 스트림</strong>, 스트림마다 <strong>8개 채널</strong> 중 하나를 고릅니다. 어떤 주변장치가 어느 스트림 · 채널에 붙는지는 RM0383 의 DMA 요청 매핑 표에 고정되어 있습니다.</p>
-<div class="table-wrap"><table><thead><tr><th>주변장치 요청</th><th>컨트롤러</th><th>스트림</th><th>채널</th></tr></thead><tbody><tr><td>USART2_RX</td><td>DMA1</td><td>5</td><td>4</td></tr><tr><td>USART2_TX</td><td>DMA1</td><td>6</td><td>4</td></tr><tr><td>I2C1_RX</td><td>DMA1</td><td>0 또는 5</td><td>1</td></tr><tr><td>SPI2_TX</td><td>DMA1</td><td>4</td><td>0</td></tr><tr><td>ADC1</td><td>DMA2</td><td>0 또는 4</td><td>0</td></tr><tr><td>TIM3_CH1</td><td>DMA1</td><td>4</td><td>5</td></tr><tr><td>메모리 → 메모리</td><td>DMA2 만</td><td>아무 스트림</td><td>—</td></tr></tbody></table></div>
+<p><strong>DMA(Direct Memory Access)</strong> 는 코어를 거치지 않고 메모리 ↔ 주변장치, 메모리 ↔ 메모리 사이에서 데이터를 옮기는 별도의 마스터입니다. F411 에는 DMA1 · DMA2 두 컨트롤러가 있고 각각 <strong>8개 스트림</strong>, 스트림마다 <strong>8개 채널</strong> 중 하나를 고릅니다. 어떤 주변장치가 어느 스트림 · 채널에 붙는지는 RM0383 의 DMA 요청 매핑 표(9장 DMA, Table 27 DMA1 · Table 28 DMA2)에 고정되어 있습니다.</p>
+<div class="table-wrap"><table><thead><tr><th>주변장치 요청</th><th>컨트롤러</th><th>스트림</th><th>채널</th></tr></thead><tbody><tr><td>USART2_RX</td><td>DMA1</td><td>5 (또는 스트림 7 · 채널 6)</td><td>4</td></tr><tr><td>USART2_TX</td><td>DMA1</td><td>6</td><td>4</td></tr><tr><td>I2C1_RX</td><td>DMA1</td><td>0 또는 5</td><td>1</td></tr><tr><td>SPI2_TX</td><td>DMA1</td><td>4</td><td>0</td></tr><tr><td>ADC1</td><td>DMA2</td><td>0 또는 4</td><td>0</td></tr><tr><td>TIM3_CH1</td><td>DMA1</td><td>4</td><td>5</td></tr><tr><td>메모리 → 메모리</td><td>DMA2 만</td><td>아무 스트림</td><td>—</td></tr></tbody></table></div>
 <p>DMA1 은 APB1 주변장치, DMA2 는 APB2 주변장치와 메모리 간 복사를 맡습니다. CubeMX 의 DMA 탭에서 "USART2_RX" 를 추가하면 이 표에 따라 스트림이 자동으로 정해집니다.</p>
 <p>전송이 끝나면 인터럽트(전송 완료 TC, 절반 완료 HT)가 나고, HAL 은 <code>HAL_UART_RxCpltCallback</code> 같은 콜백으로 알려 줍니다. <a href="l09.html">L09</a> 의 ADC 순환 DMA 가 대표적인 예입니다. ADC 가 변환할 때마다 DMA 가 <code>adc_buf[]</code> 에 값을 써 주므로 메인 루프는 배열만 읽으면 됩니다.</p>
 <div class="callout callout-warn"><div class="callout-title">DMA 와 캐시 · 정렬</div><div class="callout-body"><p>DMA 는 코어 레지스터가 아니라 <strong>메모리 주소</strong>를 봅니다. 그래서 DMA 버퍼는 지역 변수(스택, 함수가 끝나면 사라짐)가 아니라 전역 · <code>static</code> 으로 두고, 코어가 읽을 때는 <code>volatile</code> 로 선언합니다. Cortex-M7(F7 · H7)에서는 데이터 캐시 때문에 DMA 가 쓴 값이 코어에 보이지 않는 문제가 추가로 생기며, 캐시 무효화나 비캐시 영역(MPU)이 필요합니다. F4 에는 데이터 캐시가 없어 이 문제가 없습니다.</p></div></div>
@@ -266,6 +278,6 @@ SECTIONS {
 </article>
 
 </main>
-<script src="../assets/js/site.js?v=20260928b"></script>
+<script src="../assets/js/site.js?v=20260928d"></script>
 </body>
 </html>

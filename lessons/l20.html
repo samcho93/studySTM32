@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L20. 워치독과 리셋 · studySTM32</title>
+<meta name="description" content="IWDG 제한 시간 계산식과 Refresh 위치 설계, RCC 리셋 플래그로 원인 판별, WWDG 의 창 개념, NVIC_SystemReset 을 익힙니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
+<link rel="stylesheet" href="../assets/css/main.css?v=20260928d">
+<link rel="stylesheet" href="../assets/css/stm32.css?v=20260928d">
+<link rel="stylesheet" href="../assets/css/ml-theme.css?v=20260928d">
+<link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
+<script src="../assets/js/theme.js?v=20260928d"></script>
+</head>
+<body class="lesson-page track-page-adv">
+<button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
+<aside class="sidebar" id="sidebar">
+<nav class="sidebar-nav">
+<div class="brand-row"><a class="brand" href="../index.html"><span class="brand-mark">32</span><span class="brand-text">studySTM32<small>STM32 HAL 인터랙티브 강좌</small></span></a></div>
+<div class="side-tools"><a class="side-tool" href="../sim/index.html">시뮬레이터</a><a class="side-tool" href="../lessons/hal-reference.html">HAL 레퍼런스</a></div>
+<div class="nav-track" data-track="theory">
+<div class="nav-track-title track-theory"><span class="nav-part-no">PART 0</span>STM32 이해하기</div>
+<ul>
+<li><a href="../lessons/t01.html" data-slug="t01"><span class="nav-no">T01</span>STM32 제품군 총람</a></li>
+<li><a href="../lessons/t02.html" data-slug="t02"><span class="nav-no">T02</span>Cortex-M 코어 구조</a></li>
+<li><a href="../lessons/t03.html" data-slug="t03"><span class="nav-no">T03</span>메모리 맵과 버스</a></li>
+<li><a href="../lessons/t04.html" data-slug="t04"><span class="nav-no">T04</span>클럭과 리셋 시스템</a></li>
+<li><a href="../lessons/t05.html" data-slug="t05"><span class="nav-no">T05</span>GPIO 내부 구조와 전기 특성</a></li>
+<li><a href="../lessons/t06.html" data-slug="t06"><span class="nav-no">T06</span>인터럽트·예외와 NVIC</a></li>
+<li><a href="../lessons/t07.html" data-slug="t07"><span class="nav-no">T07</span>타이머 구조</a></li>
+<li><a href="../lessons/t08.html" data-slug="t08"><span class="nav-no">T08</span>통신 인터페이스 원리</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="basics">
+<div class="nav-track-title track-basics"><span class="nav-part-no">PART 1</span>시작하기</div>
+<ul>
+<li><a href="../lessons/l01.html" data-slug="l01"><span class="nav-no">L01</span>STM32 시리즈와 개발 환경</a></li>
+<li><a href="../lessons/l02.html" data-slug="l02"><span class="nav-no">L02</span>시뮬레이터 둘러보기와 첫 프로젝트</a></li>
+<li><a href="../lessons/l03.html" data-slug="l03"><span class="nav-no">L03</span>GPIO 출력 — LED</a></li>
+<li><a href="../lessons/l04.html" data-slug="l04"><span class="nav-no">L04</span>GPIO 입력 — 스위치</a></li>
+<li><a href="../lessons/l05.html" data-slug="l05"><span class="nav-no">L05</span>외부 인터럽트 EXTI</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="comm">
+<div class="nav-track-title track-comm"><span class="nav-part-no">PART 2</span>통신·타이머·아날로그</div>
+<ul>
+<li><a href="../lessons/l06.html" data-slug="l06"><span class="nav-no">L06</span>UART와 printf</a></li>
+<li><a href="../lessons/l07.html" data-slug="l07"><span class="nav-no">L07</span>타이머 인터럽트</a></li>
+<li><a href="../lessons/l08.html" data-slug="l08"><span class="nav-no">L08</span>PWM — LED 밝기와 서보</a></li>
+<li><a href="../lessons/l09.html" data-slug="l09"><span class="nav-no">L09</span>ADC — 가변저항·조도센서</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="periph">
+<div class="nav-track-title track-periph"><span class="nav-part-no">PART 3</span>주변기기</div>
+<ul>
+<li><a href="../lessons/l10.html" data-slug="l10"><span class="nav-no">L10</span>I2C와 LCD1602</a></li>
+<li><a href="../lessons/l11.html" data-slug="l11"><span class="nav-no">L11</span>SPI 기초</a></li>
+<li><a href="../lessons/l12.html" data-slug="l12"><span class="nav-no">L12</span>7세그먼트 FND</a></li>
+<li><a href="../lessons/l13.html" data-slug="l13"><span class="nav-no">L13</span>DC 모터 드라이버</a></li>
+<li><a href="../lessons/l14.html" data-slug="l14"><span class="nav-no">L14</span>스텝모터</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="project">
+<div class="nav-track-title track-project"><span class="nav-part-no">PART 4</span>프로젝트</div>
+<ul>
+<li><a href="../lessons/l15.html" data-slug="l15"><span class="nav-no">L15</span>미니 프로젝트: 스마트 선풍기</a></li>
+<li><a href="../lessons/l16.html" data-slug="l16"><span class="nav-no">L16</span>실물 보드로 옮기기</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="adv">
+<div class="nav-track-title track-adv"><span class="nav-part-no">PART 5</span>중급 활용</div>
+<ul>
+<li><a href="../lessons/l17.html" data-slug="l17"><span class="nav-no">L17</span>주변기기 모듈 활용</a></li>
+<li><a href="../lessons/l18.html" data-slug="l18"><span class="nav-no">L18</span>DMA — CPU 없이 옮기기</a></li>
+<li><a href="../lessons/l19.html" data-slug="l19"><span class="nav-no">L19</span>입력 캡처 — 펄스 재기</a></li>
+<li><a href="../lessons/l20.html" class="active" data-slug="l20"><span class="nav-no">L20</span>워치독과 리셋</a></li>
+<li><a href="../lessons/l21.html" data-slug="l21"><span class="nav-no">L21</span>RTC 와 저전력 모드</a></li>
+<li><a href="../lessons/l22.html" data-slug="l22"><span class="nav-no">L22</span>FreeRTOS 기초</a></li>
+<li><a href="../lessons/l23.html" data-slug="l23"><span class="nav-no">L23</span>FreeRTOS 통신과 동기화</a></li>
+</ul>
+</div>
+</nav>
+</aside>
+<div class="sidebar-scrim" id="scrim"></div>
+<main class="main">
+<header class="topbar"><a class="topbar-brand" href="../index.html"><span class="brand-mark">32</span>studySTM32</a><nav class="topnav" aria-label="사이트 메뉴"><a href="../index.html">강의 홈</a><a href="../sim/index.html">시뮬레이터</a><a href="../lessons/hal-reference.html">HAL 레퍼런스</a></nav><button class="theme-icon" type="button" data-theme-toggle data-theme-icon aria-label="테마 전환"></button></header>
+
+<article class="lesson" data-slug="l20" data-track="adv">
+  <div class="lesson-head">
+    <div class="crumbs"><span class="track-pill track-adv">PART 5</span> 중급 활용 &middot; 약 45분 &middot; 중급</div>
+    <h1><span class="lesson-no">L20</span>워치독과 리셋</h1>
+    <p class="lede">IWDG 제한 시간 계산식과 Refresh 위치 설계, RCC 리셋 플래그로 원인 판별, WWDG 의 창 개념, NVIC_SystemReset 을 익힙니다.</p>
+    <div class="requires">선수 레슨: <a href="l06.html">L06</a> <a href="l07.html">L07</a></div>
+    <div class="lesson-actions">
+      <label class="done-toggle"><input type="checkbox" id="doneCheck"><span>학습 완료로 표시</span></label>
+      <a class="ghost-btn tool-sim" href="../sim/index.html?ex=l20-iwdg" data-sim-src="../sim/index.html?ex=l20-iwdg&amp;embed=1">시뮬레이터에서 실습</a><a class="ghost-btn" href="hal-reference.html">HAL 레퍼런스</a>
+    </div>
+  </div>
+  <div class="lesson-grid">
+    <div class="lesson-body">
+<h2 id="학습-목표">학습 목표<a class="anchor" href="#학습-목표">#</a></h2>
+<ul><li>워치독이 필요한 이유와 <strong>독립 워치독(IWDG)</strong> 의 동작(LSI 클럭, 다운카운터, Refresh)을 설명합니다.</li><li>제한 시간 공식 <span class="math">T = 4 × 2^PR × (RL + 1) / LSI</span> 로 프리스케일러와 Reload 값을 고르고, LSI 오차를 반영합니다.</li><li><code>HAL_IWDG_Refresh</code> 를 <strong>어디에 두어야</strong> 멈춤을 제대로 잡는지 설계합니다.</li><li>RCC 리셋 플래그로 <strong>리셋 원인</strong>을 판별하고, <code>NVIC_SystemReset()</code> 으로 소프트웨어 리셋을 겁니다.</li><li>창 워치독(WWDG)의 "너무 늦어도, 너무 일러도 리셋" 개념을 이해합니다.</li></ul>
+<h2 id="왜-워치독인가">왜 워치독인가<a class="anchor" href="#왜-워치독인가">#</a></h2>
+<p>현장의 장치는 사람이 리셋 버튼을 눌러 줄 수 없습니다. 무한 루프, I2C 장치가 응답하지 않아 멈춘 <code>while</code>, 스택 오버플로, 잡음으로 틀어진 레지스터 … 원인이 무엇이든 <strong>프로그램이 멈추면 스스로 리셋해서 다시 시작</strong>해야 합니다.</p>
+<p>워치독은 혼자 거꾸로 세는 타이머입니다. 프로그램이 정상이면 주기적으로 카운터를 다시 채우고(Refresh, "개에게 먹이 주기"), 멈춰서 Refresh 가 끊기면 카운터가 0 에 닿아 <strong>MCU 전체를 리셋</strong>합니다.</p>
+<h2 id="iwdg-구조">IWDG 구조<a class="anchor" href="#iwdg-구조">#</a></h2>
+<ul><li>클럭은 메인 클럭과 독립된 <strong>LSI RC 발진기</strong>(F4 약 32 kHz, F1 약 40 kHz)입니다. 메인 클럭이 죽어도 동작합니다.</li><li>12비트 다운카운터(0~4095)와 프리스케일러(÷4 ~ ÷256)로 구성됩니다.</li><li><strong>한 번 시작하면 리셋 외에는 멈출 수 없습니다.</strong> (옵션 바이트로 전원을 켜자마자 자동 시작하게 할 수도 있음: 하드웨어 워치독)</li></ul>
+<p><span class="math">제한 시간 = 4 × 2^PR × (Reload + 1) / LSI 주파수</span> — PR 은 0~6 이고, HAL 에서는 <code>IWDG_PRESCALER_4</code> ~ <code>IWDG_PRESCALER_256</code> 과 Reload(0~4095)로 줍니다.</p>
+<div class="table-wrap regmap"><table><thead><tr><th>Prescaler</th><th>틱 (32 kHz)</th><th>Reload 999</th><th>Reload 4095 (최대)</th></tr></thead><tbody><tr><td><code>IWDG_PRESCALER_4</code></td><td>0.125 ms</td><td>125 ms</td><td>512 ms</td></tr><tr><td><code>IWDG_PRESCALER_32</code></td><td>1 ms</td><td><strong>1.0 s</strong></td><td>4.1 s</td></tr><tr><td><code>IWDG_PRESCALER_64</code></td><td>2 ms</td><td>2.0 s</td><td>8.2 s</td></tr><tr><td><code>IWDG_PRESCALER_256</code></td><td>8 ms</td><td>8.0 s</td><td>32.8 s</td></tr></tbody></table></div>
+<div class="callout callout-warn"><div class="callout-title">LSI 는 정확하지 않습니다</div><div class="callout-body"><p>STM32F411 데이터시트의 LSI 는 <strong>최소 17 kHz, 보통 32 kHz, 최대 47 kHz</strong> 입니다. 1 s 로 설계한 IWDG 가 실제로는 0.68 s ~ 1.88 s 일 수 있습니다. 그래서 <strong>LSI 가 가장 빠를 때(가장 짧은 제한 시간)</strong> 에도 정상 루프가 넉넉히 Refresh 할 수 있게 잡습니다. 이 예제는 200 ms 마다 Refresh 하므로 0.68 s 안에 충분히 들어갑니다.</p></div></div>
+<h3 id="cubemx-설정">CubeMX 설정<a class="anchor" href="#cubemx-설정">#</a></h3>
+<p><strong>System Core → IWDG → Activated</strong>, IWDG counter clock prescaler <strong>32</strong>, IWDG down-counter reload value <strong>999</strong>. <code>IWDG_HandleTypeDef hiwdg;</code> 와 <code>MX_IWDG_Init()</code> 이 생성되고, **<code>MX_IWDG_Init()</code> 이 불리는 순간부터 카운트가 시작**됩니다. 그 뒤의 초기화(LCD, 센서 대기 등)가 제한 시간보다 길면 while 루프에 닿기도 전에 리셋되므로, 긴 초기화 중간에도 Refresh 하거나 IWDG 초기화를 뒤로 미룹니다.</p>
+<h2 id="예제-멈추면-스스로-리셋">예제 — 멈추면 스스로 리셋<a class="anchor" href="#예제-멈추면-스스로-리셋">#</a></h2>
+<p>200 ms 마다 LD2 를 토글하며 Refresh 합니다. <strong>B1 을 누르면 무한 루프에 빠진 척</strong>합니다. 1초 뒤 IWDG 가 리셋하고, 다시 시작한 <code>main()</code> 이 리셋 원인을 출력합니다. 터미널에 <code>r</code> 을 보내면 <code>NVIC_SystemReset()</code> 으로 소프트웨어 리셋합니다.</p>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l20-iwdg" data-sim-src="../sim/index.html?ex=l20-iwdg&amp;embed=1" data-sim-id="l20-iwdg"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">IWDG 리셋 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l20-iwdg" target="_blank" rel="noopener">새 창</a><code class="sim-id">l20-iwdg</code></div>
+<div class="code-block code-example" data-example="l20-iwdg"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN 0 */</span>
+<span class="tk-c">/* 리셋 원인 출력. 여러 플래그가 함께 켜질 수 있어 구체적인 것부터 검사합니다. */</span>
+<span class="tk-t">void</span> <span class="tk-f">print_reset_cause</span>(<span class="tk-t">void</span>)
+{
+  <span class="tk-k">if</span> (<span class="tk-h">__HAL_RCC_GET_FLAG</span>(<span class="tk-m">RCC_FLAG_IWDGRST</span>))      <span class="tk-f">printf</span>(<span class="tk-s">"Reset cause: IWDG (independent watchdog)\r\n"</span>);
+  <span class="tk-k">else</span> <span class="tk-k">if</span> (<span class="tk-h">__HAL_RCC_GET_FLAG</span>(<span class="tk-m">RCC_FLAG_WWDGRST</span>)) <span class="tk-f">printf</span>(<span class="tk-s">"Reset cause: WWDG (window watchdog)\r\n"</span>);
+  <span class="tk-k">else</span> <span class="tk-k">if</span> (<span class="tk-h">__HAL_RCC_GET_FLAG</span>(<span class="tk-m">RCC_FLAG_SFTRST</span>))  <span class="tk-f">printf</span>(<span class="tk-s">"Reset cause: software (NVIC_SystemReset)\r\n"</span>);
+  <span class="tk-k">else</span> <span class="tk-k">if</span> (<span class="tk-h">__HAL_RCC_GET_FLAG</span>(<span class="tk-m">RCC_FLAG_PORRST</span>))  <span class="tk-f">printf</span>(<span class="tk-s">"Reset cause: power-on\r\n"</span>);
+  <span class="tk-k">else</span> <span class="tk-k">if</span> (<span class="tk-h">__HAL_RCC_GET_FLAG</span>(<span class="tk-m">RCC_FLAG_PINRST</span>))  <span class="tk-f">printf</span>(<span class="tk-s">"Reset cause: NRST pin (reset button)\r\n"</span>);
+  <span class="tk-k">else</span>                                           <span class="tk-f">printf</span>(<span class="tk-s">"Reset cause: unknown\r\n"</span>);
+  <span class="tk-h">__HAL_RCC_CLEAR_RESET_FLAGS</span>();                  <span class="tk-c">// 지우지 않으면 다음 리셋 때도 남아 있음</span>
+}
+<span class="tk-c">/* USER CODE END 0 */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN 2 */</span>
+  <span class="tk-f">print_reset_cause</span>();
+  <span class="tk-f">printf</span>(<span class="tk-s">"IWDG running: refresh every 200 ms. B1 = hang, 'r' = software reset\r\n"</span>);
+  <span class="tk-c">/* USER CODE END 2 */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    <span class="tk-h">HAL_GPIO_TogglePin</span>(LD2_GPIO_Port, LD2_Pin);
+    loops++;
+
+    <span class="tk-k">if</span> (<span class="tk-h">HAL_GPIO_ReadPin</span>(B1_GPIO_Port, B1_Pin) == <span class="tk-m">GPIO_PIN_RESET</span>) {
+      <span class="tk-f">printf</span>(<span class="tk-s">"B1: main loop stuck after %lu loops...\r\n"</span>, loops);
+      <span class="tk-k">while</span> (<span class="tk-n">1</span>) { }                               <span class="tk-c">// 버그로 멈춘 상황 흉내 — Refresh 가 더는 불리지 않음</span>
+    }
+    <span class="tk-k">if</span> (<span class="tk-h">HAL_UART_Receive</span>(&amp;huart2, &amp;rx_ch, <span class="tk-n">1</span>, <span class="tk-n">0</span>) == <span class="tk-m">HAL_OK</span> &amp;&amp; rx_ch == <span class="tk-s">'r'</span>) {
+      <span class="tk-f">printf</span>(<span class="tk-s">"Software reset\r\n"</span>);
+      <span class="tk-f">NVIC_SystemReset</span>();                         <span class="tk-c">// 즉시 리셋 (돌아오지 않음)</span>
+    }
+
+    <span class="tk-h">HAL_IWDG_Refresh</span>(&amp;hiwdg);                     <span class="tk-c">// 한 바퀴가 정상으로 끝났을 때만 Refresh</span>
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">200</span>);
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span></code></pre></div>
+<p>시뮬레이터 터미널 출력 예:</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">text</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-text">Reset cause: power-on
+IWDG running: refresh every 200 ms. B1 = hang, &#x27;r&#x27; = software reset
+B1: main loop stuck after 6 loops...
+Reset cause: IWDG (independent watchdog)
+IWDG running: refresh every 200 ms. B1 = hang, &#x27;r&#x27; = software reset
+Software reset
+Reset cause: software (NVIC_SystemReset)</code></pre></div>
+<ul><li>리셋되면 전역 변수(<code>loops</code>)는 0 으로 돌아갑니다. RAM 은 다시 초기화되기 때문입니다.</li><li>리셋 플래그는 <strong>RCC_CSR 레지스터에 남아 있다가</strong> 전원을 끄거나 <code>__HAL_RCC_CLEAR_RESET_FLAGS()</code> 로 지울 때까지 유지됩니다. 지우지 않으면 다음 리셋에서도 옛 원인이 보입니다.</li></ul>
+<h2 id="리셋-원인-판별">리셋 원인 판별<a class="anchor" href="#리셋-원인-판별">#</a></h2>
+<div class="table-wrap api"><table><thead><tr><th>플래그 (<code>RCC_FLAG_…</code>)</th><th>원인</th><th>비고</th></tr></thead><tbody><tr><td><code>IWDGRST</code></td><td>독립 워치독</td><td>멈춤·무한 루프의 증거</td></tr><tr><td><code>WWDGRST</code></td><td>창 워치독</td><td>너무 늦거나 너무 이른 Refresh</td></tr><tr><td><code>SFTRST</code></td><td>소프트웨어</td><td><code>NVIC_SystemReset()</code> — 펌웨어 업데이트 뒤, 설정 변경 뒤</td></tr><tr><td><code>PORRST</code></td><td>전원 켜짐 / 꺼짐</td><td>처음 켤 때</td></tr><tr><td><code>BORRST</code></td><td>브라운아웃</td><td>전원 전압이 BOR 문턱 아래로 떨어짐 (전원 불량 의심)</td></tr><tr><td><code>PINRST</code></td><td>NRST 핀</td><td>리셋 버튼(B2). <strong>다른 모든 리셋에서도 함께 켜짐</strong></td></tr><tr><td><code>LPWRRST</code></td><td>저전력 관리</td><td>옵션 바이트 설정에 따라 STOP/STANDBY 진입 시</td></tr></tbody></table></div>
+<p>내부 리셋(워치독 · 소프트웨어 · 전원)은 NRST 핀을 LOW 로 끌어내리므로 <code>PINRST</code> 도 같이 켜집니다. 그래서 예제는 <strong>구체적인 원인부터</strong> 검사하고 <code>PINRST</code> 를 맨 마지막에 둡니다. 현장 장치라면 리셋 원인과 횟수를 백업 레지스터나 플래시에 기록해 두면 고장 분석에 큰 도움이 됩니다.</p>
+<h2 id="refresh-는-어디에">Refresh 는 어디에<a class="anchor" href="#refresh-는-어디에">#</a></h2>
+<div class="table-wrap api"><table><thead><tr><th>위치</th><th>결과</th></tr></thead><tbody><tr><td>메인 루프 끝에서 한 번 (예제)</td><td>루프가 멈추면 리셋 — <strong>올바름</strong></td></tr><tr><td>타이머 인터럽트 안</td><td>메인 루프가 멈춰도 인터럽트는 계속 돌아 Refresh — <strong>워치독이 쓸모없어짐</strong></td></tr><tr><td>오래 걸리는 함수 곳곳에 여러 번</td><td>어디서 멈춰도 그 근처 Refresh 가 살려 줌 — 멈춤을 놓침</td></tr><tr><td>모든 작업의 "살아 있음" 확인 뒤</td><td>여러 작업(RTOS 태스크)이 각자 플래그를 세우고, 감시 코드가 <strong>모두 세워졌을 때만</strong> Refresh — 가장 안전</td></tr></tbody></table></div>
+<ul><li>플래시 섹터 지우기(F4 의 128 KB 섹터는 1초 이상 걸릴 수 있음)처럼 오래 막히는 작업 앞에서는 Refresh 하거나 제한 시간을 넉넉히 둡니다.</li><li>디버거로 중단점에 멈추면 IWDG 는 계속 셉니다. 디버깅 중 리셋을 막으려면 <code>__HAL_DBGMCU_FREEZE_IWDG();</code> 를 부릅니다(시뮬레이터 미지원).</li><li>F4 의 IWDG 는 <strong>STOP · STANDBY 모드에서도 계속 셉니다.</strong> 저전력 장치는 RTC 웨이크업으로 주기적으로 깨어나 Refresh 합니다(L21). L4 · G0 는 옵션 바이트로 저전력 모드에서 멈출 수 있습니다.</li></ul>
+<h2 id="창-워치독-wwdg-개념">창 워치독 WWDG (개념)<a class="anchor" href="#창-워치독-wwdg-개념">#</a></h2>
+<p>WWDG 는 APB1 클럭으로 동작하는 7비트 다운카운터입니다. 카운터가 0x40 아래(0x3F)로 떨어지면 리셋하고, 추가로 <strong>창(Window) 값보다 클 때 Refresh 해도 리셋</strong>합니다. "정해진 시간 창 안에서만" 먹이를 주어야 합니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">text</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-text">카운터  0x7F ─────────── W(창) ─────────── 0x40 ──► 0x3F = 리셋
+         │  여기서 Refresh = 리셋 │ 여기서 Refresh = 정상 │ 늦음 = 리셋</code></pre></div>
+<ul><li>너무 <strong>빨리</strong> 도는 루프(예: 조건 검사를 건너뛰는 버그)도 잡습니다.</li><li>F411(APB1 42 MHz)에서 틱 = 4096 × 2^WDGTB / 42 MHz. WDGTB = 3 이면 약 0.78 ms, 최대 64틱 ≈ 50 ms 로 짧습니다.</li><li>카운터가 0x40 이 되면 <strong>조기 경고 인터럽트(EWI)</strong> 로 리셋 직전에 상태를 기록할 수 있습니다.</li><li>시뮬레이터는 WWDG 를 지원하지 않습니다. 개념과 설정 값 계산만 익혀 두세요.</li></ul>
+<h2 id="소프트웨어-리셋">소프트웨어 리셋<a class="anchor" href="#소프트웨어-리셋">#</a></h2>
+<p><code>NVIC_SystemReset()</code> 은 코어의 AIRCR 레지스터에 리셋 요청(SYSRESETREQ)을 써서 즉시 리셋합니다. 함수는 돌아오지 않습니다. 설정을 바꾼 뒤 다시 시작하거나, 부트로더로 넘어가거나, 복구할 수 없는 오류(<code>Error_Handler</code>)에서 씁니다. 단, <code>Error_Handler</code> 에서 무조건 리셋하면 원인을 모른 채 계속 재시작하므로, 원인을 기록하고 리셋 횟수를 제한하는 편이 좋습니다.</p>
+<div class="callout callout-task"><div class="callout-title">실습</div><div class="callout-body"><ol><li>IWDG 제한 시간을 250 ms(Prescaler 4, Reload ?)로 바꾸세요. 예제의 <code>HAL_Delay(200)</code> 으로 괜찮은가요? LSI 가 47 kHz 일 때는?</li><li><code>HAL_Delay(200)</code> 을 <code>HAL_Delay(1200)</code> 으로 바꾸면 어떻게 되는지 시뮬레이터에서 확인하세요.</li><li>리셋 원인이 IWDG 이면 LD2 를 5번 빠르게 깜빡여 알리는 코드를 USER CODE 2 에 추가하세요.</li></ol></div></div>
+<div class="callout callout-check"><div class="callout-title">스스로 확인</div><div class="callout-body"><ul><li>Prescaler 64, Reload 499, LSI 32 kHz 일 때 제한 시간은?</li><li>타이머 인터럽트 콜백에서 <code>HAL_IWDG_Refresh()</code> 를 부르면 왜 안 되나요?</li><li>전원을 켰을 때 <code>PORRST</code> 와 <code>PINRST</code> 가 함께 켜져 있는 이유는?</li></ul></div></div>
+<h2 id="자주-나는-오류와-해결">자주 나는 오류와 해결<a class="anchor" href="#자주-나는-오류와-해결">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인</th><th>해결</th></tr></thead><tbody><tr><td>부팅하자마자 계속 리셋</td><td>초기화가 제한 시간보다 김</td><td>초기화 중 Refresh, 제한 시간 늘리기</td></tr><tr><td>가끔만 리셋됨 (특정 보드에서)</td><td>LSI 오차로 실제 제한 시간이 짧음</td><td>최소 LSI(17 kHz 쪽) 기준으로 여유 두기</td></tr><tr><td>디버깅 중 중단점에서 리셋</td><td>IWDG 는 코어가 멈춰도 셈</td><td><code>__HAL_DBGMCU_FREEZE_IWDG()</code></td></tr><tr><td>리셋 원인이 늘 같게 나옴</td><td>플래그를 지우지 않음</td><td><code>__HAL_RCC_CLEAR_RESET_FLAGS()</code></td></tr><tr><td>멈췄는데 리셋되지 않음</td><td>Refresh 를 인터럽트 안에서 호출</td><td>메인 루프(또는 감시 태스크)로 옮기기</td></tr><tr><td>STOP 모드에서 깨어나지도 않았는데 리셋</td><td>IWDG 가 STOP 중에도 셈</td><td>RTC 웨이크업으로 깨어나 Refresh</td></tr></tbody></table></div>
+<h2 id="과제">과제<a class="anchor" href="#과제">#</a></h2>
+<ol><li>메인 루프의 작업 세 개(센서 읽기, 표시, 통신)가 각각 비트를 세우고, 세 비트가 모두 세워졌을 때만 Refresh 하는 감시 구조를 만드세요.</li><li>리셋 원인별 횟수를 RTC 백업 레지스터(<code>HAL_RTCEx_BKUPWrite</code>, 실물)에 누적해 부팅 때 출력하는 코드를 설계하세요.</li><li>WWDG 로 20~40 ms 창을 만들려면 WDGTB, 카운터, 창 값을 얼마로 해야 하는지 계산하세요(APB1 42 MHz).</li></ol>
+<h2 id="참고자료">참고자료<a class="anchor" href="#참고자료">#</a></h2>
+<ul><li>ST, <em>RM0383 (STM32F411)</em>, 15장 Independent watchdog (IWDG), 16장 Window watchdog (WWDG), 6장 RCC (RCC_CSR 리셋 플래그)</li><li>ST, <em>STM32F411xC/E Datasheet</em> — LSI 발진기 특성 표</li><li>ST, <em>UM1725 — STM32F4 HAL</em>, IWDG Generic Driver (<code>HAL_IWDG_Init</code>, <code>HAL_IWDG_Refresh</code>)</li><li>ARM, <em>Cortex-M4 Devices Generic User Guide</em> — AIRCR (SYSRESETREQ)</li><li>이 사이트의 <a href="hal-reference.html#iwdg-워치독">HAL 레퍼런스 — IWDG</a></li></ul>
+      <nav class="pager"><a class="pager-prev" href="l19.html"><span>이전 · L19</span>입력 캡처 — 펄스 재기</a><a class="pager-next" href="l21.html"><span>다음 · L21</span>RTC 와 저전력 모드</a></nav>
+    </div>
+    <aside class="lesson-toc"><div class="toc-title">이 레슨의 내용</div><div class="toc-links"><a class="toc-l2" href="#학습-목표">학습 목표</a><a class="toc-l2" href="#왜-워치독인가">왜 워치독인가</a><a class="toc-l2" href="#iwdg-구조">IWDG 구조</a><a class="toc-l3" href="#cubemx-설정">CubeMX 설정</a><a class="toc-l2" href="#예제-멈추면-스스로-리셋">예제 — 멈추면 스스로 리셋</a><a class="toc-l2" href="#리셋-원인-판별">리셋 원인 판별</a><a class="toc-l2" href="#refresh-는-어디에">Refresh 는 어디에</a><a class="toc-l2" href="#창-워치독-wwdg-개념">창 워치독 WWDG (개념)</a><a class="toc-l2" href="#소프트웨어-리셋">소프트웨어 리셋</a><a class="toc-l2" href="#자주-나는-오류와-해결">자주 나는 오류와 해결</a><a class="toc-l2" href="#과제">과제</a><a class="toc-l2" href="#참고자료">참고자료</a></div></aside>
+  </div>
+</article>
+
+</main>
+<script src="../assets/js/site.js?v=20260928d"></script>
+</body>
+</html>

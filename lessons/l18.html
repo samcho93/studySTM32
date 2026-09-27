@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L18. DMA — CPU 없이 옮기기 · studySTM32</title>
+<meta name="description" content="DMA 스트림·채널과 원형 모드, 절반·전체 완료 콜백으로 ADC 다채널 값을 블록 단위로 처리하고, UART ReceiveToIdle 로 길이를 모르는 명령을 받습니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
+<link rel="stylesheet" href="../assets/css/main.css?v=20260928d">
+<link rel="stylesheet" href="../assets/css/stm32.css?v=20260928d">
+<link rel="stylesheet" href="../assets/css/ml-theme.css?v=20260928d">
+<link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
+<script src="../assets/js/theme.js?v=20260928d"></script>
+</head>
+<body class="lesson-page track-page-adv">
+<button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
+<aside class="sidebar" id="sidebar">
+<nav class="sidebar-nav">
+<div class="brand-row"><a class="brand" href="../index.html"><span class="brand-mark">32</span><span class="brand-text">studySTM32<small>STM32 HAL 인터랙티브 강좌</small></span></a></div>
+<div class="side-tools"><a class="side-tool" href="../sim/index.html">시뮬레이터</a><a class="side-tool" href="../lessons/hal-reference.html">HAL 레퍼런스</a></div>
+<div class="nav-track" data-track="theory">
+<div class="nav-track-title track-theory"><span class="nav-part-no">PART 0</span>STM32 이해하기</div>
+<ul>
+<li><a href="../lessons/t01.html" data-slug="t01"><span class="nav-no">T01</span>STM32 제품군 총람</a></li>
+<li><a href="../lessons/t02.html" data-slug="t02"><span class="nav-no">T02</span>Cortex-M 코어 구조</a></li>
+<li><a href="../lessons/t03.html" data-slug="t03"><span class="nav-no">T03</span>메모리 맵과 버스</a></li>
+<li><a href="../lessons/t04.html" data-slug="t04"><span class="nav-no">T04</span>클럭과 리셋 시스템</a></li>
+<li><a href="../lessons/t05.html" data-slug="t05"><span class="nav-no">T05</span>GPIO 내부 구조와 전기 특성</a></li>
+<li><a href="../lessons/t06.html" data-slug="t06"><span class="nav-no">T06</span>인터럽트·예외와 NVIC</a></li>
+<li><a href="../lessons/t07.html" data-slug="t07"><span class="nav-no">T07</span>타이머 구조</a></li>
+<li><a href="../lessons/t08.html" data-slug="t08"><span class="nav-no">T08</span>통신 인터페이스 원리</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="basics">
+<div class="nav-track-title track-basics"><span class="nav-part-no">PART 1</span>시작하기</div>
+<ul>
+<li><a href="../lessons/l01.html" data-slug="l01"><span class="nav-no">L01</span>STM32 시리즈와 개발 환경</a></li>
+<li><a href="../lessons/l02.html" data-slug="l02"><span class="nav-no">L02</span>시뮬레이터 둘러보기와 첫 프로젝트</a></li>
+<li><a href="../lessons/l03.html" data-slug="l03"><span class="nav-no">L03</span>GPIO 출력 — LED</a></li>
+<li><a href="../lessons/l04.html" data-slug="l04"><span class="nav-no">L04</span>GPIO 입력 — 스위치</a></li>
+<li><a href="../lessons/l05.html" data-slug="l05"><span class="nav-no">L05</span>외부 인터럽트 EXTI</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="comm">
+<div class="nav-track-title track-comm"><span class="nav-part-no">PART 2</span>통신·타이머·아날로그</div>
+<ul>
+<li><a href="../lessons/l06.html" data-slug="l06"><span class="nav-no">L06</span>UART와 printf</a></li>
+<li><a href="../lessons/l07.html" data-slug="l07"><span class="nav-no">L07</span>타이머 인터럽트</a></li>
+<li><a href="../lessons/l08.html" data-slug="l08"><span class="nav-no">L08</span>PWM — LED 밝기와 서보</a></li>
+<li><a href="../lessons/l09.html" data-slug="l09"><span class="nav-no">L09</span>ADC — 가변저항·조도센서</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="periph">
+<div class="nav-track-title track-periph"><span class="nav-part-no">PART 3</span>주변기기</div>
+<ul>
+<li><a href="../lessons/l10.html" data-slug="l10"><span class="nav-no">L10</span>I2C와 LCD1602</a></li>
+<li><a href="../lessons/l11.html" data-slug="l11"><span class="nav-no">L11</span>SPI 기초</a></li>
+<li><a href="../lessons/l12.html" data-slug="l12"><span class="nav-no">L12</span>7세그먼트 FND</a></li>
+<li><a href="../lessons/l13.html" data-slug="l13"><span class="nav-no">L13</span>DC 모터 드라이버</a></li>
+<li><a href="../lessons/l14.html" data-slug="l14"><span class="nav-no">L14</span>스텝모터</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="project">
+<div class="nav-track-title track-project"><span class="nav-part-no">PART 4</span>프로젝트</div>
+<ul>
+<li><a href="../lessons/l15.html" data-slug="l15"><span class="nav-no">L15</span>미니 프로젝트: 스마트 선풍기</a></li>
+<li><a href="../lessons/l16.html" data-slug="l16"><span class="nav-no">L16</span>실물 보드로 옮기기</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="adv">
+<div class="nav-track-title track-adv"><span class="nav-part-no">PART 5</span>중급 활용</div>
+<ul>
+<li><a href="../lessons/l17.html" data-slug="l17"><span class="nav-no">L17</span>주변기기 모듈 활용</a></li>
+<li><a href="../lessons/l18.html" class="active" data-slug="l18"><span class="nav-no">L18</span>DMA — CPU 없이 옮기기</a></li>
+<li><a href="../lessons/l19.html" data-slug="l19"><span class="nav-no">L19</span>입력 캡처 — 펄스 재기</a></li>
+<li><a href="../lessons/l20.html" data-slug="l20"><span class="nav-no">L20</span>워치독과 리셋</a></li>
+<li><a href="../lessons/l21.html" data-slug="l21"><span class="nav-no">L21</span>RTC 와 저전력 모드</a></li>
+<li><a href="../lessons/l22.html" data-slug="l22"><span class="nav-no">L22</span>FreeRTOS 기초</a></li>
+<li><a href="../lessons/l23.html" data-slug="l23"><span class="nav-no">L23</span>FreeRTOS 통신과 동기화</a></li>
+</ul>
+</div>
+</nav>
+</aside>
+<div class="sidebar-scrim" id="scrim"></div>
+<main class="main">
+<header class="topbar"><a class="topbar-brand" href="../index.html"><span class="brand-mark">32</span>studySTM32</a><nav class="topnav" aria-label="사이트 메뉴"><a href="../index.html">강의 홈</a><a href="../sim/index.html">시뮬레이터</a><a href="../lessons/hal-reference.html">HAL 레퍼런스</a></nav><button class="theme-icon" type="button" data-theme-toggle data-theme-icon aria-label="테마 전환"></button></header>
+
+<article class="lesson" data-slug="l18" data-track="adv">
+  <div class="lesson-head">
+    <div class="crumbs"><span class="track-pill track-adv">PART 5</span> 중급 활용 &middot; 약 55분 &middot; 중급</div>
+    <h1><span class="lesson-no">L18</span>DMA — CPU 없이 옮기기</h1>
+    <p class="lede">DMA 스트림·채널과 원형 모드, 절반·전체 완료 콜백으로 ADC 다채널 값을 블록 단위로 처리하고, UART ReceiveToIdle 로 길이를 모르는 명령을 받습니다.</p>
+    <div class="requires">선수 레슨: <a href="l06.html">L06</a> <a href="l09.html">L09</a></div>
+    <div class="lesson-actions">
+      <label class="done-toggle"><input type="checkbox" id="doneCheck"><span>학습 완료로 표시</span></label>
+      <a class="ghost-btn tool-sim" href="../sim/index.html?ex=l18-adc-dma" data-sim-src="../sim/index.html?ex=l18-adc-dma&amp;embed=1">시뮬레이터에서 실습</a><a class="ghost-btn" href="hal-reference.html">HAL 레퍼런스</a>
+    </div>
+  </div>
+  <div class="lesson-grid">
+    <div class="lesson-body">
+<h2 id="학습-목표">학습 목표<a class="anchor" href="#학습-목표">#</a></h2>
+<ul><li>DMA 가 <strong>CPU 개입 없이</strong> 주변장치와 메모리 사이에서 데이터를 옮기는 원리를 설명합니다.</li><li>STM32F4 의 <strong>DMA 컨트롤러 · 스트림 · 채널</strong> 구조와 ADC1 · USART2 의 DMA 연결을 찾습니다.</li><li><strong>원형(Circular) 모드</strong>와 <strong>절반 완료 / 전체 완료 콜백</strong>으로 ADC 다채널 값을 블록 단위로 처리합니다.</li><li>UART <strong>IDLE 감지</strong>(<code>HAL_UARTEx_ReceiveToIdle_IT</code> / <code>_DMA</code>)로 길이를 모르는 명령을 받습니다.</li></ul>
+<h2 id="dma-란">DMA 란<a class="anchor" href="#dma-란">#</a></h2>
+<p>폴링이나 인터럽트 방식에서는 바이트 하나, 변환 값 하나마다 <strong>CPU 가 직접</strong> 읽어서 메모리에 씁니다. DMA(Direct Memory Access)는 이 복사를 전담하는 하드웨어입니다. CPU 는 "어디서, 어디로, 몇 개" 만 알려 주고 다른 일을 합니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">text</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-text">폴링/인터럽트:  ADC ──► CPU(읽기) ──► CPU(쓰기) ──► RAM      값마다 CPU 가 일함
+DMA           :  ADC ──────── DMA ──────────────► RAM      CPU 는 끝났다는 알림만 받음</code></pre></div>
+<div class="table-wrap api"><table><thead><tr><th>방식</th><th>CPU 부담</th><th>알맞은 곳</th></tr></thead><tbody><tr><td>폴링</td><td>기다리는 동안 CPU 전부</td><td>간단한 1회성 측정</td></tr><tr><td>인터럽트</td><td>값(바이트)마다 ISR 한 번</td><td>느린 입력, 짧은 명령</td></tr><tr><td>DMA</td><td>블록 끝(또는 절반)마다 ISR 한 번</td><td>ADC 연속 샘플링, UART 대량 송수신, SPI 디스플레이</td></tr></tbody></table></div>
+<h3 id="스트림과-채널-stm32f4">스트림과 채널 (STM32F4)<a class="anchor" href="#스트림과-채널-stm32f4">#</a></h3>
+<p>F4 에는 DMA1 · DMA2 두 컨트롤러가 있고, 각각 <strong>스트림 8개(Stream0~7)</strong> 를 가집니다. 스트림마다 <strong>채널 8개</strong> 중 하나를 골라 어느 주변장치의 요청을 받을지 정합니다. 조합은 레퍼런스 매뉴얼의 DMA 요청 표에 고정되어 있습니다.</p>
+<div class="table-wrap regmap"><table><thead><tr><th>요청</th><th>컨트롤러</th><th>스트림</th><th>채널</th><th>방향</th></tr></thead><tbody><tr><td>ADC1</td><td>DMA2</td><td>Stream0 (또는 Stream4)</td><td>Channel 0</td><td>주변장치 → 메모리</td></tr><tr><td>USART2_RX</td><td>DMA1</td><td>Stream5</td><td>Channel 4</td><td>주변장치 → 메모리</td></tr><tr><td>USART2_TX</td><td>DMA1</td><td>Stream6</td><td>Channel 4</td><td>메모리 → 주변장치</td></tr></tbody></table></div>
+<p>F1 · F0 · L0 등은 스트림 없이 <strong>채널 번호가 요청마다 정해져</strong> 있고(예: F103 의 ADC1 = DMA1 Channel1), G0 · G4 · L4+ · U5 는 DMAMUX 로 아무 채널에나 요청을 연결합니다. CubeMX 의 <strong>DMA Settings → Add</strong> 가 이 선택을 대신해 주므로 표를 외울 필요는 없습니다.</p>
+<h3 id="dma-설정-항목">DMA 설정 항목<a class="anchor" href="#dma-설정-항목">#</a></h3>
+<ul><li><strong>Direction</strong>: Peripheral → Memory(수신·ADC), Memory → Peripheral(송신)</li><li><strong>Mode</strong>: Normal(한 번 옮기고 멈춤) / <strong>Circular</strong>(끝나면 처음부터 다시, 멈추지 않음)</li><li><strong>Increment</strong>: 주변장치 주소는 고정, 메모리 주소는 증가(배열을 채움)</li><li><strong>Data width</strong>: Byte / Half Word(16비트, ADC) / Word</li><li><strong>인터럽트</strong>: 전송의 <strong>절반</strong>(HT, Half Transfer)과 <strong>전체</strong>(TC, Transfer Complete)에서 발생</li></ul>
+<h2 id="원형-dma-와-절반-전체-콜백">원형 DMA 와 절반 / 전체 콜백<a class="anchor" href="#원형-dma-와-절반-전체-콜백">#</a></h2>
+<p>원형 모드에서 DMA 는 배열 끝에 닿으면 곧바로 앞에서부터 다시 씁니다. 그래서 CPU 가 배열을 읽는 동안에도 값이 계속 바뀝니다. 이 문제는 배열을 반으로 나누어 해결합니다(핑퐁 버퍼).</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">text</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-text">adc_buf[32]:  [ 앞 절반 0~15 ][ 뒤 절반 16~31 ]
+                DMA 가 채우는 중 ─────►
+HT 인터럽트:  앞 절반이 찼다 → CPU 는 앞 절반 처리  (DMA 는 뒤 절반을 채우는 중)
+TC 인터럽트:  뒤 절반이 찼다 → CPU 는 뒤 절반 처리  (DMA 는 다시 앞 절반을 채우는 중)</code></pre></div>
+<p>HAL 은 HT 에서 <code>HAL_ADC_ConvHalfCpltCallback</code>, TC 에서 <code>HAL_ADC_ConvCpltCallback</code> 을 부릅니다. CPU 가 반쪽을 처리하는 시간이 DMA 가 다른 반쪽을 채우는 시간보다 짧으면 값이 섞이지 않습니다.</p>
+<h2 id="예제-1-adc-2채널-원형-dma">예제 1 — ADC 2채널 + 원형 DMA<a class="anchor" href="#예제-1-adc-2채널-원형-dma">#</a></h2>
+<p>L09 의 DMA 예제는 배열의 최신 값만 읽었습니다. 이번에는 채널마다 16개씩 모아 <strong>평균</strong>을 냅니다.</p>
+<h3 id="cubemx-설정">CubeMX 설정<a class="anchor" href="#cubemx-설정">#</a></h3>
+<ol><li><strong>Analog → ADC1</strong>: IN0, IN1 체크. Scan Conversion <strong>Enabled</strong>, Continuous Conversion <strong>Enabled</strong>, <strong>DMA Continuous Requests Enabled</strong></li><li>Rank 1 = Channel 0, Rank 2 = Channel 1 (Number Of Conversion 2)</li><li><strong>DMA Settings → Add → ADC1</strong>: DMA2 Stream0, Mode <strong>Circular</strong>, Data Width <strong>Half Word</strong></li><li><strong>NVIC</strong>: <em>DMA2 stream0 global interrupt</em> 가 켜져 있는지 확인 (DMA 를 추가하면 자동으로 켜짐)</li></ol>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l18-adc-dma" data-sim-src="../sim/index.html?ex=l18-adc-dma&amp;embed=1" data-sim-id="l18-adc-dma"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">ADC + 원형 DMA 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l18-adc-dma" target="_blank" rel="noopener">새 창</a><code class="sim-id">l18-adc-dma</code></div>
+<div class="code-block code-example" data-example="l18-adc-dma"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN PV */</span>
+<span class="tk-p">#define</span> <span class="tk-m">ADC_CH</span>      <span class="tk-n">2</span>                        <span class="tk-c">// 스캔하는 채널 수 (rank 1 = IN0, rank 2 = IN1)</span>
+<span class="tk-p">#define</span> <span class="tk-m">ADC_SAMPLES</span> <span class="tk-n">16</span>                       <span class="tk-c">// 채널마다 모을 샘플 수</span>
+<span class="tk-p">#define</span> <span class="tk-f">ADC_BUF_LEN</span> (<span class="tk-m">ADC_CH</span> * <span class="tk-m">ADC_SAMPLES</span>)   <span class="tk-c">// 32칸: [IN0, IN1, IN0, IN1, ...]</span>
+<span class="tk-t">uint16_t</span> adc_buf[<span class="tk-m">ADC_BUF_LEN</span>];               <span class="tk-c">// DMA 가 계속 덮어쓰는 배열</span>
+<span class="tk-k">volatile</span> <span class="tk-t">uint32_t</span> avg_pot = <span class="tk-n">0</span>, avg_ldr = <span class="tk-n">0</span>;  <span class="tk-c">// 콜백이 계산한 평균</span>
+<span class="tk-k">volatile</span> <span class="tk-t">uint32_t</span> blocks = <span class="tk-n">0</span>;                <span class="tk-c">// 처리한 반쪽 블록 수</span>
+<span class="tk-t">uint32_t</span> last_print = <span class="tk-n">0</span>;
+<span class="tk-c">/* USER CODE END PV */</span>
+
+<span class="tk-c">/* USER CODE BEGIN 0 */</span>
+<span class="tk-c">/* adc_buf[start] 부터 절반(16칸)을 채널별로 평균냅니다 */</span>
+<span class="tk-t">void</span> <span class="tk-f">average_block</span>(<span class="tk-t">uint32_t</span> start)
+{
+  <span class="tk-t">uint32_t</span> sum0 = <span class="tk-n">0</span>, sum1 = <span class="tk-n">0</span>;
+  <span class="tk-k">for</span> (<span class="tk-t">uint32_t</span> i = start; i &lt; start + <span class="tk-m">ADC_BUF_LEN</span> / <span class="tk-n">2</span>; i += <span class="tk-m">ADC_CH</span>) {
+    sum0 += adc_buf[i];          <span class="tk-c">// 짝수 칸 = IN0 (가변저항)</span>
+    sum1 += adc_buf[i + <span class="tk-n">1</span>];      <span class="tk-c">// 홀수 칸 = IN1 (조도센서)</span>
+  }
+  avg_pot = sum0 / (<span class="tk-m">ADC_SAMPLES</span> / <span class="tk-n">2</span>);
+  avg_ldr = sum1 / (<span class="tk-m">ADC_SAMPLES</span> / <span class="tk-n">2</span>);
+  blocks++;
+}
+<span class="tk-c">/* USER CODE END 0 */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN 2 */</span>
+  <span class="tk-f">printf</span>(<span class="tk-s">"ADC + DMA circular start\r\n"</span>);
+  <span class="tk-h">HAL_ADC_Start_DMA</span>(&amp;hadc1, (<span class="tk-t">uint32_t</span> *)adc_buf, <span class="tk-m">ADC_BUF_LEN</span>);   <span class="tk-c">// 한 번 시작하면 CPU 없이 계속</span>
+  <span class="tk-c">/* USER CODE END 2 */</span>
+
+<span class="tk-c">/* USER CODE BEGIN 4 */</span>
+<span class="tk-c">/* printf 리타깃: syscalls.c 의 _write() 가 글자마다 이 함수를 부릅니다. */</span>
+<span class="tk-t">int</span> <span class="tk-f">__io_putchar</span>(<span class="tk-t">int</span> ch)
+{
+  <span class="tk-h">HAL_UART_Transmit</span>(&amp;huart2, (<span class="tk-t">uint8_t</span> *)&amp;ch, <span class="tk-n">1</span>, <span class="tk-m">HAL_MAX_DELAY</span>);
+  <span class="tk-k">return</span> ch;
+}
+
+<span class="tk-c">/* DMA 가 배열의 앞 절반을 채웠을 때 — 뒤 절반은 지금 채워지는 중 */</span>
+<span class="tk-t">void</span> <span class="tk-h">HAL_ADC_ConvHalfCpltCallback</span>(<span class="tk-t">ADC_HandleTypeDef</span> *hadc)
+{
+  <span class="tk-k">if</span> (hadc-&gt;Instance == <span class="tk-m">ADC1</span>) <span class="tk-f">average_block</span>(<span class="tk-n">0</span>);
+}
+
+<span class="tk-c">/* DMA 가 배열 끝까지 채웠을 때 — 다음 바퀴는 다시 앞 절반부터 */</span>
+<span class="tk-t">void</span> <span class="tk-h">HAL_ADC_ConvCpltCallback</span>(<span class="tk-t">ADC_HandleTypeDef</span> *hadc)
+{
+  <span class="tk-k">if</span> (hadc-&gt;Instance == <span class="tk-m">ADC1</span>) <span class="tk-f">average_block</span>(<span class="tk-m">ADC_BUF_LEN</span> / <span class="tk-n">2</span>);
+}
+<span class="tk-c">/* USER CODE END 4 */</span></code></pre></div>
+<ul><li>배열은 <code>[IN0, IN1, IN0, IN1, …]</code> 순서로 채워집니다. rank 순서가 곧 배열 순서입니다.</li><li><code>HAL_ADC_Start_DMA</code> 를 한 번 부르면 끝입니다. 메인 루프에는 ADC 코드가 없습니다.</li><li>콜백은 인터럽트 문맥이므로 평균 계산처럼 <strong>짧은 일만</strong> 하고, <code>printf</code> 는 메인 루프에서 합니다.</li><li>시뮬레이터에서 가변저항 · 조도센서 값을 바꾸면 평균이 바로 따라옵니다.</li></ul>
+<h3 id="실물에서는-콜백이-얼마나-자주-불릴까">실물에서는 콜백이 얼마나 자주 불릴까<a class="anchor" href="#실물에서는-콜백이-얼마나-자주-불릴까">#</a></h3>
+<p>F411 기본 설정(ADC 클럭 = 84 MHz / 4 = 21 MHz, 샘플링 84 사이클 + 변환 12 사이클)이면 변환 한 번에 <span class="math">96 사이클 / 21 MHz ≈ 4.57 µs</span> 입니다. 32칸을 한 바퀴 도는 데 약 146 µs, <strong>HT · TC 콜백이 73 µs 마다</strong> 불립니다.</p>
+<ul><li>이 정도는 괜찮지만, 채널이 적고 샘플링 시간이 짧으면 콜백이 수 µs 마다 불려 CPU 가 콜백만 처리하게 됩니다.</li><li>샘플링 주기를 정확히 정하려면 <strong>연속 변환을 끄고 타이머 트리거</strong>(예: TIM3 TRGO 1 kHz)로 변환을 시작합니다. 오디오 · 진동 측정의 표준 구조입니다.</li><li>시뮬레이터는 DMA 배열을 1 ms 마다 채우고 콜백을 부르므로, 콜백 횟수(<code>blocks</code>)는 실물과 다릅니다.</li></ul>
+<div class="callout callout-info"><div class="callout-title">F7 · H7 의 D-캐시</div><div class="callout-body"><p>Cortex-M7(F7 · H7)은 데이터 캐시가 있어 DMA 가 RAM 에 쓴 값을 CPU 가 캐시의 옛 값으로 읽을 수 있습니다. DMA 버퍼를 캐시하지 않는 영역(MPU 설정)에 두거나, 읽기 전에 <code>SCB_InvalidateDCache_by_Addr()</code> 로 캐시를 무효화합니다. F4 에는 SRAM 용 데이터 캐시가 없어(ART 가속기는 플래시 읽기용) 신경 쓰지 않아도 됩니다.</p></div></div>
+<h2 id="uart-가변-길이-수신-idle-감지">UART 가변 길이 수신 — IDLE 감지<a class="anchor" href="#uart-가변-길이-수신-idle-감지">#</a></h2>
+<p>L06 의 <code>HAL_UART_Receive_IT(&amp;huart2, buf, n)</code> 은 <strong>정확히 n 바이트</strong>가 와야 콜백이 불립니다. 명령 길이가 제각각이면 1바이트씩 받아 줄 끝을 찾아야 했습니다.</p>
+<p>USART 는 수신선이 <strong>1문자 시간 동안 조용하면 IDLE 플래그</strong>를 세웁니다(115200 bps 에서 10비트 = 약 87 µs). <code>HAL_UARTEx_ReceiveToIdle_IT</code> / <code>_DMA</code> 는 이 IDLE 을 이용해 "한 덩어리가 끝났다" 는 순간에 콜백을 부르고, <strong>받은 길이</strong>를 알려 줍니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_UARTEx_ReceiveToIdle_IT</span> (<span class="tk-t">UART_HandleTypeDef</span> *huart, <span class="tk-t">uint8_t</span> *pData, <span class="tk-t">uint16_t</span> Size);
+<span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_UARTEx_ReceiveToIdle_DMA</span>(<span class="tk-t">UART_HandleTypeDef</span> *huart, <span class="tk-t">uint8_t</span> *pData, <span class="tk-t">uint16_t</span> Size);
+<span class="tk-t">void</span> <span class="tk-h">HAL_UARTEx_RxEventCallback</span>(<span class="tk-t">UART_HandleTypeDef</span> *huart, <span class="tk-t">uint16_t</span> Size);   <span class="tk-c">/* Size = 받은 바이트 수 */</span></code></pre></div>
+<p>콜백은 ① IDLE 이 감지될 때, ② 버퍼(Size)가 가득 찰 때 불립니다. DMA 판에서는 ③ DMA 절반 완료 때도 불립니다.</p>
+<h2 id="예제-2-명령-한-줄-받기">예제 2 — 명령 한 줄 받기<a class="anchor" href="#예제-2-명령-한-줄-받기">#</a></h2>
+<p>터미널에서 <code>led on</code>, <code>led off</code>, <code>status</code> 를 입력해 보세요. 한 줄을 통째로 받아 처리합니다.</p>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l18-uart-idle" data-sim-src="../sim/index.html?ex=l18-uart-idle&amp;embed=1" data-sim-id="l18-uart-idle"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">ReceiveToIdle 명령 수신 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l18-uart-idle" target="_blank" rel="noopener">새 창</a><code class="sim-id">l18-uart-idle</code></div>
+<div class="code-block code-example" data-example="l18-uart-idle"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN PV */</span>
+<span class="tk-p">#define</span> <span class="tk-m">RX_BUF_SIZE</span> <span class="tk-n">64</span>
+<span class="tk-t">uint8_t</span> rx_buf[<span class="tk-m">RX_BUF_SIZE</span>];        <span class="tk-c">// HAL 이 채우는 수신 버퍼</span>
+<span class="tk-t">char</span> cmd[<span class="tk-m">RX_BUF_SIZE</span> + <span class="tk-n">1</span>];          <span class="tk-c">// 처리용 복사본 (문자열)</span>
+<span class="tk-k">volatile</span> <span class="tk-t">uint16_t</span> rx_len = <span class="tk-n">0</span>;       <span class="tk-c">// 받은 길이 (0 = 새 명령 없음)</span>
+<span class="tk-t">uint32_t</span> cmd_count = <span class="tk-n">0</span>;
+<span class="tk-c">/* USER CODE END PV */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN 2 */</span>
+  <span class="tk-f">printf</span>(<span class="tk-s">"Type: led on / led off / status\r\n"</span>);
+  <span class="tk-h">HAL_UARTEx_ReceiveToIdle_IT</span>(&amp;huart2, rx_buf, <span class="tk-m">RX_BUF_SIZE</span>);   <span class="tk-c">// 한 줄(또는 버퍼가 찰 때까지) 받기 시작</span>
+  <span class="tk-c">/* USER CODE END 2 */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    <span class="tk-k">if</span> (rx_len &gt; <span class="tk-n">0</span>) {
+      <span class="tk-t">uint16_t</span> n = rx_len;
+      <span class="tk-f">memcpy</span>(cmd, rx_buf, n);
+      cmd[n] = <span class="tk-n">0</span>;
+      rx_len = <span class="tk-n">0</span>;
+      <span class="tk-h">HAL_UARTEx_ReceiveToIdle_IT</span>(&amp;huart2, rx_buf, <span class="tk-m">RX_BUF_SIZE</span>);  <span class="tk-c">// 다음 줄을 받도록 다시 시작</span>
+      <span class="tk-f">trim_end</span>(cmd);
+      <span class="tk-k">if</span> (cmd[<span class="tk-n">0</span>] != <span class="tk-n">0</span>) <span class="tk-f">handle_command</span>(cmd);
+    }
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span>
+
+<span class="tk-c">/* USER CODE BEGIN 4 */</span>
+<span class="tk-c">/* printf 리타깃: syscalls.c 의 _write() 가 글자마다 이 함수를 부릅니다. */</span>
+<span class="tk-t">int</span> <span class="tk-f">__io_putchar</span>(<span class="tk-t">int</span> ch)
+{
+  <span class="tk-h">HAL_UART_Transmit</span>(&amp;huart2, (<span class="tk-t">uint8_t</span> *)&amp;ch, <span class="tk-n">1</span>, <span class="tk-m">HAL_MAX_DELAY</span>);
+  <span class="tk-k">return</span> ch;
+}
+
+<span class="tk-c">/* 선이 1문자 시간 이상 조용해지거나(IDLE) 버퍼가 가득 차면 불립니다. Size = 이번에 받은 바이트 수 */</span>
+<span class="tk-t">void</span> <span class="tk-h">HAL_UARTEx_RxEventCallback</span>(<span class="tk-t">UART_HandleTypeDef</span> *huart, <span class="tk-t">uint16_t</span> Size)
+{
+  <span class="tk-k">if</span> (huart-&gt;Instance == <span class="tk-m">USART2</span>) {
+    rx_len = Size;              <span class="tk-c">// 처리는 메인 루프에서</span>
+  }
+}
+<span class="tk-c">/* USER CODE END 4 */</span></code></pre></div>
+<ul><li>콜백은 길이만 저장하고, 복사 · 문자열 비교 · 응답은 메인 루프에서 합니다.</li><li>수신은 한 번 끝나면 멈추므로, 처리 전에 **다시 <code>ReceiveToIdle_IT</code> 를 불러** 다음 줄을 받을 준비를 합니다. 버퍼를 먼저 <code>cmd</code> 로 복사해 두었으므로 덮어써도 안전합니다.</li><li>터미널이 <code>\r\n</code> 을 보내므로 끝의 줄바꿈을 지우고 비교합니다.</li></ul>
+<h3 id="dma-판으로-바꾸기-실물">DMA 판으로 바꾸기 (실물)<a class="anchor" href="#dma-판으로-바꾸기-실물">#</a></h3>
+<p>바이트가 많거나 보레이트가 높으면 <code>_DMA</code> 판이 CPU 부담이 적습니다.</p>
+<ol><li><strong>USART2 → DMA Settings → Add → USART2_RX</strong>: DMA1 Stream5, Mode Normal, Data Width Byte</li><li><strong>NVIC</strong>: <em>USART2 global interrupt</em> 를 켭니다. IDLE 은 UART 인터럽트로 알립니다.</li><li>코드에서 <code>_IT</code> 를 <code>_DMA</code> 로 바꾸고, 시작 직후 절반 완료 인터럽트를 끕니다.</li></ol>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-h">HAL_UARTEx_ReceiveToIdle_DMA</span>(&amp;huart2, rx_buf, <span class="tk-m">RX_BUF_SIZE</span>);
+<span class="tk-h">__HAL_DMA_DISABLE_IT</span>(&amp;hdma_usart2_rx, <span class="tk-m">DMA_IT_HT</span>);   <span class="tk-c">/* 절반 완료 때 콜백이 불리지 않게 */</span></code></pre></div>
+<div class="callout callout-info"><div class="callout-title">시뮬레이터</div><div class="callout-body"><p>시뮬레이터의 <code>HAL_UARTEx_ReceiveToIdle_DMA</code> 는 <code>_IT</code> 판과 같게 동작하고, CubeMX 화면에 UART 용 DMA 설정은 아직 없습니다. 그래서 예제는 실물에서도 추가 설정 없이 동작하는 <code>_IT</code> 판으로 작성했습니다. <code>hdma_usart2_rx</code>, <code>__HAL_DMA_DISABLE_IT</code> 는 실물 CubeIDE 에서 씁니다.</p></div></div>
+<h2 id="dma-송신">DMA 송신<a class="anchor" href="#dma-송신">#</a></h2>
+<p><code>HAL_UART_Transmit_DMA(&amp;huart2, buf, len)</code> 은 전송을 시작하자마자 돌아오고, 끝나면 <code>HAL_UART_TxCpltCallback</code> 이 불립니다. **전송이 끝나기 전에 <code>buf</code> 를 바꾸면 바뀐 내용이 나갑니다.** 지역 배열을 넘기면 함수가 끝나면서 사라지므로 전역(또는 static) 버퍼를 씁니다.</p>
+<div class="callout callout-task"><div class="callout-title">실습</div><div class="callout-body"><ol><li>예제 1의 <code>ADC_SAMPLES</code> 를 64 로 늘려 보세요. 배열 크기는 몇 바이트가 되나요?</li><li>예제 1에 3번째 채널(IN4, PA4)을 추가하세요. CubeMX 의 rank 와 <code>average_block</code> 을 어떻게 바꿔야 하나요?</li><li>예제 2에 <code>blink &lt;ms&gt;</code> 명령을 추가해 LD2 깜빡임 주기를 바꾸세요. (<code>atoi(cmd + 6)</code>)</li></ol></div></div>
+<div class="callout callout-check"><div class="callout-title">스스로 확인</div><div class="callout-body"><ul><li>원형 DMA 에서 배열 전체를 한 번에 처리하면 어떤 문제가 생기나요?</li><li>115200 bps 에서 IDLE 이 감지되기까지 걸리는 최소 시간은?</li><li><code>HAL_UART_Receive_IT(&amp;huart2, buf, 10)</code> 으로 5바이트 명령을 받으면 무슨 일이 생기나요?</li></ul></div></div>
+<h2 id="자주-나는-오류와-해결">자주 나는 오류와 해결<a class="anchor" href="#자주-나는-오류와-해결">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인</th><th>해결</th></tr></thead><tbody><tr><td>DMA 배열이 계속 0</td><td><code>MX_DMA_Init()</code> 이 <code>MX_ADC1_Init()</code> 보다 뒤에 있음, DMA Continuous Requests 꺼짐</td><td>초기화 순서(L09), ADC 설정 확인</td></tr><tr><td>한 번만 채워지고 멈춤</td><td>DMA Mode 가 Normal</td><td>Circular 로 변경</td></tr><tr><td>배열 값이 뒤섞여 보임</td><td>Data Width 가 Word 인데 배열은 <code>uint16_t</code></td><td>ADC 는 Half Word 와 <code>uint16_t</code></td></tr><tr><td>메인 루프가 거의 돌지 않음</td><td>연속 변환 + 짧은 배열로 콜백이 너무 자주 불림</td><td>배열을 키우거나 타이머 트리거 사용</td></tr><tr><td><code>RxEventCallback</code> 이 한 번만 불림</td><td>콜백 뒤 수신을 다시 시작하지 않음</td><td>처리 후 <code>ReceiveToIdle_IT</code> 다시 호출</td></tr><tr><td>DMA 판에서 명령이 반으로 잘려 옴</td><td>절반 완료(HT) 때도 콜백이 불림</td><td><code>__HAL_DMA_DISABLE_IT(&amp;hdma_usart2_rx, DMA_IT_HT)</code></td></tr><tr><td>콜백이 전혀 불리지 않음</td><td>USART2 global interrupt 꺼짐</td><td>NVIC 에서 켜기</td></tr></tbody></table></div>
+<h2 id="과제">과제<a class="anchor" href="#과제">#</a></h2>
+<ol><li>가변저항 값을 원형 DMA 로 받아 64개 이동 평균을 내고, 결과로 L08 의 PWM LED 밝기를 조절하세요.</li><li><code>set pwm 30</code> 처럼 인자가 있는 명령을 해석하는 작은 명령 해석기를 만드세요(<code>strncmp</code>, <code>atoi</code>).</li><li>예제 1을 <strong>타이머 트리거</strong>(TIM3 1 kHz) 구조로 바꾸는 CubeMX 설정을 조사해 정리하세요. (External Trigger Conversion Source, TRGO)</li></ol>
+<h2 id="참고자료">참고자료<a class="anchor" href="#참고자료">#</a></h2>
+<ul><li>ST, <em>RM0383 (STM32F411)</em>, 9장 DMA controller (DMA1 · DMA2 요청 매핑 표)</li><li>ST, <em>AN4031 — Using the STM32F2, STM32F4 and STM32F7 Series DMA controller</em></li><li>ST, <em>UM1725 — STM32F4 HAL</em>, UART Extended (<code>HAL_UARTEx_ReceiveToIdle_DMA</code>, <code>HAL_UARTEx_RxEventCallback</code>)</li><li>이 사이트의 <a href="hal-reference.html#uart-dma-idle">HAL 레퍼런스 — UART DMA · IDLE</a>, <a href="hal-reference.html#adc">ADC</a></li></ul>
+      <nav class="pager"><a class="pager-prev" href="l17.html"><span>이전 · L17</span>주변기기 모듈 활용</a><a class="pager-next" href="l19.html"><span>다음 · L19</span>입력 캡처 — 펄스 재기</a></nav>
+    </div>
+    <aside class="lesson-toc"><div class="toc-title">이 레슨의 내용</div><div class="toc-links"><a class="toc-l2" href="#학습-목표">학습 목표</a><a class="toc-l2" href="#dma-란">DMA 란</a><a class="toc-l3" href="#스트림과-채널-stm32f4">스트림과 채널 (STM32F4)</a><a class="toc-l3" href="#dma-설정-항목">DMA 설정 항목</a><a class="toc-l2" href="#원형-dma-와-절반-전체-콜백">원형 DMA 와 절반 / 전체 콜백</a><a class="toc-l2" href="#예제-1-adc-2채널-원형-dma">예제 1 — ADC 2채널 + 원형 DMA</a><a class="toc-l3" href="#cubemx-설정">CubeMX 설정</a><a class="toc-l3" href="#실물에서는-콜백이-얼마나-자주-불릴까">실물에서는 콜백이 얼마나 자주 불릴까</a><a class="toc-l2" href="#uart-가변-길이-수신-idle-감지">UART 가변 길이 수신 — IDLE 감지</a><a class="toc-l2" href="#예제-2-명령-한-줄-받기">예제 2 — 명령 한 줄 받기</a><a class="toc-l3" href="#dma-판으로-바꾸기-실물">DMA 판으로 바꾸기 (실물)</a><a class="toc-l2" href="#dma-송신">DMA 송신</a><a class="toc-l2" href="#자주-나는-오류와-해결">자주 나는 오류와 해결</a><a class="toc-l2" href="#과제">과제</a><a class="toc-l2" href="#참고자료">참고자료</a></div></aside>
+  </div>
+</article>
+
+</main>
+<script src="../assets/js/site.js?v=20260928d"></script>
+</body>
+</html>

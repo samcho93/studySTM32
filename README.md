@@ -5,7 +5,8 @@ CubeMX 핀 설정 → HAL 코드 → 브라우저 시뮬레이터 → 실물 보
 - 배포: https://samcho93.github.io/studySTM32/ (GitHub Pages, 서버·npm 빌드 체인 없음)
 - 대상 MCU(9종, 5개 제품군): STM32F030R8 · F103C8 · F103RB · F401RE · **F411RE**(기본) · F446RE · F407VG · G071RB · L476RG
 - 보드는 선택 프리셋: Nucleo-64 7종, Blue Pill, STM32F4DISCOVERY — 또는 MCU만 놓고 직접 배선
-- 레슨 24개 (PART 0 STM32 이해하기 · PART 1 시작하기 · PART 2 통신·타이머·아날로그 · PART 3 주변기기 · PART 4 프로젝트) + HAL API 레퍼런스
+- 레슨 31개 (PART 0 STM32 이해하기 · PART 1 시작하기 · PART 2 통신·타이머·아날로그 · PART 3 주변기기 · PART 4 프로젝트 · PART 5 중급 활용) + HAL API 레퍼런스
+- PART 5 중급 활용: 주변기기 모듈(OLED·초음파·키패드·4자리 FND·DHT11·릴레이·엔코더·조이스틱), DMA, 입력 캡처, 워치독, RTC·저전력, FreeRTOS 기초·동기화
 - 레슨 속 **[시뮬레이터에서 열기]** 버튼을 누르면 해당 예제 프로젝트가 페이지 오른쪽 실습 패널에 열립니다.
 
 ## 구조
@@ -22,6 +23,7 @@ studySTM32/
 │   ├── comm/    l06~l09.md     # PART 2 통신·타이머·아날로그
 │   ├── periph/  l10~l14.md     # PART 3 주변기기
 │   ├── project/ l15~l16.md     # PART 4 프로젝트
+│   ├── adv/     l17~l23.md     # PART 5 중급 활용 (모듈·DMA·입력 캡처·워치독·RTC·저전력·FreeRTOS)
 │   └── reference/hal.md        # HAL API 레퍼런스 → lessons/hal-reference.html
 ├── lessons/*.html              # 산출물 (직접 수정 금지)
 ├── sim/index.html              # STM32 시뮬레이터 (CubeIDE + CubeMX 혼합 UI)
@@ -69,17 +71,18 @@ front matter 뒤에 `## 학습 목표` → 본문 → `## 자주 나는 오류�
 `sim/index.html` 은 STM32CubeIDE 와 CubeMX 를 합친 모양의 브라우저 시뮬레이터입니다.
 
 - **프로젝트 탐색기** — `main.c`, `main.h`, `.ioc`, 읽기 전용 HAL 헤더
-- **디자인 영역** — 회로 노드(LED, 버튼, 가변저항, LCD1602, DC 모터, 서보, 스텝모터 등 15종) / 핀아웃·설정(CubeMX 식) / 코드(USER CODE 구역)
+- **디자인 영역** — 회로 노드(LED, 버튼, 가변저항, LCD1602, OLED, 초음파, 키패드, DHT11, DC 모터, 서보, 스텝모터 등 20여 종) / 핀아웃·설정(CubeMX 식) / 코드(USER CODE 구역)
 - **실습 결과 영역** — 보드 그림, 장치 상태, UART 터미널, 로직 분석기
 - **Properties** — 선택한 핀·노드·주변장치 속성
 
-C 서브셋 컴파일러가 사용자 코드를 JavaScript 로 바꾸고, 런타임이 HAL(GPIO · EXTI · UART · TIM/PWM · ADC · I2C · SPI)을 에뮬레이션합니다.
+C 서브셋 컴파일러가 사용자 코드를 JavaScript 로 바꾸고, 런타임이 HAL(GPIO · EXTI · UART(IDLE 수신) · TIM/PWM/입력 캡처 · ADC(DMA) · I2C · SPI · IWDG · RTC · 저전력 모드)과
+CMSIS-RTOS2(FreeRTOS) API 를 에뮬레이션합니다.
 주소: `sim/index.html?ex=<예제 id>` 로 레슨 예제를 바로 엽니다. 자세한 규격은 [docs/SPEC.md](docs/SPEC.md) 를 보세요.
 
 ## 디자인
 
 "SAM 로봇강좌" 디자인 시스템 — 인디고 강조색 + 진한 노랑 보조색, Pretendard + JetBrains Mono, 라이트 기본 / 다크 지원.
-트랙 색은 `--track-theory`(로즈) · `--track-basics`(인디고) · `--track-comm`(시안) · `--track-periph`(보라) · `--track-project`(노랑) · `--track-ref`(초록) 입니다.
+트랙 색은 `--track-theory`(로즈) · `--track-basics`(인디고) · `--track-comm`(시안) · `--track-periph`(보라) · `--track-project`(노랑) · `--track-adv`(파랑) · `--track-ref`(초록) 입니다.
 
 ## 라이선스와 상표
 

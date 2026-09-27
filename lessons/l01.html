@@ -6,12 +6,12 @@
 <title>L01. STM32 시리즈와 개발 환경 · studySTM32</title>
 <meta name="description" content="Cortex-M 코어와 F0·F1·F4·L4·H7 제품군, CubeIDE·CubeMX, HAL·LL·레지스터의 차이, Nucleo와 BluePill 보드를 정리합니다.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
-<link rel="stylesheet" href="../assets/css/main.css?v=20260928b">
-<link rel="stylesheet" href="../assets/css/stm32.css?v=20260928b">
-<link rel="stylesheet" href="../assets/css/ml-theme.css?v=20260928b">
+<link rel="stylesheet" href="../assets/css/main.css?v=20260928d">
+<link rel="stylesheet" href="../assets/css/stm32.css?v=20260928d">
+<link rel="stylesheet" href="../assets/css/ml-theme.css?v=20260928d">
 <link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
 <link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
-<script src="../assets/js/theme.js?v=20260928b"></script>
+<script src="../assets/js/theme.js?v=20260928d"></script>
 </head>
 <body class="lesson-page track-page-basics">
 <button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
@@ -68,6 +68,18 @@
 <li><a href="../lessons/l16.html" data-slug="l16"><span class="nav-no">L16</span>실물 보드로 옮기기</a></li>
 </ul>
 </div>
+<div class="nav-track" data-track="adv">
+<div class="nav-track-title track-adv"><span class="nav-part-no">PART 5</span>중급 활용</div>
+<ul>
+<li><a href="../lessons/l17.html" data-slug="l17"><span class="nav-no">L17</span>주변기기 모듈 활용</a></li>
+<li><a href="../lessons/l18.html" data-slug="l18"><span class="nav-no">L18</span>DMA — CPU 없이 옮기기</a></li>
+<li><a href="../lessons/l19.html" data-slug="l19"><span class="nav-no">L19</span>입력 캡처 — 펄스 재기</a></li>
+<li><a href="../lessons/l20.html" data-slug="l20"><span class="nav-no">L20</span>워치독과 리셋</a></li>
+<li><a href="../lessons/l21.html" data-slug="l21"><span class="nav-no">L21</span>RTC 와 저전력 모드</a></li>
+<li><a href="../lessons/l22.html" data-slug="l22"><span class="nav-no">L22</span>FreeRTOS 기초</a></li>
+<li><a href="../lessons/l23.html" data-slug="l23"><span class="nav-no">L23</span>FreeRTOS 통신과 동기화</a></li>
+</ul>
+</div>
 </nav>
 </aside>
 <div class="sidebar-scrim" id="scrim"></div>
@@ -95,7 +107,7 @@
 <div class="table-wrap"><table><thead><tr><th>코어</th><th>특징</th><th>주로 쓰는 STM32</th></tr></thead><tbody><tr><td>Cortex-M0 / M0+</td><td>가장 작고 저렴, 저전력</td><td>F0, G0, L0, C0</td></tr><tr><td>Cortex-M3</td><td>32비트 기본형, 하드웨어 나눗셈</td><td>F1, F2, L1</td></tr><tr><td>Cortex-M4F</td><td>M3 + <strong>DSP 명령 + 단정밀도 FPU</strong></td><td>F3, F4, G4, L4, WB</td></tr><tr><td>Cortex-M7</td><td>고성능, 캐시, (일부) 배정밀도 FPU</td><td>F7, H7</td></tr><tr><td>Cortex-M33</td><td>M4급 성능 + TrustZone 보안</td><td>L5, U5, H5</td></tr></tbody></table></div>
 <p>같은 Cortex-M이라도 <strong>주변장치의 레지스터 구조는 ST가 정한 것</strong>이라서, STM32끼리는 제품군이 달라도 코드가 비슷합니다. 그리고 ST가 제공하는 <strong>HAL 라이브러리</strong>가 이 차이를 한 번 더 감춰 주기 때문에, F1에서 쓰던 코드를 F4로 옮기기가 쉽습니다.</p>
 <h2 id="제품군-비교">제품군 비교<a class="anchor" href="#제품군-비교">#</a></h2>
-<div class="table-wrap"><table><thead><tr><th>제품군</th><th>코어</th><th>최대 클럭</th><th>특징</th><th>대표 칩 · 보드</th></tr></thead><tbody><tr><td><strong>F0</strong></td><td>M0</td><td>48 MHz</td><td>저가형 입문 제품군</td><td>STM32F030, NUCLEO-F030R8</td></tr><tr><td><strong>F1</strong></td><td>M3</td><td>72 MHz</td><td>가장 오래되고 자료가 많은 주력 제품군</td><td>STM32F103C8(BluePill), NUCLEO-F103RB</td></tr><tr><td><strong>F4</strong></td><td>M4F</td><td>84~180 MHz</td><td>FPU·DSP, 교육·산업에서 가장 흔한 고성능 범용</td><td>STM32F401/F411(최대 100 MHz), F446(180 MHz)</td></tr><tr><td><strong>L4</strong></td><td>M4F</td><td>80 MHz</td><td>초저전력(배터리 기기), 고성능 ADC</td><td>STM32L476, NUCLEO-L476RG</td></tr><tr><td><strong>H7</strong></td><td>M7 (일부 M7+M4 듀얼)</td><td>480~550 MHz</td><td>최고 성능, 대용량 메모리, 캐시</td><td>STM32H743, NUCLEO-H743ZI</td></tr></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>제품군</th><th>코어</th><th>최대 클럭</th><th>특징</th><th>대표 칩 · 보드</th></tr></thead><tbody><tr><td><strong>F0</strong></td><td>M0</td><td>48 MHz</td><td>저가형 입문 제품군</td><td>STM32F030, NUCLEO-F030R8</td></tr><tr><td><strong>F1</strong></td><td>M3</td><td>72 MHz</td><td>가장 오래되고 자료가 많은 주력 제품군</td><td>STM32F103C8(BluePill), NUCLEO-F103RB</td></tr><tr><td><strong>F4</strong></td><td>M4F</td><td>84~180 MHz</td><td>FPU·DSP, 교육·산업에서 가장 흔한 고성능 범용</td><td>STM32F401/F411(최대 100 MHz), F446(180 MHz)</td></tr><tr><td><strong>L4</strong></td><td>M4F</td><td>80 MHz</td><td>초저전력(배터리 기기), 고성능 ADC</td><td>STM32L476, NUCLEO-L476RG</td></tr><tr><td><strong>H7</strong></td><td>M7 (일부 M7+M4 듀얼)</td><td>대부분 480~550 MHz (H7A3/B0 280 MHz, H7R/S 600 MHz)</td><td>최고 성능, 대용량 메모리, 캐시</td><td>STM32H743, NUCLEO-H743ZI</td></tr></tbody></table></div>
 <p>이 밖에 G0/G4(F0/F3 후속), U5(초저전력 + 보안), WB/WL(블루투스·LoRa 무선) 등이 있습니다. 처음 배울 때는 <strong>F4(특히 F411/F401) 또는 F1</strong> 중 하나로 시작하면 자료를 찾기 쉽습니다.</p>
 <h3 id="칩-이름-읽기">칩 이름 읽기<a class="anchor" href="#칩-이름-읽기">#</a></h3>
 <p><code>STM32F411RET6</code> 을 한 글자씩 나눠 보면 칩의 사양이 보입니다.</p>
@@ -138,6 +150,6 @@
 </article>
 
 </main>
-<script src="../assets/js/site.js?v=20260928b"></script>
+<script src="../assets/js/site.js?v=20260928d"></script>
 </body>
 </html>

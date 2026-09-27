@@ -38,6 +38,25 @@ HOOKS['l17-joystick'] = (t, devs) => {
   if (at(t, 3500)) { j.set(2048, 2048); j.press(true); } if (at(t, 4000)) j.press(false);
 };
 HOOKS['l17-ultrasonic'] = (t, devs) => { if (at(t, 2500)) dev(devs, 'ultrasonic').set(137); };
+// ---- PART 5 중급 활용
+HOOKS['l18-uart-idle'] = (t, devs) => {
+  const v = dev(devs, 'vcp');
+  if (at(t, 2600)) v.send('led on\r\n'); if (at(t, 3200)) v.send('status\r\n'); if (at(t, 3800)) v.send('led off\r\n');
+};
+HOOKS['l19-ic-ultrasonic'] = (t, devs) => { if (at(t, 2500)) dev(devs, 'ultrasonic').set(137); };
+HOOKS['l19-ic-button'] = (t, devs) => {
+  const b = dev(devs, 'button');
+  [[1000, 1300], [2000, 3250], [3700, 3780]].forEach(([d, u]) => { if (at(t, d)) b.press(true); if (at(t, u)) b.press(false); });
+};
+HOOKS['l20-iwdg'] = (t, devs) => { if (at(t, 3500)) dev(devs, 'vcp').send('r'); };
+const pressB1 = list => (t, devs) => {
+  const b = dev(devs, 'board-button');
+  list.forEach(([d, u]) => { if (at(t, d)) b.press(true); if (at(t, u)) b.press(false); });
+};
+HOOKS['l22-rtos-prio'] = pressB1([[2850, 3400]]);
+HOOKS['l23-queue'] = pressB1([[2300, 2400], [3300, 3400], [3500, 3600]]);
+HOOKS['l23-semaphore-isr'] = pressB1([[2300, 2400], [3300, 3400]]);
+HOOKS['l21-rtc-clock'] = pressB1([[3000, 3100]]);
 
 function runOne(id, verbose) {
   const ex = EX[id], P = project(id, ex), chip = C.chipOf(P);

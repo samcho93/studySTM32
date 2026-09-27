@@ -599,7 +599,10 @@
   /** main 또는 태스크가 양보한 값 처리 */
   Machine.prototype._yielded = function (v, th) {
     if (!v) return;
-    if (v.delay != null) { if (th) th.wake = this.t + v.delay; else this.wake = this.t + v.delay; }
+    if (v.delay != null) {
+      if (th && v.hd) th.busy = this.t + v.delay;          // HAL_Delay: 태스크가 CPU 를 쥔 채 기다린다 (낮은 우선순위는 못 돈다)
+      else if (th) th.wake = this.t + v.delay; else this.wake = this.t + v.delay;
+    }
     else if (v.sleep) this._enterSleep(v.sleep);
     else if (v.kernelStart) { this.rtos = this.rtos || { threads: [], seq: 0 }; this.rtos.running = true; this.wake = Infinity; }
     else if (v.block && th) th.block = { check: v.block, until: v.until };
@@ -623,6 +626,10 @@
       R.idle = (R.idle || 0) + Math.max(0, nx - now);
       this._adv(Math.max(now, nx));
       return;
+    }
+    if (best.busy > now) {                                   // 바쁜 대기 중: 1 ms 타임슬라이스만큼 시간만 흐른다
+      var until = Math.min(best.busy, now + 1, target, this.events.length ? this.events[0].t : Infinity);
+      best.runMs += until - now; best.last = ++R.seq; this._adv(Math.max(until, now + 1e-6)); return;
     }
     R.cur = best; best.block = null;
     this._quantum();
@@ -655,7 +662,10 @@
     var mode = this.sleepMode; if (!mode) return;
     if (mode === 'stop') {
       this.tickLost += this.t - this.sleepStart;   // STOP 동안 SysTick 도 멈춘다
-      this.warnOnce('stopclk', 'STOP 에서 깨어나면 시스템 클럭이 HSI(' + this.chip.hsi + ' MHz)로 돌아갑니다. 실물에서는 깨어난 뒤 SystemClock_Config() 를 다시 불러야 합니다.');
+      var self = this, mark = this.clkCfgCount || 0;
+      this.at(this.t + 50, function () {
+        if ((self.clkCfgCount || 0) === mark) self.warnOnce('stopclk', 'STOP 에서 깨어나면 시스템 클럭이 HSI(' + self.chip.hsi + ' MHz)로 돌아갑니다. 깨어난 뒤 SystemClock_Config() 를 다시 부르지 않았습니다 (실물에서는 UART 보레이트·타이머 주기가 틀어집니다).');
+      });
     }
     this.sleepMode = null; this.wake = this.t;
     this.emit('power', 'run');
@@ -768,7 +778,7 @@
       HAL_NVIC_SetPriority: function () { }, HAL_NVIC_SetPriorityGrouping: function () { },
       HAL_NVIC_EnableIRQ: function (n) { var nm = IRQ_NAME[n]; if (nm) M.nvic[nm] = true; },
       HAL_NVIC_DisableIRQ: function (n) { var nm = IRQ_NAME[n]; if (nm) M.nvic[nm] = false; },
-      HAL_RCC_OscConfig: function () { return 0; }, HAL_RCC_ClockConfig: function () { return 0; },
+      HAL_RCC_OscConfig: function () { return 0; }, HAL_RCC_ClockConfig: function () { M.clkCfgCount = (M.clkCfgCount || 0) + 1; return 0; },
       HAL_RCC_GetSysClockFreq: function () { return M.sysclk; }, HAL_RCC_GetHCLKFreq: function () { return M.clk.hclk * 1e6; },
       HAL_RCC_GetPCLK1Freq: function () { return M.clk.apb1 * 1e6; },
       HAL_RCC_GetPCLK2Freq: function () { return M.clk.apb2 * 1e6; },
@@ -1198,6 +1208,20 @@
     F.HAL_UART_DMAStop = function (h) { var u = M.uarts[inst(h)]; if (u) { u.idle = null; u.it = null; } return 0; };
 
     // ---- CMSIS-RTOS2 (FreeRTOS 위)
+    // 메시지 큐: 메모리 그대로 복사 (uint32_t·구조체 메시지 지원)
+    function rawCopy(p, n) {
+      if (p && !p.a && typeof p === 'object') return { obj: JSON.parse(JSON.stringify(p)) };
+      var a = p.a || p, o = p.a ? p.o : 0, bpe = a.BYTES_PER_ELEMENT || 1;
+      if (bpe === 1 || !a.buffer) return { bytes: bytesOf(p, n) };
+      return { bytes: Array.prototype.slice.call(new Uint8Array(a.buffer, a.byteOffset + o * bpe, Math.min(n, (a.length - o) * bpe))) };
+    }
+    function rawPaste(p, it) {
+      if (!it) return;
+      if (it.obj) { Object.keys(it.obj).forEach(function (k) { p[k] = it.obj[k]; }); return; }
+      var a = p.a || p, o = p.a ? p.o : 0, bpe = a.BYTES_PER_ELEMENT || 1;
+      if (bpe === 1 || !a.buffer) { writeBytes(p, it.bytes); return; }
+      new Uint8Array(a.buffer, a.byteOffset + o * bpe, Math.min(it.bytes.length, (a.length - o) * bpe)).set(it.bytes);
+    }
     function rtos() { return M.rtos || (M.rtos = { threads: [], running: false, cur: null, seq: 0, timers: [] }); }
     function* waitUntil(check, timeout) {
       timeout = timeout >>> 0;
@@ -1262,13 +1286,13 @@
       var x = q && q.__q; if (!x) return -4;
       var ok = yield* waitUntil(function () { return x.items.length < x.cap; }, timeout);
       if (!ok) return timeout ? -2 : -3;
-      x.items.push(bytesOf(ptr, x.size)); return 0;
+      x.items.push(rawCopy(ptr, x.size)); return 0;
     };
     F.osMessageQueueGet = function* (q, ptr, prio, timeout) {
       var x = q && q.__q; if (!x) return -4;
       var ok = yield* waitUntil(function () { return x.items.length > 0; }, timeout);
       if (!ok) return timeout ? -2 : -3;
-      writeBytes(ptr, x.items.shift()); return 0;
+      rawPaste(ptr, x.items.shift()); return 0;
     };
     F.osMessageQueueGetCount = function (q) { return q && q.__q ? q.__q.items.length : 0; };
     F.osThreadFlagsSet = function (h, f) { var t = thOf(h); if (!t) return 0x80000004; t.flags |= f >>> 0; return t.flags; };

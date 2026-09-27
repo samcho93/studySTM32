@@ -136,6 +136,7 @@
       '  ******************************************************************************\n  */\n') +
       '/* USER CODE END Header */\n');
     var rt = rtosTasks(project);
+    NVIC_PRIO = rt ? 5 : 0;
     out.push('/* Includes ------------------------------------------------------------------*/\n#include "main.h"\n' + (rt ? '#include "cmsis_os.h"\n' : '') + '\n' +
       '/* Private includes ----------------------------------------------------------*/\n' + sec(user, 'Includes') + '/* USER CODE END Includes */\n');
     out.push('/* Private typedef -----------------------------------------------------------*/\n' + sec(user, 'PTD') + '/* USER CODE END PTD */\n');
@@ -293,9 +294,10 @@
     s += blk('RTOS_THREADS') + blk('RTOS_EVENTS') + '  /* Start scheduler */\n  osKernelStart();\n\n  /* We should never get here as control is now taken by the scheduler */\n';
     return s;
   }
+  var NVIC_PRIO = 0;   // genMainC 가 FreeRTOS 사용 시 5 로 바꾼다 (RTOS API 를 부르는 ISR 규칙)
   function nvicLines(irq, ind) {
     ind = ind || '  ';
-    return ind + 'HAL_NVIC_SetPriority(' + irq + '_IRQn, 0, 0);\n' + ind + 'HAL_NVIC_EnableIRQ(' + irq + '_IRQn);\n';
+    return ind + 'HAL_NVIC_SetPriority(' + irq + '_IRQn, ' + NVIC_PRIO + ', 0);\n' + ind + 'HAL_NVIC_EnableIRQ(' + irq + '_IRQn);\n';
   }
   function head(p, what) {
     return '/**\n  * @brief ' + p + ' Initialization Function\n  * @param None\n  * @retval None\n  */\nstatic void ' + initName(p) + '(void)\n{\n\n' +
@@ -388,7 +390,7 @@
         '  sTime.Hours = ' + bcd(c.hours || 0) + ';\n  sTime.Minutes = ' + bcd(c.minutes || 0) + ';\n  sTime.Seconds = ' + bcd(c.seconds || 0) + ';\n' +
         (chip.series === 'F1' ? '' : '  sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;\n  sTime.StoreOperation = RTC_STOREOPERATION_RESET;\n') +
         errChk('HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD)') +
-        '  sDate.WeekDay = RTC_WEEKDAY_MONDAY;\n  sDate.Month = RTC_MONTH_' + MON[((c.month || 1) - 1) % 12] + ';\n  sDate.Date = ' + bcd(c.date || 1) + ';\n  sDate.Year = ' + bcd(c.year != null ? c.year : 26) + ';\n\n' +
+        '  sDate.WeekDay = RTC_WEEKDAY_' + ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'][new Date(Date.UTC(2000 + (c.year != null ? c.year : 26), (c.month || 1) - 1, c.date || 1)).getUTCDay()] + ';\n  sDate.Month = RTC_MONTH_' + MON[((c.month || 1) - 1) % 12] + ';\n  sDate.Date = ' + bcd(c.date || 1) + ';\n  sDate.Year = ' + bcd(c.year != null ? c.year : 26) + ';\n\n' +
         errChk('HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD)');
       if (c.wakeup) s += '\n  /** Enable the WakeUp\n  */\n' + errChk('HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, ' + (c.wakeup - 1) + ', RTC_WAKEUPCLOCK_CK_SPRE_16BITS)');
       if (N.RTC_WKUP) s += '  /* RTC interrupt Init (MSP) */\n' + nvicLines('RTC_WKUP');

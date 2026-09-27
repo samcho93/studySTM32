@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L22. FreeRTOS 기초 · studySTM32</title>
+<meta name="description" content="RTOS 가 필요한 이유, 태스크·스케줄러·우선순위·상태, CubeMX FREERTOS(CMSIS_V2) 설정과 생성 코드, osDelay 와 HAL_Delay 의 차이, 스택 크기를 익힙니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
+<link rel="stylesheet" href="../assets/css/main.css?v=20260928d">
+<link rel="stylesheet" href="../assets/css/stm32.css?v=20260928d">
+<link rel="stylesheet" href="../assets/css/ml-theme.css?v=20260928d">
+<link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
+<script src="../assets/js/theme.js?v=20260928d"></script>
+</head>
+<body class="lesson-page track-page-adv">
+<button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
+<aside class="sidebar" id="sidebar">
+<nav class="sidebar-nav">
+<div class="brand-row"><a class="brand" href="../index.html"><span class="brand-mark">32</span><span class="brand-text">studySTM32<small>STM32 HAL 인터랙티브 강좌</small></span></a></div>
+<div class="side-tools"><a class="side-tool" href="../sim/index.html">시뮬레이터</a><a class="side-tool" href="../lessons/hal-reference.html">HAL 레퍼런스</a></div>
+<div class="nav-track" data-track="theory">
+<div class="nav-track-title track-theory"><span class="nav-part-no">PART 0</span>STM32 이해하기</div>
+<ul>
+<li><a href="../lessons/t01.html" data-slug="t01"><span class="nav-no">T01</span>STM32 제품군 총람</a></li>
+<li><a href="../lessons/t02.html" data-slug="t02"><span class="nav-no">T02</span>Cortex-M 코어 구조</a></li>
+<li><a href="../lessons/t03.html" data-slug="t03"><span class="nav-no">T03</span>메모리 맵과 버스</a></li>
+<li><a href="../lessons/t04.html" data-slug="t04"><span class="nav-no">T04</span>클럭과 리셋 시스템</a></li>
+<li><a href="../lessons/t05.html" data-slug="t05"><span class="nav-no">T05</span>GPIO 내부 구조와 전기 특성</a></li>
+<li><a href="../lessons/t06.html" data-slug="t06"><span class="nav-no">T06</span>인터럽트·예외와 NVIC</a></li>
+<li><a href="../lessons/t07.html" data-slug="t07"><span class="nav-no">T07</span>타이머 구조</a></li>
+<li><a href="../lessons/t08.html" data-slug="t08"><span class="nav-no">T08</span>통신 인터페이스 원리</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="basics">
+<div class="nav-track-title track-basics"><span class="nav-part-no">PART 1</span>시작하기</div>
+<ul>
+<li><a href="../lessons/l01.html" data-slug="l01"><span class="nav-no">L01</span>STM32 시리즈와 개발 환경</a></li>
+<li><a href="../lessons/l02.html" data-slug="l02"><span class="nav-no">L02</span>시뮬레이터 둘러보기와 첫 프로젝트</a></li>
+<li><a href="../lessons/l03.html" data-slug="l03"><span class="nav-no">L03</span>GPIO 출력 — LED</a></li>
+<li><a href="../lessons/l04.html" data-slug="l04"><span class="nav-no">L04</span>GPIO 입력 — 스위치</a></li>
+<li><a href="../lessons/l05.html" data-slug="l05"><span class="nav-no">L05</span>외부 인터럽트 EXTI</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="comm">
+<div class="nav-track-title track-comm"><span class="nav-part-no">PART 2</span>통신·타이머·아날로그</div>
+<ul>
+<li><a href="../lessons/l06.html" data-slug="l06"><span class="nav-no">L06</span>UART와 printf</a></li>
+<li><a href="../lessons/l07.html" data-slug="l07"><span class="nav-no">L07</span>타이머 인터럽트</a></li>
+<li><a href="../lessons/l08.html" data-slug="l08"><span class="nav-no">L08</span>PWM — LED 밝기와 서보</a></li>
+<li><a href="../lessons/l09.html" data-slug="l09"><span class="nav-no">L09</span>ADC — 가변저항·조도센서</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="periph">
+<div class="nav-track-title track-periph"><span class="nav-part-no">PART 3</span>주변기기</div>
+<ul>
+<li><a href="../lessons/l10.html" data-slug="l10"><span class="nav-no">L10</span>I2C와 LCD1602</a></li>
+<li><a href="../lessons/l11.html" data-slug="l11"><span class="nav-no">L11</span>SPI 기초</a></li>
+<li><a href="../lessons/l12.html" data-slug="l12"><span class="nav-no">L12</span>7세그먼트 FND</a></li>
+<li><a href="../lessons/l13.html" data-slug="l13"><span class="nav-no">L13</span>DC 모터 드라이버</a></li>
+<li><a href="../lessons/l14.html" data-slug="l14"><span class="nav-no">L14</span>스텝모터</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="project">
+<div class="nav-track-title track-project"><span class="nav-part-no">PART 4</span>프로젝트</div>
+<ul>
+<li><a href="../lessons/l15.html" data-slug="l15"><span class="nav-no">L15</span>미니 프로젝트: 스마트 선풍기</a></li>
+<li><a href="../lessons/l16.html" data-slug="l16"><span class="nav-no">L16</span>실물 보드로 옮기기</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="adv">
+<div class="nav-track-title track-adv"><span class="nav-part-no">PART 5</span>중급 활용</div>
+<ul>
+<li><a href="../lessons/l17.html" data-slug="l17"><span class="nav-no">L17</span>주변기기 모듈 활용</a></li>
+<li><a href="../lessons/l18.html" data-slug="l18"><span class="nav-no">L18</span>DMA — CPU 없이 옮기기</a></li>
+<li><a href="../lessons/l19.html" data-slug="l19"><span class="nav-no">L19</span>입력 캡처 — 펄스 재기</a></li>
+<li><a href="../lessons/l20.html" data-slug="l20"><span class="nav-no">L20</span>워치독과 리셋</a></li>
+<li><a href="../lessons/l21.html" data-slug="l21"><span class="nav-no">L21</span>RTC 와 저전력 모드</a></li>
+<li><a href="../lessons/l22.html" class="active" data-slug="l22"><span class="nav-no">L22</span>FreeRTOS 기초</a></li>
+<li><a href="../lessons/l23.html" data-slug="l23"><span class="nav-no">L23</span>FreeRTOS 통신과 동기화</a></li>
+</ul>
+</div>
+</nav>
+</aside>
+<div class="sidebar-scrim" id="scrim"></div>
+<main class="main">
+<header class="topbar"><a class="topbar-brand" href="../index.html"><span class="brand-mark">32</span>studySTM32</a><nav class="topnav" aria-label="사이트 메뉴"><a href="../index.html">강의 홈</a><a href="../sim/index.html">시뮬레이터</a><a href="../lessons/hal-reference.html">HAL 레퍼런스</a></nav><button class="theme-icon" type="button" data-theme-toggle data-theme-icon aria-label="테마 전환"></button></header>
+
+<article class="lesson" data-slug="l22" data-track="adv">
+  <div class="lesson-head">
+    <div class="crumbs"><span class="track-pill track-adv">PART 5</span> 중급 활용 &middot; 약 60분 &middot; 중급</div>
+    <h1><span class="lesson-no">L22</span>FreeRTOS 기초</h1>
+    <p class="lede">RTOS 가 필요한 이유, 태스크·스케줄러·우선순위·상태, CubeMX FREERTOS(CMSIS_V2) 설정과 생성 코드, osDelay 와 HAL_Delay 의 차이, 스택 크기를 익힙니다.</p>
+    <div class="requires">선수 레슨: <a href="l07.html">L07</a> <a href="l18.html">L18</a></div>
+    <div class="lesson-actions">
+      <label class="done-toggle"><input type="checkbox" id="doneCheck"><span>학습 완료로 표시</span></label>
+      <a class="ghost-btn tool-sim" href="../sim/index.html?ex=l22-rtos-blink" data-sim-src="../sim/index.html?ex=l22-rtos-blink&amp;embed=1">시뮬레이터에서 실습</a><a class="ghost-btn" href="hal-reference.html">HAL 레퍼런스</a>
+    </div>
+  </div>
+  <div class="lesson-grid">
+    <div class="lesson-body">
+<h2 id="학습-목표">학습 목표<a class="anchor" href="#학습-목표">#</a></h2>
+<ul><li>슈퍼 루프(<code>while(1)</code>)의 한계와 <strong>RTOS 가 필요한 이유</strong>를 설명합니다.</li><li>태스크 · 스케줄러 · 우선순위 · 태스크 상태(Running · Ready · Blocked · Suspended)를 이해합니다.</li><li>CubeMX 의 <strong>FREERTOS(CMSIS_V2)</strong> 설정으로 태스크를 만들고, 생성된 코드의 흐름을 읽습니다.</li><li><code>osDelay</code> 와 <code>HAL_Delay</code> 의 차이, <code>osDelayUntil</code> 로 주기 작업 만들기를 익힙니다.</li><li>스택 크기와 HAL 타임베이스(TIM6) 설정의 의미를 압니다.</li></ul>
+<h2 id="왜-rtos-인가">왜 RTOS 인가<a class="anchor" href="#왜-rtos-인가">#</a></h2>
+<p>지금까지는 <code>while(1)</code> 안에서 여러 일을 차례로 처리했습니다(슈퍼 루프). 일이 늘어나면 문제가 생깁니다.</p>
+<ul><li>한 작업이 <code>HAL_Delay(500)</code> 이나 긴 <code>while</code> 로 기다리면 <strong>다른 모든 작업이 멈춥니다</strong>.</li><li><code>HAL_GetTick()</code> 비교로 기다리지 않게 만들 수 있지만(L06 · L07), 작업마다 상태 변수와 시각 변수가 늘어 코드가 복잡해집니다.</li><li>"버튼 반응은 5 ms 안에, 화면 갱신은 늦어도 됨" 같은 <strong>중요도 차이</strong>를 표현하기 어렵습니다.</li></ul>
+<p>RTOS(Real-Time Operating System)는 작업마다 <strong>자기만의 무한 루프를 가진 태스크</strong>로 나누고, 스케줄러가 CPU 를 나눠 줍니다. 각 태스크는 마음 놓고 기다려도(<code>osDelay</code>) 됩니다. 기다리는 동안 CPU 는 다른 태스크에게 갑니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* 슈퍼 루프 */</span>                          <span class="tk-c">/* RTOS: 태스크 두 개 */</span>
+<span class="tk-k">while</span> (<span class="tk-n">1</span>) {                              <span class="tk-t">void</span> <span class="tk-f">BlinkTask</span>(<span class="tk-t">void</span> *arg) { <span class="tk-k">for</span>(;;) { <span class="tk-f">toggle</span>(); <span class="tk-f">osDelay</span>(<span class="tk-n">250</span>); } }
+  <span class="tk-k">if</span> (now - t1 &gt;= <span class="tk-n">250</span>) { ... }           <span class="tk-t">void</span> <span class="tk-f">ReportTask</span>(<span class="tk-t">void</span> *arg) { <span class="tk-k">for</span>(;;) { <span class="tk-f">print</span>(); <span class="tk-f">osDelay</span>(<span class="tk-n">1000</span>); } }
+  <span class="tk-k">if</span> (now - t2 &gt;= <span class="tk-n">1000</span>) { ... }
+}</code></pre></div>
+<p>FreeRTOS 는 가장 널리 쓰이는 무료 RTOS 이고, ST 는 그 위에 <strong>CMSIS-RTOS2</strong> 라는 표준 API(<code>os…</code> 함수)를 얹어 CubeMX 로 제공합니다.</p>
+<h2 id="태스크와-스케줄러">태스크와 스케줄러<a class="anchor" href="#태스크와-스케줄러">#</a></h2>
+<h3 id="태스크-상태">태스크 상태<a class="anchor" href="#태스크-상태">#</a></h3>
+<div class="code-block"><div class="code-head"><span class="code-lang">text</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-text">            osThreadNew
+                │
+                ▼
+   ┌──────► Ready ─────── 스케줄러가 선택 ───► Running
+   │          ▲                                  │
+   │          │ 시간이 됨 / 신호가 옴             │ osDelay, 큐·세마포어 대기
+   │          └────────── Blocked ◄──────────────┘
+   │
+   └─ osThreadResume ── Suspended ◄── osThreadSuspend</code></pre></div>
+<ul><li><strong>Running</strong>: 지금 CPU 를 쓰는 태스크 (코어가 하나이므로 한 번에 하나)</li><li><strong>Ready</strong>: 실행할 준비가 되었지만 더 높은(또는 같은) 우선순위 태스크가 CPU 를 쓰는 중</li><li><strong>Blocked</strong>: <code>osDelay</code>, 큐 · 세마포어 대기 등으로 <strong>CPU 를 쓰지 않고</strong> 기다리는 중</li><li><strong>Suspended</strong>: 명시적으로 멈춤. 다시 깨우기 전까지 선택되지 않음</li></ul>
+<h3 id="스케줄링-규칙-freertos-기본-설정">스케줄링 규칙 (FreeRTOS 기본 설정)<a class="anchor" href="#스케줄링-규칙-freertos-기본-설정">#</a></h3>
+<ol><li><strong>Ready 중 우선순위가 가장 높은 태스크가 실행</strong>됩니다. 더 높은 태스크가 Ready 가 되는 순간 즉시 CPU 를 빼앗습니다(<strong>선점</strong>).</li><li>우선순위가 같으면 틱(1 ms)마다 번갈아 실행합니다(<strong>타임 슬라이싱</strong>, 라운드 로빈).</li><li>모두 Blocked 이면 가장 낮은 <strong>Idle 태스크</strong>가 돕니다. (저전력 설계에서는 Idle 에서 잠들 수 있음)</li></ol>
+<p>CMSIS-RTOS2 우선순위 값: <code>osPriorityIdle</code>(1) &lt; <code>osPriorityLow</code>(8) &lt; <code>osPriorityBelowNormal</code>(16) &lt; **<code>osPriorityNormal</code>(24)** &lt; <code>osPriorityAboveNormal</code>(32) &lt; <code>osPriorityHigh</code>(40) &lt; <code>osPriorityRealtime</code>(48).</p>
+<div class="callout callout-warn"><div class="callout-title">높은 태스크는 반드시 쉬어야 합니다</div><div class="callout-body"><p>높은 우선순위 태스크가 <code>osDelay</code> 나 대기 없이 계속 돌면 <strong>그보다 낮은 태스크는 영원히 실행되지 않습니다</strong>(굶주림, starvation). 우선순위가 높을수록 "짧게 일하고 곧바로 Blocked" 가 되도록 만듭니다.</p></div></div>
+<h2 id="cubemx-에서-freertos-켜기">CubeMX 에서 FreeRTOS 켜기<a class="anchor" href="#cubemx-에서-freertos-켜기">#</a></h2>
+<ol><li><strong>Middleware and Software Packs → FREERTOS → Interface: CMSIS_V2</strong></li><li><strong>Tasks and Queues</strong> 탭: 기본 <code>defaultTask</code> 가 있습니다. <strong>Add</strong> 로 태스크를 추가합니다.<ul><li>Task Name <code>blinkTask</code>, Priority <code>osPriorityLow</code>, Stack Size (Words) <code>128</code>, Entry Function <code>StartBlinkTask</code>, Code Generation Option <code>Default</code></li></ul></li><li><strong>System Core → SYS → Timebase Source: TIM6</strong> (또는 쓰지 않는 다른 기본 타이머)</li><li>Config parameters 의 <code>TOTAL_HEAP_SIZE</code>(기본 15360 바이트)가 모든 태스크 스택 + 큐 등을 담을 만큼인지 확인</li></ol>
+<div class="callout callout-info"><div class="callout-title">왜 Timebase 를 TIM6 으로 바꾸나</div><div class="callout-body"><p>FreeRTOS 는 스케줄러 틱으로 <strong>SysTick</strong> 을 씁니다. HAL 도 기본으로 SysTick 을 <code>HAL_Delay</code> · <code>HAL_GetTick</code> 에 쓰므로, CubeMX 는 HAL 타임베이스를 다른 타이머로 옮기라고 경고합니다. TIM6 으로 바꾸면 <code>main.c</code> 에 <code>HAL_TIM_PeriodElapsedCallback</code> 이 생기고 그 안에서 <code>if (htim-&gt;Instance == TIM6) HAL_IncTick();</code> 을 부릅니다. <strong>시뮬레이터는 이 부분을 생략</strong>하고 틱을 내부에서 처리합니다. 실물에서 같은 콜백에 여러분의 타이머 코드를 넣을 때는 <code>USER CODE</code> 구역에 넣어야 지워지지 않습니다.</p></div></div>
+<h3 id="생성-코드-읽기">생성 코드 읽기<a class="anchor" href="#생성-코드-읽기">#</a></h3>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* 핸들과 속성 — CubeMX 가 태스크마다 만듦 */</span>
+osThreadId_t blinkTaskHandle;
+<span class="tk-k">const</span> osThreadAttr_t blinkTask_attributes = {
+  .name = <span class="tk-s">"blinkTask"</span>,
+  .stack_size = <span class="tk-n">128</span> * <span class="tk-n">4</span>,                       <span class="tk-c">/* 워드 → 바이트 */</span>
+  .priority = (osPriority_t) osPriorityLow,
+};
+
+<span class="tk-t">int</span> <span class="tk-f">main</span>(<span class="tk-t">void</span>)
+{
+  <span class="tk-h">HAL_Init</span>(); <span class="tk-f">SystemClock_Config</span>(); <span class="tk-h">MX_GPIO_Init</span>(); <span class="tk-h">MX_USART2_UART_Init</span>();
+  <span class="tk-c">/* USER CODE BEGIN 2 */</span> ... <span class="tk-c">/* USER CODE END 2 */</span>
+  <span class="tk-f">osKernelInitialize</span>();                        <span class="tk-c">/* 1) 커널 준비 */</span>
+  <span class="tk-c">/* USER CODE BEGIN RTOS_MUTEX / SEMAPHORES / TIMERS / QUEUES */</span>
+  defaultTaskHandle = <span class="tk-f">osThreadNew</span>(StartDefaultTask, <span class="tk-k">NULL</span>, &amp;defaultTask_attributes);   <span class="tk-c">/* 2) 태스크 생성 */</span>
+  blinkTaskHandle   = <span class="tk-f">osThreadNew</span>(StartBlinkTask,   <span class="tk-k">NULL</span>, &amp;blinkTask_attributes);
+  <span class="tk-f">osKernelStart</span>();                             <span class="tk-c">/* 3) 스케줄러 시작 — 여기서 돌아오지 않음 */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>) { }                                <span class="tk-c">/* 도달하지 않음 */</span>
+}</code></pre></div>
+<ul><li><code>osKernelStart()</code> 뒤의 <code>while (1)</code> 은 실행되지 않습니다. <strong>코드는 태스크 함수 안에</strong> 씁니다.</li><li><code>defaultTask</code> 의 본문은 <code>USER CODE BEGIN 5</code> 구역, 추가한 태스크는 <code>USER CODE BEGIN StartBlinkTask</code> 처럼 함수 이름 구역에 씁니다.</li><li>태스크 함수는 <strong>절대 return 하면 안 됩니다.</strong> <code>for(;;)</code> 로 끝나지 않게 하거나, 끝낼 때는 <code>osThreadExit()</code> 을 부릅니다.</li></ul>
+<h2 id="예제-1-태스크-두-개">예제 1 — 태스크 두 개<a class="anchor" href="#예제-1-태스크-두-개">#</a></h2>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l22-rtos-blink" data-sim-src="../sim/index.html?ex=l22-rtos-blink&amp;embed=1" data-sim-id="l22-rtos-blink"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">태스크 두 개 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l22-rtos-blink" target="_blank" rel="noopener">새 창</a><code class="sim-id">l22-rtos-blink</code></div>
+<p><code>USER CODE BEGIN 5</code> (defaultTask, 보통 우선순위)와 <code>USER CODE BEGIN StartBlinkTask</code> (blinkTask, 낮은 우선순위)에 들어간 코드입니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-t">void</span> <span class="tk-f">StartDefaultTask</span>(<span class="tk-t">void</span> *argument)
+{
+  <span class="tk-c">/* USER CODE BEGIN 5 */</span>
+  <span class="tk-c">/* Infinite loop */</span>
+  <span class="tk-k">for</span>(;;)
+  {
+    <span class="tk-f">printf</span>(<span class="tk-s">"[%5lu] %s: blink_count=%lu\r\n"</span>, <span class="tk-f">osKernelGetTickCount</span>(), <span class="tk-f">osThreadGetName</span>(<span class="tk-f">osThreadGetId</span>()), blink_count);
+    <span class="tk-f">osDelay</span>(<span class="tk-n">1000</span>);                      <span class="tk-c">// 1000 틱(1 s) 동안 Blocked — 그동안 다른 태스크가 CPU 사용</span>
+  }
+  <span class="tk-c">/* USER CODE END 5 */</span>
+}
+
+<span class="tk-t">void</span> <span class="tk-f">StartBlinkTask</span>(<span class="tk-t">void</span> *argument)
+{
+  <span class="tk-c">/* USER CODE BEGIN StartBlinkTask */</span>
+  <span class="tk-c">/* Infinite loop */</span>
+  <span class="tk-k">for</span>(;;)
+  {
+    <span class="tk-h">HAL_GPIO_TogglePin</span>(LD2_GPIO_Port, LD2_Pin);
+    blink_count++;
+    <span class="tk-f">osDelay</span>(<span class="tk-n">250</span>);
+  }
+  <span class="tk-c">/* USER CODE END StartBlinkTask */</span>
+}</code></pre></div>
+<div class="code-block code-example" data-example="l22-rtos-blink"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN PV */</span>
+<span class="tk-k">volatile</span> <span class="tk-t">uint32_t</span> blink_count = <span class="tk-n">0</span>;      <span class="tk-c">// 두 태스크가 함께 보는 변수</span>
+<span class="tk-c">/* USER CODE END PV */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN 2 */</span>
+  <span class="tk-f">printf</span>(<span class="tk-s">"FreeRTOS start\r\n"</span>);
+  <span class="tk-c">/* USER CODE END 2 */</span></code></pre></div>
+<div class="code-block"><div class="code-head"><span class="code-lang">text</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-text">[    1] defaultTask: blink_count=0
+[ 1004] defaultTask: blink_count=5
+[ 2007] defaultTask: blink_count=9</code></pre></div>
+<ul><li>두 태스크는 서로를 모릅니다. 각자 자기 주기로 돌고, 공유 변수 <code>blink_count</code> 로만 연결됩니다.</li><li>출력 시각이 1004, 2007, 3010 … 으로 <strong>조금씩 밀립니다.</strong> <code>osDelay(1000)</code> 은 "지금부터 1000 틱" 이라 <code>printf</code> 에 걸린 시간(약 3 ms)이 쌓이기 때문입니다.</li></ul>
+<h2 id="osdelay-osdelayuntil-haldelay">osDelay · osDelayUntil · HAL_Delay<a class="anchor" href="#osdelay-osdelayuntil-haldelay">#</a></h2>
+<div class="table-wrap api"><table><thead><tr><th>함수</th><th>기다리는 동안</th><th>기준</th><th>쓰는 곳</th></tr></thead><tbody><tr><td><code>osDelay(n)</code></td><td><strong>Blocked</strong> — 다른 태스크 실행</td><td>지금부터 n 틱</td><td>대부분의 대기</td></tr><tr><td><code>osDelayUntil(t)</code></td><td><strong>Blocked</strong></td><td>절대 틱 t 까지</td><td>정확한 주기 작업 (밀리지 않음)</td></tr><tr><td><code>HAL_Delay(n)</code></td><td><strong>바쁜 대기</strong> — 틱을 확인하며 CPU 를 붙잡음</td><td>지금부터 n ms</td><td>커널 시작 전 초기화에서만</td></tr></tbody></table></div>
+<p>태스크 안에서 <code>HAL_Delay</code> 를 쓰면 그 태스크가 Running 상태로 CPU 를 붙잡으므로 <strong>낮은 우선순위 태스크가 멈춥니다</strong>. 커널 시작 뒤에는 <code>osDelay</code> 를 씁니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-t">uint32_t</span> next = <span class="tk-f">osKernelGetTickCount</span>();
+<span class="tk-k">for</span> (;;) {
+  next += <span class="tk-n">1000</span>;
+  <span class="tk-f">osDelayUntil</span>(next);          <span class="tk-c">/* 작업 시간과 상관없이 정확히 1000 틱 간격 */</span>
+  <span class="tk-f">do_periodic_work</span>();
+}</code></pre></div>
+<h2 id="예제-2-우선순위와-굶주림">예제 2 — 우선순위와 굶주림<a class="anchor" href="#예제-2-우선순위와-굶주림">#</a></h2>
+<ul><li><code>lowTask</code>(Low): <code>osDelay</code> 없이 <code>low_count++</code> 만 반복 → 다른 태스크가 모두 쉴 때만 돕니다.</li><li><code>highTask</code>(AboveNormal): 100 ms 마다 LD2 토글. <strong>B1 을 누르고 있는 동안은 양보 없이 바쁜 대기</strong>를 합니다(나쁜 예).</li><li><code>defaultTask</code>(Normal): <code>osDelayUntil</code> 로 1 초마다 <code>low_count</code> 와 늦어진 시간(<code>late</code>)을 보고합니다.</li></ul>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l22-rtos-prio" data-sim-src="../sim/index.html?ex=l22-rtos-prio&amp;embed=1" data-sim-id="l22-rtos-prio"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">우선순위 관찰 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l22-rtos-prio" target="_blank" rel="noopener">새 창</a><code class="sim-id">l22-rtos-prio</code></div>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-t">void</span> <span class="tk-f">StartDefaultTask</span>(<span class="tk-t">void</span> *argument)   <span class="tk-c">/* osPriorityNormal */</span>
+{
+  <span class="tk-t">uint32_t</span> next = <span class="tk-f">osKernelGetTickCount</span>();
+  <span class="tk-k">for</span>(;;)
+  {
+    next += <span class="tk-n">1000</span>;
+    <span class="tk-f">osDelayUntil</span>(next);                 <span class="tk-c">// 절대 시각까지 대기 → 주기가 밀리지 않음</span>
+    <span class="tk-t">uint32_t</span> now = <span class="tk-f">osKernelGetTickCount</span>();
+    <span class="tk-f">printf</span>(<span class="tk-s">"[%5lu] late=%lu ms  low_count=%lu  high_runs=%lu\r\n"</span>, now, now - next, low_count, high_runs);
+    low_count = <span class="tk-n">0</span>;
+    high_runs = <span class="tk-n">0</span>;
+  }
+}
+
+<span class="tk-t">void</span> <span class="tk-f">StartLowTask</span>(<span class="tk-t">void</span> *argument)       <span class="tk-c">/* osPriorityLow — osDelay 없음 */</span>
+{
+  <span class="tk-k">for</span>(;;)
+  {
+    low_count++;
+  }
+}
+
+<span class="tk-t">void</span> <span class="tk-f">StartHighTask</span>(<span class="tk-t">void</span> *argument)      <span class="tk-c">/* osPriorityAboveNormal */</span>
+{
+  <span class="tk-k">for</span>(;;)
+  {
+    <span class="tk-h">HAL_GPIO_TogglePin</span>(LD2_GPIO_Port, LD2_Pin);
+    high_runs++;
+    <span class="tk-k">while</span> (<span class="tk-h">HAL_GPIO_ReadPin</span>(B1_GPIO_Port, B1_Pin) == <span class="tk-m">GPIO_PIN_RESET</span>) { }   <span class="tk-c">// 누르는 동안 양보 없이 바쁜 대기 (나쁜 예)</span>
+    <span class="tk-f">osDelay</span>(<span class="tk-n">100</span>);                       <span class="tk-c">// 정상: 100 ms 동안 Blocked → 낮은 태스크에게 CPU</span>
+  }
+}</code></pre></div>
+<p>시뮬레이터에서 B1 을 약 0.5 초 누르고 있으면 이런 줄이 보입니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">text</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-text">[ 2004] late=0 ms  low_count=1989600  high_runs=10
+[ 3423] late=419 ms  low_count=1817201  high_runs=10
+[ 4004] late=0 ms  low_count=1149600  high_runs=6</code></pre></div>
+<ul><li>누르는 동안 <code>highTask</code> 가 CPU 를 붙잡아 <code>defaultTask</code>(보통)는 <strong>419 ms 늦게</strong> 보고하고, <code>lowTask</code> 는 그동안 한 번도 돌지 못해 <code>low_count</code> 가 줄어듭니다.</li><li>손을 떼면 곧바로 정상으로 돌아옵니다. <code>lowTask</code> 가 쉬지 않고 돌아도 <code>highTask</code> 의 100 ms 주기는 흔들리지 않습니다 — 선점 덕분입니다.</li><li>실물에서는 Idle 태스크보다 높은 태스크가 쉬지 않으면 Idle 이 돌지 못해, 삭제된 태스크의 메모리 정리나 Idle 훅 저전력 진입이 일어나지 않습니다.</li></ul>
+<div class="callout callout-info"><div class="callout-title">시뮬레이터와 HAL_Delay</div><div class="callout-body"><p>시뮬레이터는 태스크 안의 <code>HAL_Delay</code> 를 CPU 를 붙잡는 바쁜 대기로 정확히 흉내 내지 못할 수 있습니다. 그래서 예제 2는 바쁜 대기를 <code>while</code> 로 직접 만들었습니다. 실물에서 <code>HAL_Delay</code> 도 같은 결과를 냅니다.</p></div></div>
+<h2 id="스택-크기">스택 크기<a class="anchor" href="#스택-크기">#</a></h2>
+<p>CubeMX 의 Stack Size 는 <strong>워드(4바이트) 단위</strong>입니다. 128 워드 = 512 바이트. 태스크의 지역 변수, 함수 호출 깊이, 인터럽트가 끼어들 때 쌓이는 레지스터가 여기에 들어갑니다.</p>
+<ul><li><code>printf</code>(newlib)는 스택을 많이 씁니다. <code>printf</code> 를 쓰는 태스크는 <strong>256 워드 이상</strong>, 실수 출력(<code>%f</code>)까지 쓰면 더 크게 잡습니다.</li><li>큰 배열은 지역 변수로 두지 말고 전역(또는 <code>static</code>)으로 둡니다.</li><li>실물에서는 <code>osThreadGetStackSpace(handle)</code>(남은 스택의 최솟값)으로 여유를 확인하고, FreeRTOS 설정의 <code>CHECK_FOR_STACK_OVERFLOW</code> 를 켜 두면 넘칠 때 훅이 불립니다(시뮬레이터 미지원).</li><li>여러 태스크가 <code>printf</code> 를 쓰면 CubeMX 의 <strong>USE_NEWLIB_REENTRANT</strong> 를 켜라는 안내가 나옵니다. 켜 두세요.</li></ul>
+<div class="callout callout-task"><div class="callout-title">실습</div><div class="callout-body"><ol><li>예제 1의 <code>blinkTask</code> 우선순위를 <code>osPriorityHigh</code> 로 바꿔도 결과가 같은 이유를 설명하세요.</li><li>예제 1에 세 번째 태스크를 추가해 B1 을 20 ms 마다 읽고 누를 때마다 <code>printf</code> 하세요. 스택은 얼마로 할까요?</li><li>예제 2의 <code>lowTask</code> 를 <code>osPriorityNormal</code> 로 올리면 <code>defaultTask</code> 의 보고는 어떻게 되나요? (같은 우선순위 → 타임 슬라이싱)</li><li>예제 1의 <code>defaultTask</code> 를 <code>osDelayUntil</code> 로 바꿔 출력 시각이 밀리지 않게 하세요.</li></ol></div></div>
+<div class="callout callout-check"><div class="callout-title">스스로 확인</div><div class="callout-body"><ul><li><code>osKernelStart()</code> 다음 줄에 쓴 코드는 언제 실행되나요?</li><li>우선순위가 같은 두 태스크가 모두 <code>osDelay</code> 없이 돈다면 CPU 는 어떻게 나뉘나요?</li><li>Stack Size 256 워드는 몇 바이트인가요? 태스크 8개면 힙은 최소 얼마가 필요한가요?</li></ul></div></div>
+<h2 id="자주-나는-오류와-해결">자주 나는 오류와 해결<a class="anchor" href="#자주-나는-오류와-해결">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인</th><th>해결</th></tr></thead><tbody><tr><td><code>while(1)</code> 안의 코드가 실행되지 않음</td><td><code>osKernelStart()</code> 는 돌아오지 않음</td><td>코드를 태스크 함수로 옮기기</td></tr><tr><td>낮은 우선순위 태스크가 전혀 돌지 않음</td><td>높은 태스크가 <code>osDelay</code> 없이 돌거나 <code>HAL_Delay</code> 사용</td><td>높은 태스크는 짧게 일하고 Blocked</td></tr><tr><td>태스크를 만들었는데 실행되지 않음</td><td><code>TOTAL_HEAP_SIZE</code> 부족으로 <code>osThreadNew</code> 가 NULL 반환</td><td>힙 늘리기, 반환값 확인</td></tr><tr><td>가끔 HardFault</td><td>태스크 스택 넘침 (<code>printf</code>, 큰 지역 배열)</td><td>Stack Size 늘리기, 배열은 전역으로</td></tr><tr><td>태스크 함수가 끝난 뒤 멈춤</td><td>태스크 함수가 return</td><td><code>for(;;)</code> 또는 <code>osThreadExit()</code></td></tr><tr><td>CubeMX 가 SysTick 경고</td><td>HAL 타임베이스와 RTOS 가 SysTick 을 공유</td><td>SYS → Timebase Source: TIM6</td></tr><tr><td>주기 작업이 조금씩 밀림</td><td><code>osDelay</code> 는 상대 시간</td><td><code>osDelayUntil</code></td></tr></tbody></table></div>
+<h2 id="과제">과제<a class="anchor" href="#과제">#</a></h2>
+<ol><li>L15 의 스마트 선풍기를 태스크 세 개(입력 · 제어 · 표시)로 나누는 설계를 그리세요. 각 태스크의 우선순위와 주기를 정하고 이유를 쓰세요.</li><li>예제 2의 결과로 각 태스크가 CPU 를 쓴 비율을 추정해 보세요.</li><li>Idle 태스크에서 SLEEP 모드로 들어가는 <strong>Tickless Idle</strong>(<code>configUSE_TICKLESS_IDLE</code>)이 무엇인지 조사해 정리하세요.</li></ol>
+<h2 id="참고자료">참고자료<a class="anchor" href="#참고자료">#</a></h2>
+<ul><li>FreeRTOS, <em>Mastering the FreeRTOS Real Time Kernel — a Hands-On Tutorial Guide</em> (태스크 관리 · 스케줄링 장)</li><li>ARM, <em>CMSIS-RTOS2 API documentation</em> (Thread Management, Generic Wait Functions)</li><li>ST, <em>UM1722 — Developing applications on STM32Cube with RTOS</em></li><li>ST, <em>STM32CubeMX User Manual (UM1718)</em> — FREERTOS 설정 화면</li><li>이 사이트의 <a href="hal-reference.html#cmsis-rtos2-freertos">HAL 레퍼런스 — CMSIS-RTOS2</a></li></ul>
+      <nav class="pager"><a class="pager-prev" href="l21.html"><span>이전 · L21</span>RTC 와 저전력 모드</a><a class="pager-next" href="l23.html"><span>다음 · L23</span>FreeRTOS 통신과 동기화</a></nav>
+    </div>
+    <aside class="lesson-toc"><div class="toc-title">이 레슨의 내용</div><div class="toc-links"><a class="toc-l2" href="#학습-목표">학습 목표</a><a class="toc-l2" href="#왜-rtos-인가">왜 RTOS 인가</a><a class="toc-l2" href="#태스크와-스케줄러">태스크와 스케줄러</a><a class="toc-l3" href="#태스크-상태">태스크 상태</a><a class="toc-l3" href="#스케줄링-규칙-freertos-기본-설정">스케줄링 규칙 (FreeRTOS 기본 설정)</a><a class="toc-l2" href="#cubemx-에서-freertos-켜기">CubeMX 에서 FreeRTOS 켜기</a><a class="toc-l3" href="#생성-코드-읽기">생성 코드 읽기</a><a class="toc-l2" href="#예제-1-태스크-두-개">예제 1 — 태스크 두 개</a><a class="toc-l2" href="#osdelay-osdelayuntil-haldelay">osDelay · osDelayUntil · HAL_Delay</a><a class="toc-l2" href="#예제-2-우선순위와-굶주림">예제 2 — 우선순위와 굶주림</a><a class="toc-l2" href="#스택-크기">스택 크기</a><a class="toc-l2" href="#자주-나는-오류와-해결">자주 나는 오류와 해결</a><a class="toc-l2" href="#과제">과제</a><a class="toc-l2" href="#참고자료">참고자료</a></div></aside>
+  </div>
+</article>
+
+</main>
+<script src="../assets/js/site.js?v=20260928d"></script>
+</body>
+</html>

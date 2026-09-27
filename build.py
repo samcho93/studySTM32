@@ -53,7 +53,7 @@ MCUS = ["STM32F030R8", "STM32F103C8", "STM32F103RB", "STM32F303RE", "STM32F401RE
         "STM32F407VG", "STM32F746ZG", "STM32H743ZI", "STM32G071RB", "STM32G474RE", "STM32L053R8", "STM32L476RG",
         "STM32U575ZI", "STM32C031C6", "STM32WB55RG"]
 FAMILIES = ["F0", "F1", "F3", "F4", "F7", "H7", "G0", "G4", "L0", "L4", "U5", "C0", "WB"]
-ASSET_VER = "20260928c"   # CSS/JS 캐시 무효화 — 자산을 바꾸면 올립니다
+ASSET_VER = "20260928d"   # CSS/JS 캐시 무효화 — 자산을 바꾸면 올립니다
 DEVICE_TYPES = ["led", "rgb", "button", "pot", "ldr", "buzzer", "fnd", "lcd1602", "motor",
                 "servo", "stepper", "uart", "i2cdev", "spidev", "logic", "oled", "ultrasonic", "keypad",
                 "fnd4", "dht11", "relay", "encoder", "joystick"]

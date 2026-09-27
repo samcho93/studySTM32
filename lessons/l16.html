@@ -6,12 +6,12 @@
 <title>L16. 실물 보드로 옮기기 · studySTM32</title>
 <meta name="description" content="STM32CubeIDE 설치, .ioc 설정, 빌드와 ST-Link 플래시·디버그, 시뮬레이터와 실물의 차이와 안전한 배선을 정리합니다.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
-<link rel="stylesheet" href="../assets/css/main.css?v=20260928b">
-<link rel="stylesheet" href="../assets/css/stm32.css?v=20260928b">
-<link rel="stylesheet" href="../assets/css/ml-theme.css?v=20260928b">
+<link rel="stylesheet" href="../assets/css/main.css?v=20260928d">
+<link rel="stylesheet" href="../assets/css/stm32.css?v=20260928d">
+<link rel="stylesheet" href="../assets/css/ml-theme.css?v=20260928d">
 <link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
 <link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
-<script src="../assets/js/theme.js?v=20260928b"></script>
+<script src="../assets/js/theme.js?v=20260928d"></script>
 </head>
 <body class="lesson-page track-page-project">
 <button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
@@ -66,6 +66,18 @@
 <ul>
 <li><a href="../lessons/l15.html" data-slug="l15"><span class="nav-no">L15</span>미니 프로젝트: 스마트 선풍기</a></li>
 <li><a href="../lessons/l16.html" class="active" data-slug="l16"><span class="nav-no">L16</span>실물 보드로 옮기기</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="adv">
+<div class="nav-track-title track-adv"><span class="nav-part-no">PART 5</span>중급 활용</div>
+<ul>
+<li><a href="../lessons/l17.html" data-slug="l17"><span class="nav-no">L17</span>주변기기 모듈 활용</a></li>
+<li><a href="../lessons/l18.html" data-slug="l18"><span class="nav-no">L18</span>DMA — CPU 없이 옮기기</a></li>
+<li><a href="../lessons/l19.html" data-slug="l19"><span class="nav-no">L19</span>입력 캡처 — 펄스 재기</a></li>
+<li><a href="../lessons/l20.html" data-slug="l20"><span class="nav-no">L20</span>워치독과 리셋</a></li>
+<li><a href="../lessons/l21.html" data-slug="l21"><span class="nav-no">L21</span>RTC 와 저전력 모드</a></li>
+<li><a href="../lessons/l22.html" data-slug="l22"><span class="nav-no">L22</span>FreeRTOS 기초</a></li>
+<li><a href="../lessons/l23.html" data-slug="l23"><span class="nav-no">L23</span>FreeRTOS 통신과 동기화</a></li>
 </ul>
 </div>
 </nav>
@@ -134,13 +146,13 @@
 <ol><li>L03 ~ L14 중 두 개의 예제를 골라 실물 보드로 옮기고, 시뮬레이터 결과와 다른 점을 사진·로그와 함께 정리하세요.</li><li>CubeIDE 디버거의 <strong>SFRs</strong> 창에서 <code>GPIOA → ODR</code> 를 열어 두고 LD2 가 토글될 때 5번 비트가 바뀌는 것을 확인하세요.</li><li>같은 L15 코드를 NUCLEO-F103RB(72 MHz)로 옮기려면 무엇을 바꿔야 하는지 목록을 만드세요. (타이머 PSC, ADC 설정, 헤더 이름 등)</li></ol>
 <h2 id="참고자료">참고자료<a class="anchor" href="#참고자료">#</a></h2>
 <ul><li>ST, <em>UM2609 — STM32CubeIDE user guide</em> (빌드, 디버그, Live Expressions, SWV)</li><li>ST, <em>UM2553 — STM32CubeIDE quick start guide</em></li><li>ST, <em>UM1724 — STM32 Nucleo-64 boards user manual</em> (전원 선택, ST-Link, 솔더 브리지)</li><li>ST, <em>RM0008 — STM32F101xx/F103xx Reference Manual</em> (BluePill 의 F103)</li><li>이 사이트의 <a href="hal-reference.html">HAL 레퍼런스</a></li></ul>
-      <nav class="pager"><a class="pager-prev" href="l15.html"><span>이전 · L15</span>미니 프로젝트: 스마트 선풍기</a><span class="pager-next disabled"></span></nav>
+      <nav class="pager"><a class="pager-prev" href="l15.html"><span>이전 · L15</span>미니 프로젝트: 스마트 선풍기</a><a class="pager-next" href="l17.html"><span>다음 · L17</span>주변기기 모듈 활용</a></nav>
     </div>
     <aside class="lesson-toc"><div class="toc-title">이 레슨의 내용</div><div class="toc-links"><a class="toc-l2" href="#학습-목표">학습 목표</a><a class="toc-l2" href="#cubeide-설치">CubeIDE 설치</a><a class="toc-l2" href="#프로젝트-만들기와-ioc-설정">프로젝트 만들기와 .ioc 설정</a><a class="toc-l2" href="#코드-옮기기">코드 옮기기</a><a class="toc-l2" href="#빌드-플래시-디버그">빌드 · 플래시 · 디버그</a><a class="toc-l3" href="#터미널-연결">터미널 연결</a><a class="toc-l2" href="#시뮬레이터와-실물의-차이">시뮬레이터와 실물의 차이</a><a class="toc-l2" href="#bluepill-로-옮기기">BluePill 로 옮기기</a><a class="toc-l2" href="#실습-실물">실습 (실물)</a><a class="toc-l2" href="#자주-나는-오류와-해결">자주 나는 오류와 해결</a><a class="toc-l2" href="#과제">과제</a><a class="toc-l2" href="#참고자료">참고자료</a></div></aside>
   </div>
 </article>
 
 </main>
-<script src="../assets/js/site.js?v=20260928b"></script>
+<script src="../assets/js/site.js?v=20260928d"></script>
 </body>
 </html>

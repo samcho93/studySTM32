@@ -6,12 +6,12 @@
 <title>HAL API 레퍼런스 · studySTM32</title>
 <meta name="description" content="시뮬레이터가 지원하는 STM32 HAL 함수의 원형, 인자, 반환값, 짧은 예제와 레지스터 직접 접근 비교.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
-<link rel="stylesheet" href="../assets/css/main.css?v=20260928b">
-<link rel="stylesheet" href="../assets/css/stm32.css?v=20260928b">
-<link rel="stylesheet" href="../assets/css/ml-theme.css?v=20260928b">
+<link rel="stylesheet" href="../assets/css/main.css?v=20260928d">
+<link rel="stylesheet" href="../assets/css/stm32.css?v=20260928d">
+<link rel="stylesheet" href="../assets/css/ml-theme.css?v=20260928d">
 <link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
 <link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
-<script src="../assets/js/theme.js?v=20260928b"></script>
+<script src="../assets/js/theme.js?v=20260928d"></script>
 </head>
 <body class="lesson-page ref-page">
 <button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
@@ -66,6 +66,18 @@
 <ul>
 <li><a href="../lessons/l15.html" data-slug="l15"><span class="nav-no">L15</span>미니 프로젝트: 스마트 선풍기</a></li>
 <li><a href="../lessons/l16.html" data-slug="l16"><span class="nav-no">L16</span>실물 보드로 옮기기</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="adv">
+<div class="nav-track-title track-adv"><span class="nav-part-no">PART 5</span>중급 활용</div>
+<ul>
+<li><a href="../lessons/l17.html" data-slug="l17"><span class="nav-no">L17</span>주변기기 모듈 활용</a></li>
+<li><a href="../lessons/l18.html" data-slug="l18"><span class="nav-no">L18</span>DMA — CPU 없이 옮기기</a></li>
+<li><a href="../lessons/l19.html" data-slug="l19"><span class="nav-no">L19</span>입력 캡처 — 펄스 재기</a></li>
+<li><a href="../lessons/l20.html" data-slug="l20"><span class="nav-no">L20</span>워치독과 리셋</a></li>
+<li><a href="../lessons/l21.html" data-slug="l21"><span class="nav-no">L21</span>RTC 와 저전력 모드</a></li>
+<li><a href="../lessons/l22.html" data-slug="l22"><span class="nav-no">L22</span>FreeRTOS 기초</a></li>
+<li><a href="../lessons/l23.html" data-slug="l23"><span class="nav-no">L23</span>FreeRTOS 통신과 동기화</a></li>
 </ul>
 </div>
 </nav>
@@ -153,6 +165,7 @@ init.Speed = <span class="tk-m">GPIO_SPEED_FREQ_LOW</span>;
     <span class="tk-h">HAL_UART_Receive_IT</span>(&amp;huart2, &amp;rx, <span class="tk-n">1</span>);        <span class="tk-c">// 다시 예약</span>
   }
 }</code></pre></div>
+<p>길이를 모르는 수신(IDLE 감지)과 DMA 송수신은 <a href="#uart-dma-idle">UART DMA · IDLE</a> 을 보세요.</p>
 <h3 id="printf-리타깃">printf 리타깃<a class="anchor" href="#printf-리타깃">#</a></h3>
 <p>printf 는 <strong>리타깃 함수가 있어야</strong> UART 로 나갑니다. stdout 은 줄 버퍼라 <code>\n</code> 에서 내보내며, <code>%f</code> 는 실수 printf 설정(<code>-u _printf_float</code> / 시뮬레이터 <code>printfFloat</code>)이 필요합니다.</p>
 <div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN PFP */</span>
@@ -186,7 +199,8 @@ init.Speed = <span class="tk-m">GPIO_SPEED_FREQ_LOW</span>;
 <span class="tk-c">/* PWM: PSC 83, ARR 999 → 1 kHz, 듀티 25 % */</span>
 <span class="tk-h">HAL_TIM_PWM_Start</span>(&amp;htim3, <span class="tk-m">TIM_CHANNEL_1</span>);
 <span class="tk-h">__HAL_TIM_SET_COMPARE</span>(&amp;htim3, <span class="tk-m">TIM_CHANNEL_1</span>, <span class="tk-n">250</span>);</code></pre></div>
-<p>관련 레슨: L07, L08, L13 · 시뮬레이터 미지원: <code>HAL_TIM_IC_Start_IT</code>(입력 캡처), <code>HAL_TIM_Encoder_Start</code>, <code>HAL_TIM_OC_Start</code>, <code>HAL_TIMEx_PWMN_Start</code>, <code>__HAL_TIM_CLEAR_FLAG</code></p>
+<p>입력 캡처(<code>HAL_TIM_IC_Start_IT</code>)는 아래 <a href="#tim-입력-캡처">TIM 입력 캡처</a> 를 보세요.</p>
+<p>관련 레슨: L07, L08, L13, L19 · 시뮬레이터 미지원: <code>HAL_TIM_Encoder_Start</code>, <code>HAL_TIM_OC_Start</code>, <code>HAL_TIMEx_PWMN_Start</code>, <code>__HAL_TIM_CLEAR_FLAG</code></p>
 <h2 id="adc">ADC<a class="anchor" href="#adc">#</a></h2>
 <div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_ADC_Start</span>(<span class="tk-t">ADC_HandleTypeDef</span> *hadc);
 <span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_ADC_PollForConversion</span>(<span class="tk-t">ADC_HandleTypeDef</span> *hadc, <span class="tk-t">uint32_t</span> Timeout);
@@ -195,9 +209,11 @@ init.Speed = <span class="tk-m">GPIO_SPEED_FREQ_LOW</span>;
 <span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_ADC_ConfigChannel</span>(<span class="tk-t">ADC_HandleTypeDef</span> *hadc, <span class="tk-t">ADC_ChannelConfTypeDef</span> *sConfig);
 <span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_ADC_Start_IT</span>(<span class="tk-t">ADC_HandleTypeDef</span> *hadc);
 <span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_ADC_Start_DMA</span>(<span class="tk-t">ADC_HandleTypeDef</span> *hadc, <span class="tk-t">uint32_t</span> *pData, <span class="tk-t">uint32_t</span> Length);
-<span class="tk-t">void</span> <span class="tk-h">HAL_ADC_ConvCpltCallback</span>(<span class="tk-t">ADC_HandleTypeDef</span> *hadc);   <span class="tk-c">/* 사용자 정의 */</span></code></pre></div>
+<span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_ADC_Stop_DMA</span>(<span class="tk-t">ADC_HandleTypeDef</span> *hadc);
+<span class="tk-t">void</span> <span class="tk-h">HAL_ADC_ConvCpltCallback</span>(<span class="tk-t">ADC_HandleTypeDef</span> *hadc);       <span class="tk-c">/* 사용자 정의 — 변환 끝 / DMA 전체 완료 */</span>
+<span class="tk-t">void</span> <span class="tk-h">HAL_ADC_ConvHalfCpltCallback</span>(<span class="tk-t">ADC_HandleTypeDef</span> *hadc);   <span class="tk-c">/* 사용자 정의 — DMA 절반 완료 */</span></code></pre></div>
 <p>12비트: 0 ~ 4095, 전압 = 값 × 3.3 / 4095. 여러 채널을 켜고 폴링하면 Start/Poll/GetValue 한 번마다 <strong>rank 순서대로 다음 채널</strong> 값이 나옵니다.</p>
-<div class="table-wrap api"><table><thead><tr><th>함수</th><th>설명</th><th>반환</th></tr></thead><tbody><tr><td><code>HAL_ADC_Start</code></td><td>변환 시작</td><td><code>HAL_OK</code></td></tr><tr><td><code>HAL_ADC_PollForConversion(&amp;hadc1, 10)</code></td><td>변환 끝까지 최대 10 ms 대기</td><td><code>HAL_OK</code> / <code>HAL_TIMEOUT</code></td></tr><tr><td><code>HAL_ADC_GetValue</code></td><td>결과 읽기</td><td>0 ~ 4095</td></tr><tr><td><code>HAL_ADC_Stop</code></td><td>정지</td><td><code>HAL_OK</code></td></tr><tr><td><code>HAL_ADC_ConfigChannel</code></td><td>채널·rank·샘플링 시간 변경</td><td><code>HAL_OK</code></td></tr><tr><td><code>HAL_ADC_Start_IT</code></td><td>변환 끝나면 <code>HAL_ADC_ConvCpltCallback</code></td><td><code>HAL_OK</code></td></tr><tr><td><code>HAL_ADC_Start_DMA(&amp;hadc1, (uint32_t *)buf, n)</code></td><td>여러 채널을 rank 순서로 <code>buf</code> 에 계속 채움 (스캔 + 연속 + 순환 DMA)</td><td><code>HAL_OK</code></td></tr></tbody></table></div>
+<div class="table-wrap api"><table><thead><tr><th>함수</th><th>설명</th><th>반환</th></tr></thead><tbody><tr><td><code>HAL_ADC_Start</code></td><td>변환 시작</td><td><code>HAL_OK</code></td></tr><tr><td><code>HAL_ADC_PollForConversion(&amp;hadc1, 10)</code></td><td>변환 끝까지 최대 10 ms 대기</td><td><code>HAL_OK</code> / <code>HAL_TIMEOUT</code></td></tr><tr><td><code>HAL_ADC_GetValue</code></td><td>결과 읽기</td><td>0 ~ 4095</td></tr><tr><td><code>HAL_ADC_Stop</code></td><td>정지</td><td><code>HAL_OK</code></td></tr><tr><td><code>HAL_ADC_ConfigChannel</code></td><td>채널·rank·샘플링 시간 변경</td><td><code>HAL_OK</code></td></tr><tr><td><code>HAL_ADC_Start_IT</code></td><td>변환 끝나면 <code>HAL_ADC_ConvCpltCallback</code></td><td><code>HAL_OK</code></td></tr><tr><td><code>HAL_ADC_Start_DMA(&amp;hadc1, (uint32_t *)buf, n)</code></td><td>여러 채널을 rank 순서로 <code>buf</code> 에 계속 채움 (스캔 + 연속 + 순환 DMA)</td><td><code>HAL_OK</code></td></tr><tr><td><code>HAL_ADC_ConvHalfCpltCallback</code> / <code>ConvCpltCallback</code></td><td>원형 DMA 에서 배열 앞 절반 / 뒤 절반이 찼을 때 (DMA 인터럽트 필요)</td><td>—</td></tr><tr><td><code>HAL_ADC_Stop_DMA</code></td><td>DMA 변환 정지</td><td><code>HAL_OK</code></td></tr></tbody></table></div>
 <div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-h">HAL_ADC_Start</span>(&amp;hadc1);
 <span class="tk-k">if</span> (<span class="tk-h">HAL_ADC_PollForConversion</span>(&amp;hadc1, <span class="tk-n">10</span>) == <span class="tk-m">HAL_OK</span>) {
   <span class="tk-t">uint32_t</span> v = <span class="tk-h">HAL_ADC_GetValue</span>(&amp;hadc1);
@@ -207,7 +223,7 @@ init.Speed = <span class="tk-m">GPIO_SPEED_FREQ_LOW</span>;
 
 <span class="tk-t">uint16_t</span> adc_buf[<span class="tk-n">2</span>];
 <span class="tk-h">HAL_ADC_Start_DMA</span>(&amp;hadc1, (<span class="tk-t">uint32_t</span> *)adc_buf, <span class="tk-n">2</span>);   <span class="tk-c">// adc_buf[0] = rank1, [1] = rank2</span></code></pre></div>
-<p>관련 레슨: L09 · 시뮬레이터 미지원: <code>HAL_ADCEx_Calibration_Start</code>(F1), 주입(Injected) 채널, 아날로그 워치독</p>
+<p>관련 레슨: L09, L18 · 시뮬레이터 미지원: <code>HAL_ADCEx_Calibration_Start</code>(F1), 주입(Injected) 채널, 아날로그 워치독</p>
 <h2 id="i2c">I2C<a class="anchor" href="#i2c">#</a></h2>
 <div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_I2C_Master_Transmit</span>(<span class="tk-t">I2C_HandleTypeDef</span> *hi2c, <span class="tk-t">uint16_t</span> DevAddress, <span class="tk-t">uint8_t</span> *pData, <span class="tk-t">uint16_t</span> Size, <span class="tk-t">uint32_t</span> Timeout);
 <span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_I2C_Master_Receive</span>(<span class="tk-t">I2C_HandleTypeDef</span> *hi2c, <span class="tk-t">uint16_t</span> DevAddress, <span class="tk-t">uint8_t</span> *pData, <span class="tk-t">uint16_t</span> Size, <span class="tk-t">uint32_t</span> Timeout);
@@ -234,6 +250,137 @@ init.Speed = <span class="tk-m">GPIO_SPEED_FREQ_LOW</span>;
 <span class="tk-h">HAL_SPI_TransmitReceive</span>(&amp;hspi2, tx, rx, <span class="tk-n">4</span>, <span class="tk-n">100</span>);                      <span class="tk-c">// rx[1..3] = ID</span>
 <span class="tk-h">HAL_GPIO_WritePin</span>(FLASH_CS_GPIO_Port, FLASH_CS_Pin, <span class="tk-m">GPIO_PIN_SET</span>);     <span class="tk-c">// 해제</span></code></pre></div>
 <p>관련 레슨: L11 · 시뮬레이터 미지원: <code>HAL_SPI_Transmit_IT</code> / <code>_DMA</code>, 하드웨어 NSS</p>
+<h2 id="uart-dma-idle">UART DMA · IDLE<a class="anchor" href="#uart-dma-idle">#</a></h2>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_UARTEx_ReceiveToIdle_IT</span> (<span class="tk-t">UART_HandleTypeDef</span> *huart, <span class="tk-t">uint8_t</span> *pData, <span class="tk-t">uint16_t</span> Size);
+<span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_UARTEx_ReceiveToIdle_DMA</span>(<span class="tk-t">UART_HandleTypeDef</span> *huart, <span class="tk-t">uint8_t</span> *pData, <span class="tk-t">uint16_t</span> Size);
+<span class="tk-t">void</span> <span class="tk-h">HAL_UARTEx_RxEventCallback</span>(<span class="tk-t">UART_HandleTypeDef</span> *huart, <span class="tk-t">uint16_t</span> Size);   <span class="tk-c">/* 사용자 정의 */</span>
+<span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_UART_Transmit_DMA</span>(<span class="tk-t">UART_HandleTypeDef</span> *huart, <span class="tk-k">const</span> <span class="tk-t">uint8_t</span> *pData, <span class="tk-t">uint16_t</span> Size);
+<span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_UART_Receive_DMA</span>(<span class="tk-t">UART_HandleTypeDef</span> *huart, <span class="tk-t">uint8_t</span> *pData, <span class="tk-t">uint16_t</span> Size);
+<span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_UART_DMAStop</span>(<span class="tk-t">UART_HandleTypeDef</span> *huart);</code></pre></div>
+<div class="table-wrap api"><table><thead><tr><th>함수</th><th>동작</th><th>끝나면</th></tr></thead><tbody><tr><td><code>HAL_UARTEx_ReceiveToIdle_IT(&amp;huart2, buf, 64)</code></td><td>최대 64바이트를 받되, 수신선이 1문자 시간 조용하면(IDLE) 거기서 끝</td><td><code>HAL_UARTEx_RxEventCallback(huart, Size)</code> — <code>Size</code> = 받은 바이트 수</td></tr><tr><td><code>HAL_UARTEx_ReceiveToIdle_DMA(&amp;huart2, buf, 64)</code></td><td>위와 같고 바이트 복사를 DMA 가 함</td><td>같은 콜백 (DMA 절반 완료 때도 불림)</td></tr><tr><td><code>HAL_UART_Transmit_DMA(&amp;huart2, buf, n)</code></td><td>전송 예약 후 바로 돌아옴</td><td><code>HAL_UART_TxCpltCallback</code></td></tr><tr><td><code>HAL_UART_Receive_DMA(&amp;huart2, buf, n)</code></td><td>정확히 n 바이트 수신</td><td><code>HAL_UART_RxCpltCallback</code></td></tr><tr><td><code>HAL_UART_DMAStop(&amp;huart2)</code></td><td>DMA 송수신 중단</td><td>—</td></tr></tbody></table></div>
+<ul><li>수신 이벤트는 UART 인터럽트로 알리므로 <strong>NVIC 의 USART2 global interrupt</strong> 를 켭니다. 수신은 한 번 끝나면 멈추므로 처리 후 다시 호출합니다.</li><li>DMA 판은 CubeMX 에서 USART2_RX DMA(F4: DMA1 Stream5 Channel4)를 추가해야 하고, 절반 완료 콜백을 막으려면 <code>__HAL_DMA_DISABLE_IT(&amp;hdma_usart2_rx, DMA_IT_HT)</code>(실물).</li><li>시뮬레이터: <code>_DMA</code> 판은 <code>_IT</code> 판과 같게 동작하며, CubeMX 화면에 UART DMA 설정은 없습니다.</li></ul>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-t">uint8_t</span> rx_buf[<span class="tk-n">64</span>];
+<span class="tk-k">volatile</span> <span class="tk-t">uint16_t</span> rx_len = <span class="tk-n">0</span>;
+<span class="tk-h">HAL_UARTEx_ReceiveToIdle_IT</span>(&amp;huart2, rx_buf, <span class="tk-k">sizeof</span>(rx_buf));     <span class="tk-c">// USER CODE 2</span>
+
+<span class="tk-t">void</span> <span class="tk-h">HAL_UARTEx_RxEventCallback</span>(<span class="tk-t">UART_HandleTypeDef</span> *huart, <span class="tk-t">uint16_t</span> Size)
+{
+  <span class="tk-k">if</span> (huart-&gt;Instance == <span class="tk-m">USART2</span>) rx_len = Size;                   <span class="tk-c">// 처리는 메인 루프에서, 처리 후 다시 ReceiveToIdle</span>
+}</code></pre></div>
+<p>ADC 의 원형 DMA 는 <a href="#adc">ADC</a> 의 <code>HAL_ADC_Start_DMA</code> 와 <code>HAL_ADC_ConvHalfCpltCallback</code> 을 보세요. 관련 레슨: L18</p>
+<h2 id="tim-입력-캡처">TIM 입력 캡처<a class="anchor" href="#tim-입력-캡처">#</a></h2>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_TIM_IC_Start</span>(<span class="tk-t">TIM_HandleTypeDef</span> *htim, <span class="tk-t">uint32_t</span> Channel);
+<span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_TIM_IC_Start_IT</span>(<span class="tk-t">TIM_HandleTypeDef</span> *htim, <span class="tk-t">uint32_t</span> Channel);
+<span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_TIM_IC_Stop</span>(<span class="tk-t">TIM_HandleTypeDef</span> *htim, <span class="tk-t">uint32_t</span> Channel);
+<span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_TIM_IC_Stop_IT</span>(<span class="tk-t">TIM_HandleTypeDef</span> *htim, <span class="tk-t">uint32_t</span> Channel);
+<span class="tk-t">uint32_t</span> <span class="tk-h">HAL_TIM_ReadCapturedValue</span>(<span class="tk-t">TIM_HandleTypeDef</span> *htim, <span class="tk-t">uint32_t</span> Channel);
+<span class="tk-h">__HAL_TIM_SET_CAPTUREPOLARITY</span>(htim, Channel, Polarity);          <span class="tk-c">/* 매크로 */</span>
+<span class="tk-t">void</span> <span class="tk-h">HAL_TIM_IC_CaptureCallback</span>(<span class="tk-t">TIM_HandleTypeDef</span> *htim);          <span class="tk-c">/* 사용자 정의 */</span></code></pre></div>
+<p>에지가 들어오는 순간 카운터(CNT) 값이 CCRx 에 복사됩니다. 두 캡처 값의 차이 × 틱 = 주기 또는 펄스 폭. 틱 = (PSC + 1) / 타이머 클럭.</p>
+<div class="table-wrap api"><table><thead><tr><th>함수 / 상수</th><th>설명</th></tr></thead><tbody><tr><td><code>HAL_TIM_IC_Start_IT(&amp;htim2, TIM_CHANNEL_1)</code></td><td>카운터 시작 + CH1 캡처 인터럽트. 에지마다 <code>HAL_TIM_IC_CaptureCallback</code></td></tr><tr><td><code>HAL_TIM_IC_Start</code></td><td>인터럽트 없이 캡처만 (<code>ReadCapturedValue</code> 로 폴링)</td></tr><tr><td><code>HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1)</code></td><td>마지막 캡처 값(CCR1)</td></tr><tr><td><code>__HAL_TIM_SET_CAPTUREPOLARITY(htim, ch, pol)</code></td><td>다음 캡처 에지 바꾸기</td></tr><tr><td><code>TIM_INPUTCHANNELPOLARITY_RISING</code> / <code>_FALLING</code> / <code>_BOTHEDGE</code></td><td>상승 / 하강 / 양쪽 (F1 은 양쪽 미지원)</td></tr><tr><td><code>htim-&gt;Channel == HAL_TIM_ACTIVE_CHANNEL_1</code></td><td>콜백에서 어느 채널인지 구분 (<code>TIM_CHANNEL_1</code> 과 값이 다름)</td></tr></tbody></table></div>
+<p>CubeMX: TIMx → Channel1 <strong>Input Capture direct mode</strong>, Prescaler, Counter Period(<strong>최댓값</strong> 0xFFFF / 0xFFFFFFFF), Polarity, NVIC TIMx global interrupt. 생성 코드는 <code>TIM_IC_InitTypeDef sConfigIC</code> 와 <code>HAL_TIM_IC_ConfigChannel()</code> 입니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* TIM2: PSC 83 → 1 µs 틱, ARR 0xFFFFFFFF. HIGH 폭 재기 (극성 바꾸기) */</span>
+<span class="tk-k">volatile</span> <span class="tk-t">uint32_t</span> rise, width_us;
+<span class="tk-k">volatile</span> <span class="tk-t">uint8_t</span> wait_fall = <span class="tk-n">0</span>;
+
+<span class="tk-t">void</span> <span class="tk-h">HAL_TIM_IC_CaptureCallback</span>(<span class="tk-t">TIM_HandleTypeDef</span> *htim)
+{
+  <span class="tk-k">if</span> (htim-&gt;Instance == <span class="tk-m">TIM2</span> &amp;&amp; htim-&gt;Channel == <span class="tk-m">HAL_TIM_ACTIVE_CHANNEL_1</span>) {
+    <span class="tk-t">uint32_t</span> cap = <span class="tk-h">HAL_TIM_ReadCapturedValue</span>(htim, <span class="tk-m">TIM_CHANNEL_1</span>);
+    <span class="tk-k">if</span> (!wait_fall) { rise = cap; <span class="tk-h">__HAL_TIM_SET_CAPTUREPOLARITY</span>(htim, <span class="tk-m">TIM_CHANNEL_1</span>, <span class="tk-m">TIM_INPUTCHANNELPOLARITY_FALLING</span>); }
+    <span class="tk-k">else</span>            { width_us = cap - rise; <span class="tk-h">__HAL_TIM_SET_CAPTUREPOLARITY</span>(htim, <span class="tk-m">TIM_CHANNEL_1</span>, <span class="tk-m">TIM_INPUTCHANNELPOLARITY_RISING</span>); }
+    wait_fall = !wait_fall;
+  }
+}</code></pre></div>
+<p>관련 레슨: L19 · 시뮬레이터: 타이머 자신의 PWM 출력은 캡처 에지를 만들지 않습니다(장치 · 버튼이 핀을 움직일 때 캡처). PWM 입력 모드(슬레이브 리셋)는 미지원.</p>
+<h2 id="iwdg-워치독">IWDG (워치독)<a class="anchor" href="#iwdg-워치독">#</a></h2>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_IWDG_Init</span>(<span class="tk-t">IWDG_HandleTypeDef</span> *hiwdg);       <span class="tk-c">/* MX_IWDG_Init() 이 호출 — 이때부터 카운트 시작 */</span>
+<span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_IWDG_Refresh</span>(<span class="tk-t">IWDG_HandleTypeDef</span> *hiwdg);    <span class="tk-c">/* 카운터 다시 채우기 */</span>
+<span class="tk-h">__HAL_RCC_GET_FLAG</span>(<span class="tk-m">RCC_FLAG_IWDGRST</span>);                             <span class="tk-c">/* 리셋 원인 플래그 읽기 (1 / 0) */</span>
+<span class="tk-h">__HAL_RCC_CLEAR_RESET_FLAGS</span>();                                    <span class="tk-c">/* 리셋 플래그 모두 지우기 */</span>
+<span class="tk-t">void</span> <span class="tk-f">NVIC_SystemReset</span>(<span class="tk-t">void</span>);                                      <span class="tk-c">/* 소프트웨어 리셋 (돌아오지 않음) */</span></code></pre></div>
+<p><strong>제한 시간 = 4 × 2^PR × (Reload + 1) / LSI</strong> — <code>hiwdg.Init.Prescaler = IWDG_PRESCALER_4 ~ 256</code>, <code>hiwdg.Init.Reload = 0 ~ 4095</code>. LSI 는 F4 약 32 kHz(17~47 kHz), F1 약 40 kHz.</p>
+<div class="table-wrap api"><table><thead><tr><th>설정 (LSI 32 kHz)</th><th>제한 시간</th></tr></thead><tbody><tr><td><code>IWDG_PRESCALER_32</code>, Reload 999</td><td>1.0 s</td></tr><tr><td><code>IWDG_PRESCALER_64</code>, Reload 4095</td><td>8.2 s</td></tr><tr><td><code>IWDG_PRESCALER_256</code>, Reload 4095</td><td>32.8 s (최대)</td></tr></tbody></table></div>
+<div class="table-wrap api"><table><thead><tr><th>리셋 플래그</th><th>원인</th></tr></thead><tbody><tr><td><code>RCC_FLAG_IWDGRST</code> / <code>RCC_FLAG_WWDGRST</code></td><td>독립 / 창 워치독</td></tr><tr><td><code>RCC_FLAG_SFTRST</code></td><td><code>NVIC_SystemReset()</code></td></tr><tr><td><code>RCC_FLAG_PORRST</code> / <code>RCC_FLAG_BORRST</code></td><td>전원 켜짐 / 브라운아웃</td></tr><tr><td><code>RCC_FLAG_PINRST</code></td><td>NRST 핀 (다른 리셋에서도 함께 켜짐 → 마지막에 검사)</td></tr></tbody></table></div>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE 2: 리셋 원인 → 지우기 */</span>
+<span class="tk-k">if</span> (<span class="tk-h">__HAL_RCC_GET_FLAG</span>(<span class="tk-m">RCC_FLAG_IWDGRST</span>)) <span class="tk-f">printf</span>(<span class="tk-s">"reset by IWDG\r\n"</span>);
+<span class="tk-h">__HAL_RCC_CLEAR_RESET_FLAGS</span>();
+
+<span class="tk-c">/* 메인 루프 끝: 한 바퀴가 정상일 때만 */</span>
+<span class="tk-h">HAL_IWDG_Refresh</span>(&amp;hiwdg);</code></pre></div>
+<p>관련 레슨: L20 · 시뮬레이터 미지원: WWDG(<code>HAL_WWDG_Init</code>, <code>HAL_WWDG_Refresh</code>), <code>__HAL_DBGMCU_FREEZE_IWDG</code></p>
+<h2 id="rtc">RTC<a class="anchor" href="#rtc">#</a></h2>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_RTC_Init</span>(<span class="tk-t">RTC_HandleTypeDef</span> *hrtc);
+<span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_RTC_SetTime</span>(<span class="tk-t">RTC_HandleTypeDef</span> *hrtc, RTC_TimeTypeDef *sTime, <span class="tk-t">uint32_t</span> Format);
+<span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_RTC_GetTime</span>(<span class="tk-t">RTC_HandleTypeDef</span> *hrtc, RTC_TimeTypeDef *sTime, <span class="tk-t">uint32_t</span> Format);
+<span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_RTC_SetDate</span>(<span class="tk-t">RTC_HandleTypeDef</span> *hrtc, RTC_DateTypeDef *sDate, <span class="tk-t">uint32_t</span> Format);
+<span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_RTC_GetDate</span>(<span class="tk-t">RTC_HandleTypeDef</span> *hrtc, RTC_DateTypeDef *sDate, <span class="tk-t">uint32_t</span> Format);
+<span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_RTCEx_SetWakeUpTimer_IT</span>(<span class="tk-t">RTC_HandleTypeDef</span> *hrtc, <span class="tk-t">uint32_t</span> WakeUpCounter, <span class="tk-t">uint32_t</span> WakeUpClock);
+<span class="tk-t">HAL_StatusTypeDef</span> <span class="tk-h">HAL_RTCEx_DeactivateWakeUpTimer</span>(<span class="tk-t">RTC_HandleTypeDef</span> *hrtc);
+<span class="tk-t">void</span> <span class="tk-h">HAL_RTCEx_WakeUpTimerEventCallback</span>(<span class="tk-t">RTC_HandleTypeDef</span> *hrtc);  <span class="tk-c">/* 사용자 정의 */</span></code></pre></div>
+<div class="table-wrap api"><table><thead><tr><th>항목</th><th>설명</th></tr></thead><tbody><tr><td><code>RTC_TimeTypeDef</code></td><td><code>Hours</code> <code>Minutes</code> <code>Seconds</code> <code>SubSeconds</code></td></tr><tr><td><code>RTC_DateTypeDef</code></td><td><code>Year</code>(0~99) <code>Month</code>(1~12) <code>Date</code>(1~31) <code>WeekDay</code>(1 = 월 ~ 7 = 일)</td></tr><tr><td><code>RTC_FORMAT_BIN</code> / <code>RTC_FORMAT_BCD</code></td><td>23 / <code>0x23</code>. CubeMX 생성 코드는 BCD 로 설정</td></tr><tr><td><strong>GetTime 다음 GetDate</strong></td><td>시각을 읽으면 날짜를 읽을 때까지 그림자 레지스터가 잠김. 날짜가 필요 없어도 GetDate 호출</td></tr><tr><td><code>SetWakeUpTimer_IT(&amp;hrtc, n, RTC_WAKEUPCLOCK_CK_SPRE_16BITS)</code></td><td>(n + 1) 초마다 웨이크업 인터럽트 (NVIC: RTC_WKUP)</td></tr><tr><td><code>RTC_WAKEUPCLOCK_RTCCLK_DIV16</code></td><td>한 칸 488 µs (LSE 기준), 최대 약 32 s</td></tr></tbody></table></div>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c">RTC_TimeTypeDef t; RTC_DateTypeDef d;
+<span class="tk-h">HAL_RTC_GetTime</span>(&amp;hrtc, &amp;t, <span class="tk-m">RTC_FORMAT_BIN</span>);
+<span class="tk-h">HAL_RTC_GetDate</span>(&amp;hrtc, &amp;d, <span class="tk-m">RTC_FORMAT_BIN</span>);
+<span class="tk-f">printf</span>(<span class="tk-s">"20%02d-%02d-%02d %02d:%02d:%02d\r\n"</span>, d.Year, d.Month, d.Date, t.Hours, t.Minutes, t.Seconds);</code></pre></div>
+<p>관련 레슨: L21 · 시뮬레이터 미지원: 알람(<code>HAL_RTC_SetAlarm_IT</code>), 백업 레지스터(<code>HAL_RTCEx_BKUPRead</code> / <code>Write</code>), 탬퍼 · 타임스탬프</p>
+<h2 id="pwr-저전력">PWR (저전력)<a class="anchor" href="#pwr-저전력">#</a></h2>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-t">void</span> <span class="tk-h">HAL_PWR_EnterSLEEPMode</span>(<span class="tk-t">uint32_t</span> Regulator, <span class="tk-t">uint8_t</span> SLEEPEntry);   <span class="tk-c">/* PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI */</span>
+<span class="tk-t">void</span> <span class="tk-h">HAL_PWR_EnterSTOPMode</span>(<span class="tk-t">uint32_t</span> Regulator, <span class="tk-t">uint8_t</span> STOPEntry);     <span class="tk-c">/* PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI */</span>
+<span class="tk-t">void</span> <span class="tk-h">HAL_PWR_EnterSTANDBYMode</span>(<span class="tk-t">void</span>);                                     <span class="tk-c">/* 돌아오지 않음 — 깨어나면 리셋 */</span>
+<span class="tk-t">void</span> <span class="tk-h">HAL_PWR_EnableWakeUpPin</span>(<span class="tk-t">uint32_t</span> WakeUpPinx);                       <span class="tk-c">/* PWR_WAKEUP_PIN1 = PA0 (F411) */</span>
+<span class="tk-t">void</span> <span class="tk-h">HAL_SuspendTick</span>(<span class="tk-t">void</span>);   <span class="tk-t">void</span> <span class="tk-h">HAL_ResumeTick</span>(<span class="tk-t">void</span>);                 <span class="tk-c">/* SysTick 인터럽트 멈춤 / 재개 */</span>
+<span class="tk-h">__HAL_PWR_GET_FLAG</span>(<span class="tk-m">PWR_FLAG_SB</span>);  <span class="tk-h">__HAL_PWR_CLEAR_FLAG</span>(<span class="tk-m">PWR_FLAG_WU</span>);</code></pre></div>
+<div class="table-wrap api"><table><thead><tr><th>모드</th><th>깨우는 원인</th><th>깨어난 뒤</th></tr></thead><tbody><tr><td>SLEEP</td><td>아무 인터럽트 (SysTick 포함 → <code>HAL_SuspendTick()</code> 먼저)</td><td>다음 줄부터</td></tr><tr><td>STOP</td><td>EXTI 라인: GPIO EXTI, RTC 웨이크업 · 알람</td><td>다음 줄부터, 클럭 = HSI → **<code>SystemClock_Config()</code> 다시 호출**</td></tr><tr><td>STANDBY</td><td>WKUP 핀, RTC 알람 · 웨이크업, NRST, IWDG</td><td>리셋 → <code>main()</code> 처음, <code>PWR_FLAG_SB</code> = 1</td></tr></tbody></table></div>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-h">HAL_SuspendTick</span>();
+<span class="tk-h">HAL_PWR_EnterSTOPMode</span>(<span class="tk-m">PWR_LOWPOWERREGULATOR_ON</span>, <span class="tk-m">PWR_STOPENTRY_WFI</span>);
+<span class="tk-f">SystemClock_Config</span>();          <span class="tk-c">/* PLL 다시 켜기 */</span>
+<span class="tk-h">HAL_ResumeTick</span>();</code></pre></div>
+<p>관련 레슨: L21 · 대표 소비 전류는 데이터시트의 Supply current 표를 확인하세요. 시뮬레이터의 전류 추정은 대략적인 값입니다.</p>
+<h2 id="cmsis-rtos2-freertos">CMSIS-RTOS2 (FreeRTOS)<a class="anchor" href="#cmsis-rtos2-freertos">#</a></h2>
+<p>CubeMX 의 FREERTOS(Interface <strong>CMSIS_V2</strong>)를 켜면 <code>#include &quot;cmsis_os.h&quot;</code> 와 태스크 핸들 · 속성, <code>osKernelInitialize</code> → <code>osThreadNew</code> → <code>osKernelStart</code> 가 생성됩니다. 함수 대부분은 <code>osStatus_t</code> 를 돌려줍니다: <code>osOK</code>(0), <code>osErrorTimeout</code>(−2), <code>osErrorResource</code>(−3), <code>osErrorParameter</code>(−4), <code>osErrorISR</code>(−6). <code>timeout</code> 은 틱(1 ms) 단위, <code>osWaitForever</code> = 무한 대기, <strong>ISR 에서는 0</strong>.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* 커널 · 태스크 */</span>
+osStatus_t   <span class="tk-f">osKernelInitialize</span>(<span class="tk-t">void</span>);
+osStatus_t   <span class="tk-f">osKernelStart</span>(<span class="tk-t">void</span>);                                   <span class="tk-c">/* 돌아오지 않음 */</span>
+<span class="tk-t">uint32_t</span>     <span class="tk-f">osKernelGetTickCount</span>(<span class="tk-t">void</span>);
+osThreadId_t <span class="tk-f">osThreadNew</span>(osThreadFunc_t func, <span class="tk-t">void</span> *argument, <span class="tk-k">const</span> osThreadAttr_t *attr);
+osThreadId_t <span class="tk-f">osThreadGetId</span>(<span class="tk-t">void</span>);          <span class="tk-k">const</span> <span class="tk-t">char</span> *<span class="tk-f">osThreadGetName</span>(osThreadId_t id);
+osStatus_t   <span class="tk-f">osThreadYield</span>(<span class="tk-t">void</span>);          osStatus_t <span class="tk-f">osThreadSuspend</span>(osThreadId_t id);
+osStatus_t   <span class="tk-f">osThreadResume</span>(osThreadId_t id);   osStatus_t <span class="tk-f">osThreadTerminate</span>(osThreadId_t id);   <span class="tk-t">void</span> <span class="tk-f">osThreadExit</span>(<span class="tk-t">void</span>);
+osStatus_t   <span class="tk-f">osDelay</span>(<span class="tk-t">uint32_t</span> ticks);      osStatus_t <span class="tk-f">osDelayUntil</span>(<span class="tk-t">uint32_t</span> ticks);
+
+<span class="tk-c">/* 동기화 · 통신 */</span>
+osMutexId_t        <span class="tk-f">osMutexNew</span>(<span class="tk-k">const</span> osMutexAttr_t *attr);
+osStatus_t         <span class="tk-f">osMutexAcquire</span>(osMutexId_t id, <span class="tk-t">uint32_t</span> timeout);   osStatus_t <span class="tk-f">osMutexRelease</span>(osMutexId_t id);
+osSemaphoreId_t    <span class="tk-f">osSemaphoreNew</span>(<span class="tk-t">uint32_t</span> max_count, <span class="tk-t">uint32_t</span> initial_count, <span class="tk-k">const</span> osSemaphoreAttr_t *attr);
+osStatus_t         <span class="tk-f">osSemaphoreAcquire</span>(osSemaphoreId_t id, <span class="tk-t">uint32_t</span> timeout);   osStatus_t <span class="tk-f">osSemaphoreRelease</span>(osSemaphoreId_t id);
+<span class="tk-t">uint32_t</span>           <span class="tk-f">osSemaphoreGetCount</span>(osSemaphoreId_t id);
+osMessageQueueId_t <span class="tk-f">osMessageQueueNew</span>(<span class="tk-t">uint32_t</span> msg_count, <span class="tk-t">uint32_t</span> msg_size, <span class="tk-k">const</span> osMessageQueueAttr_t *attr);
+osStatus_t         <span class="tk-f">osMessageQueuePut</span>(osMessageQueueId_t id, <span class="tk-k">const</span> <span class="tk-t">void</span> *msg_ptr, <span class="tk-t">uint8_t</span> msg_prio, <span class="tk-t">uint32_t</span> timeout);
+osStatus_t         <span class="tk-f">osMessageQueueGet</span>(osMessageQueueId_t id, <span class="tk-t">void</span> *msg_ptr, <span class="tk-t">uint8_t</span> *msg_prio, <span class="tk-t">uint32_t</span> timeout);
+<span class="tk-t">uint32_t</span>           <span class="tk-f">osMessageQueueGetCount</span>(osMessageQueueId_t id);
+<span class="tk-t">uint32_t</span> <span class="tk-f">osThreadFlagsSet</span>(osThreadId_t id, <span class="tk-t">uint32_t</span> flags);   <span class="tk-t">uint32_t</span> <span class="tk-f">osThreadFlagsWait</span>(<span class="tk-t">uint32_t</span> flags, <span class="tk-t">uint32_t</span> options, <span class="tk-t">uint32_t</span> timeout);
+<span class="tk-t">uint32_t</span> <span class="tk-f">osThreadFlagsClear</span>(<span class="tk-t">uint32_t</span> flags);
+osEventFlagsId_t <span class="tk-f">osEventFlagsNew</span>(<span class="tk-k">const</span> osEventFlagsAttr_t *attr);
+<span class="tk-t">uint32_t</span> <span class="tk-f">osEventFlagsSet</span>(osEventFlagsId_t id, <span class="tk-t">uint32_t</span> flags);   <span class="tk-t">uint32_t</span> <span class="tk-f">osEventFlagsClear</span>(osEventFlagsId_t id, <span class="tk-t">uint32_t</span> flags);
+<span class="tk-t">uint32_t</span> <span class="tk-f">osEventFlagsWait</span>(osEventFlagsId_t id, <span class="tk-t">uint32_t</span> flags, <span class="tk-t">uint32_t</span> options, <span class="tk-t">uint32_t</span> timeout);
+osTimerId_t <span class="tk-f">osTimerNew</span>(osTimerFunc_t func, osTimerType_t type, <span class="tk-t">void</span> *argument, <span class="tk-k">const</span> osTimerAttr_t *attr);
+osStatus_t  <span class="tk-f">osTimerStart</span>(osTimerId_t id, <span class="tk-t">uint32_t</span> ticks);   osStatus_t <span class="tk-f">osTimerStop</span>(osTimerId_t id);</code></pre></div>
+<div class="table-wrap api"><table><thead><tr><th>도구</th><th>ISR 에서</th><th>메모</th></tr></thead><tbody><tr><td><code>osDelay</code> / <code>osDelayUntil</code></td><td>불가</td><td>태스크를 Blocked 로. 태스크 안에서는 <code>HAL_Delay</code> 대신 사용</td></tr><tr><td><code>osMessageQueuePut</code> / <code>Get</code></td><td>Put · Get 가능 (timeout 0)</td><td>값을 복사. 큐가 차면 ISR 은 <code>osErrorResource</code></td></tr><tr><td><code>osMutexAcquire</code> / <code>Release</code></td><td><strong>불가</strong></td><td>소유자 있음, 우선순위 상속. 공유 자원 보호</td></tr><tr><td><code>osSemaphoreAcquire</code> / <code>Release</code></td><td>Release 가능 (Acquire 는 timeout 0)</td><td>이진(최대 1) · 카운팅</td></tr><tr><td><code>osThreadFlagsSet</code> / <code>Wait</code></td><td>Set 가능</td><td>특정 태스크 깨우기. <code>Wait</code> 옵션 <code>osFlagsWaitAny</code> / <code>osFlagsWaitAll</code> / <code>osFlagsNoClear</code></td></tr><tr><td><code>osEventFlagsSet</code> / <code>Wait</code></td><td>Set 가능</td><td>여러 태스크가 보는 비트 모음</td></tr><tr><td><code>osTimerNew(fn, osTimerOnce / osTimerPeriodic, arg, NULL)</code></td><td>—</td><td>콜백은 타이머 서비스 태스크에서 실행 — 짧게, 대기 금지</td></tr></tbody></table></div>
+<p>우선순위: <code>osPriorityIdle</code>(1) · <code>Low</code>(8) · <code>BelowNormal</code>(16) · **<code>Normal</code>(24)** · <code>AboveNormal</code>(32) · <code>High</code>(40) · <code>Realtime</code>(48). RTOS 함수를 부르는 인터럽트는 NVIC 우선순위를 <strong>5 이상(숫자)</strong> 으로 둡니다(CubeMX 기본 <code>LIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY</code> = 5).</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* ISR → 태스크: 세마포어 */</span>
+<span class="tk-t">void</span> <span class="tk-h">HAL_GPIO_EXTI_Callback</span>(<span class="tk-t">uint16_t</span> GPIO_Pin) { <span class="tk-k">if</span> (GPIO_Pin == B1_Pin) <span class="tk-f">osSemaphoreRelease</span>(buttonSemHandle); }
+
+<span class="tk-t">void</span> <span class="tk-f">StartButtonTask</span>(<span class="tk-t">void</span> *argument)
+{
+  <span class="tk-k">for</span> (;;) {
+    <span class="tk-f">osSemaphoreAcquire</span>(buttonSemHandle, osWaitForever);
+    <span class="tk-f">osMutexAcquire</span>(uartMutexHandle, osWaitForever);
+    <span class="tk-f">printf</span>(<span class="tk-s">"B1\r\n"</span>);
+    <span class="tk-f">osMutexRelease</span>(uartMutexHandle);
+  }
+}</code></pre></div>
+<p>관련 레슨: L22, L23 · 시뮬레이터: 태스크 함수 이름을 값으로 넘기는 것은 되지만 함수 포인터 변수는 미지원. HAL 타임베이스(TIM6) 코드는 생략. 미지원: <code>osThreadGetStackSpace</code>, 메모리 풀, 스택 넘침 검사 훅.</p>
 <h2 id="레지스터-직접-접근">레지스터 직접 접근<a class="anchor" href="#레지스터-직접-접근">#</a></h2>
 <p>HAL 함수 대신 레지스터에 직접 쓰면 빠르고 코드가 짧습니다. 시뮬레이터가 지원하는 레지스터입니다.</p>
 <div class="table-wrap regmap"><table><thead><tr><th>레지스터</th><th>읽기/쓰기</th><th>설명</th><th>HAL 대응</th></tr></thead><tbody><tr><td><code>GPIOx-&gt;ODR</code></td><td>R/W</td><td>출력 데이터 (비트 0~15)</td><td><code>WritePin</code> / <code>TogglePin</code></td></tr><tr><td><code>GPIOx-&gt;IDR</code></td><td>R</td><td>입력 데이터</td><td><code>ReadPin</code></td></tr><tr><td><code>GPIOx-&gt;BSRR</code></td><td>W</td><td>하위 16비트: 1 쓴 핀 SET, 상위 16비트: 1 쓴 핀 RESET (같은 핀이면 SET 우선)</td><td><code>WritePin</code> 내부 동작</td></tr><tr><td><code>GPIOx-&gt;BRR</code></td><td>W</td><td>1 쓴 핀 RESET (F1 등)</td><td>—</td></tr><tr><td><code>TIMx-&gt;CCR1</code> ~ <code>CCR4</code></td><td>R/W</td><td>채널 비교값(PWM 듀티)</td><td><code>__HAL_TIM_SET_COMPARE</code></td></tr><tr><td><code>TIMx-&gt;ARR</code></td><td>R/W</td><td>자동 재장전(주기)</td><td><code>__HAL_TIM_SET_AUTORELOAD</code></td></tr><tr><td><code>TIMx-&gt;PSC</code></td><td>R/W</td><td>분주비</td><td><code>__HAL_TIM_SET_PRESCALER</code></td></tr><tr><td><code>TIMx-&gt;CNT</code></td><td>R/W</td><td>카운터</td><td><code>__HAL_TIM_GET_COUNTER</code></td></tr></tbody></table></div>
@@ -245,19 +392,19 @@ init.Speed = <span class="tk-m">GPIO_SPEED_FREQ_LOW</span>;
 <p><code>GPIOx-&gt;ODR ^= ...</code> 는 읽기-수정-쓰기라서 인터럽트와 같은 포트를 함께 바꾸면 경쟁이 생길 수 있습니다. 여러 핀을 동시에 바꿀 때는 BSRR 한 번 쓰기가 안전합니다(L12).</p>
 <h2 id="libc-와-상수">libc 와 상수<a class="anchor" href="#libc-와-상수">#</a></h2>
 <p><strong>지원 libc 함수</strong>: <code>printf</code> <code>sprintf</code> <code>snprintf</code> <code>puts</code> <code>putchar</code> <code>fflush</code> <code>strlen</code> <code>strcpy</code> <code>strncpy</code> <code>strcat</code> <code>strcmp</code> <code>strncmp</code> <code>memset</code> <code>memcpy</code> <code>atoi</code> <code>atof</code> <code>abs</code> <code>fabs</code> <code>sqrt</code> <code>pow</code> <code>sin</code> <code>cos</code> <code>tan</code> <code>atan2</code> <code>floor</code> <code>ceil</code> <code>round</code> <code>rand</code> <code>srand</code> <code>isdigit</code> <code>isalpha</code> <code>toupper</code> <code>tolower</code></p>
-<p><strong>지원 상수</strong>: <code>HAL_OK</code> <code>HAL_ERROR</code> <code>HAL_BUSY</code> <code>HAL_TIMEOUT</code> <code>HAL_MAX_DELAY</code> <code>GPIO_PIN_0</code>~<code>GPIO_PIN_15</code> <code>GPIO_PIN_SET</code> <code>GPIO_PIN_RESET</code> <code>TIM_CHANNEL_1</code>~<code>4</code> <code>ADC_CHANNEL_0</code>~<code>17</code> <code>I2C_MEMADD_SIZE_8BIT</code> <code>NULL</code> <code>true</code> <code>false</code></p>
+<p><strong>지원 상수</strong>: <code>HAL_OK</code> <code>HAL_ERROR</code> <code>HAL_BUSY</code> <code>HAL_TIMEOUT</code> <code>HAL_MAX_DELAY</code> <code>GPIO_PIN_0</code>~<code>GPIO_PIN_15</code> <code>GPIO_PIN_SET</code> <code>GPIO_PIN_RESET</code> <code>TIM_CHANNEL_1</code>~<code>4</code> <code>ADC_CHANNEL_0</code>~<code>17</code> <code>I2C_MEMADD_SIZE_8BIT</code> <code>NULL</code> <code>true</code> <code>false</code> <code>TIM_INPUTCHANNELPOLARITY_*</code> <code>HAL_TIM_ACTIVE_CHANNEL_1</code>~<code>4</code> <code>IWDG_PRESCALER_4</code>~<code>256</code> <code>RCC_FLAG_*</code> <code>RTC_FORMAT_BIN</code> <code>RTC_FORMAT_BCD</code> <code>RTC_WAKEUPCLOCK_*</code> <code>RTC_MONTH_*</code> <code>RTC_WEEKDAY_*</code> <code>PWR_*</code> <code>osOK</code> <code>osError*</code> <code>osWaitForever</code> <code>osPriority*</code> <code>osFlagsWaitAny</code> <code>osFlagsWaitAll</code> <code>osFlagsNoClear</code> <code>osTimerOnce</code> <code>osTimerPeriodic</code></p>
 <p><strong>C 문법 범위</strong>: 정수·실수형(<code>uint8_t</code>~<code>uint32_t</code>, <code>int8_t</code>~<code>int32_t</code>, <code>float</code>, <code>double</code>, <code>bool</code>), 1·2차원 배열, 문자열, 포인터(<code>*p++</code>, <code>p[i]</code>, <code>&amp;변수</code>), <code>struct</code> / <code>typedef struct</code>, <code>enum</code>, <code>#define</code>(상수·함수형 매크로), <code>static</code> 지역 변수, <code>const</code> <code>volatile</code>, 모든 제어문, 삼항·비트 연산·캐스트·<code>sizeof</code>. <strong>미지원</strong>: 함수 포인터, <code>union</code>, <code>goto</code>, 비트필드, 포인터의 포인터, 가변 길이 배열, 64비트 정수의 정확한 오버플로.</p>
 <h2 id="시뮬레이터-미지원-api-모음">시뮬레이터 미지원 API 모음<a class="anchor" href="#시뮬레이터-미지원-api-모음">#</a></h2>
 <p>아래는 실물 HAL 에서 자주 쓰지만 시뮬레이터에서는 지원하지 않는 API 입니다. 실물 보드(L16)에서는 그대로 쓸 수 있습니다.</p>
-<div class="table-wrap api"><table><thead><tr><th>모듈</th><th>API (시뮬레이터 미지원)</th><th>대신 쓸 수 있는 방법</th></tr></thead><tbody><tr><td>코어</td><td><code>HAL_SuspendTick</code>, <code>HAL_PWR_EnterSLEEPMode</code>, <code>HAL_IWDG_Refresh</code></td><td>—</td></tr><tr><td>GPIO</td><td><code>HAL_GPIO_LockPin</code>, <code>HAL_GPIO_DeInit</code></td><td>—</td></tr><tr><td>UART</td><td><code>HAL_UART_Transmit_DMA</code>, <code>HAL_UART_Receive_DMA</code>, <code>HAL_UARTEx_ReceiveToIdle_IT</code>, <code>HAL_UART_ErrorCallback</code></td><td><code>Receive_IT</code> 1바이트 반복 + 버퍼</td></tr><tr><td>TIM</td><td><code>HAL_TIM_IC_Start_IT</code>, <code>HAL_TIM_Encoder_Start</code>, <code>HAL_TIM_OC_Start</code>, <code>__HAL_TIM_CLEAR_FLAG</code></td><td><code>__HAL_TIM_GET_COUNTER</code> 로 시간 측정</td></tr><tr><td>ADC</td><td><code>HAL_ADCEx_Calibration_Start</code>, 주입 채널</td><td>일반 채널 + 평균</td></tr><tr><td>I2C</td><td><code>HAL_I2C_Master_Transmit_IT</code> / <code>_DMA</code></td><td>블로킹 함수</td></tr><tr><td>SPI</td><td><code>HAL_SPI_Transmit_IT</code> / <code>_DMA</code></td><td>블로킹 함수</td></tr><tr><td>LL</td><td><code>LL_GPIO_TogglePin</code> 등 LL 드라이버 전체</td><td>HAL 또는 레지스터 직접 접근</td></tr><tr><td>기타</td><td>DAC, RTC, CAN, USB, FreeRTOS</td><td>—</td></tr></tbody></table></div>
+<div class="table-wrap api"><table><thead><tr><th>모듈</th><th>API (시뮬레이터 미지원)</th><th>대신 쓸 수 있는 방법</th></tr></thead><tbody><tr><td>코어 · 전원</td><td><code>HAL_WWDG_Init</code> / <code>Refresh</code>, <code>__HAL_DBGMCU_FREEZE_IWDG</code>, <code>HAL_PWREx_EnableFlashPowerDown</code></td><td>IWDG</td></tr><tr><td>GPIO</td><td><code>HAL_GPIO_LockPin</code>, <code>HAL_GPIO_DeInit</code></td><td>—</td></tr><tr><td>UART</td><td><code>HAL_UART_ErrorCallback</code>, <code>__HAL_DMA_DISABLE_IT</code>, CubeMX 의 UART DMA 설정</td><td><code>HAL_UARTEx_ReceiveToIdle_IT</code></td></tr><tr><td>TIM</td><td><code>HAL_TIM_Encoder_Start</code>, <code>HAL_TIM_OC_Start</code>, PWM 입력 모드, <code>__HAL_TIM_CLEAR_FLAG</code></td><td>입력 캡처, <code>__HAL_TIM_GET_COUNTER</code></td></tr><tr><td>ADC</td><td><code>HAL_ADCEx_Calibration_Start</code>, 주입 채널</td><td>일반 채널 + 평균</td></tr><tr><td>I2C</td><td><code>HAL_I2C_Master_Transmit_IT</code> / <code>_DMA</code></td><td>블로킹 함수</td></tr><tr><td>SPI</td><td><code>HAL_SPI_Transmit_IT</code> / <code>_DMA</code></td><td>블로킹 함수</td></tr><tr><td>LL</td><td><code>LL_GPIO_TogglePin</code> 등 LL 드라이버 전체</td><td>HAL 또는 레지스터 직접 접근</td></tr><tr><td>RTC</td><td><code>HAL_RTC_SetAlarm_IT</code>, <code>HAL_RTCEx_BKUPRead</code> / <code>Write</code>, <code>HAL_RTC_WaitForSynchro</code></td><td>웨이크업 타이머</td></tr><tr><td>RTOS</td><td><code>osThreadGetStackSpace</code>, 메모리 풀, FreeRTOS 네이티브 API(<code>xQueueSend</code> 등)</td><td>CMSIS-RTOS2 함수</td></tr><tr><td>기타</td><td>DAC, CAN, USB</td><td>—</td></tr></tbody></table></div>
 <h2 id="참고자료">참고자료<a class="anchor" href="#참고자료">#</a></h2>
-<ul><li>ST, <em>UM1725 — Description of STM32F4 HAL and low-layer drivers</em></li><li>ST, <em>UM1850 — Description of STM32F1 HAL and low-layer drivers</em></li><li>ST, <em>RM0383 — STM32F411xC/E Reference Manual</em></li><li>시뮬레이터 프로젝트 탐색기의 <code>Drivers/STM32F4xx_HAL_Driver/Inc/*.h</code> (지원 함수 원형과 한국어 주석)</li></ul>
+<ul><li>ST, <em>UM1725 — Description of STM32F4 HAL and low-layer drivers</em></li><li>ST, <em>UM1850 — Description of STM32F1 HAL and low-layer drivers</em></li><li>ST, <em>RM0383 — STM32F411xC/E Reference Manual</em></li><li>ARM, <em>CMSIS-RTOS2 API documentation</em> (<code>os…</code> 함수의 원형과 ISR 사용 가능 여부)</li><li>FreeRTOS, <em>Mastering the FreeRTOS Real Time Kernel</em></li><li>시뮬레이터 프로젝트 탐색기의 <code>Drivers/STM32F4xx_HAL_Driver/Inc/*.h</code> (지원 함수 원형과 한국어 주석)</li></ul>
     </div>
-    <aside class="lesson-toc"><div class="toc-title">모듈</div><div class="toc-links"><a class="toc-l2" href="#이-페이지-사용법">이 페이지 사용법</a><a class="toc-l2" href="#코어">코어</a><a class="toc-l2" href="#gpio">GPIO</a><a class="toc-l2" href="#exti-외부-인터럽트">EXTI (외부 인터럽트)</a><a class="toc-l2" href="#uart">UART</a><a class="toc-l3" href="#printf-리타깃">printf 리타깃</a><a class="toc-l2" href="#tim-pwm">TIM · PWM</a><a class="toc-l2" href="#adc">ADC</a><a class="toc-l2" href="#i2c">I2C</a><a class="toc-l2" href="#spi">SPI</a><a class="toc-l2" href="#레지스터-직접-접근">레지스터 직접 접근</a><a class="toc-l2" href="#libc-와-상수">libc 와 상수</a><a class="toc-l2" href="#시뮬레이터-미지원-api-모음">시뮬레이터 미지원 API 모음</a><a class="toc-l2" href="#참고자료">참고자료</a></div></aside>
+    <aside class="lesson-toc"><div class="toc-title">모듈</div><div class="toc-links"><a class="toc-l2" href="#이-페이지-사용법">이 페이지 사용법</a><a class="toc-l2" href="#코어">코어</a><a class="toc-l2" href="#gpio">GPIO</a><a class="toc-l2" href="#exti-외부-인터럽트">EXTI (외부 인터럽트)</a><a class="toc-l2" href="#uart">UART</a><a class="toc-l3" href="#printf-리타깃">printf 리타깃</a><a class="toc-l2" href="#tim-pwm">TIM · PWM</a><a class="toc-l2" href="#adc">ADC</a><a class="toc-l2" href="#i2c">I2C</a><a class="toc-l2" href="#spi">SPI</a><a class="toc-l2" href="#uart-dma-idle">UART DMA · IDLE</a><a class="toc-l2" href="#tim-입력-캡처">TIM 입력 캡처</a><a class="toc-l2" href="#iwdg-워치독">IWDG (워치독)</a><a class="toc-l2" href="#rtc">RTC</a><a class="toc-l2" href="#pwr-저전력">PWR (저전력)</a><a class="toc-l2" href="#cmsis-rtos2-freertos">CMSIS-RTOS2 (FreeRTOS)</a><a class="toc-l2" href="#레지스터-직접-접근">레지스터 직접 접근</a><a class="toc-l2" href="#libc-와-상수">libc 와 상수</a><a class="toc-l2" href="#시뮬레이터-미지원-api-모음">시뮬레이터 미지원 API 모음</a><a class="toc-l2" href="#참고자료">참고자료</a></div></aside>
   </div>
 </article>
 
 </main>
-<script src="../assets/js/site.js?v=20260928b"></script>
+<script src="../assets/js/site.js?v=20260928d"></script>
 </body>
 </html>

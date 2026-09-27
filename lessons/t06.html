@@ -6,12 +6,12 @@
 <title>T06. 인터럽트·예외와 NVIC · studySTM32</title>
 <meta name="description" content="벡터 테이블과 IRQHandler 이름 규칙, NVIC 우선순위(프리엠션·서브·그룹), 테일체이닝, EXTI 라인 매핑과 SYSCFG, HAL 인터럽트 흐름, ISR 작성 규칙, SysTick 우선순위 함정, 폴링·인터럽트·DMA 비교를 익힙니다.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
-<link rel="stylesheet" href="../assets/css/main.css?v=20260928b">
-<link rel="stylesheet" href="../assets/css/stm32.css?v=20260928b">
-<link rel="stylesheet" href="../assets/css/ml-theme.css?v=20260928b">
+<link rel="stylesheet" href="../assets/css/main.css?v=20260928d">
+<link rel="stylesheet" href="../assets/css/stm32.css?v=20260928d">
+<link rel="stylesheet" href="../assets/css/ml-theme.css?v=20260928d">
 <link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
 <link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
-<script src="../assets/js/theme.js?v=20260928b"></script>
+<script src="../assets/js/theme.js?v=20260928d"></script>
 </head>
 <body class="lesson-page track-page-theory">
 <button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
@@ -66,6 +66,18 @@
 <ul>
 <li><a href="../lessons/l15.html" data-slug="l15"><span class="nav-no">L15</span>미니 프로젝트: 스마트 선풍기</a></li>
 <li><a href="../lessons/l16.html" data-slug="l16"><span class="nav-no">L16</span>실물 보드로 옮기기</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="adv">
+<div class="nav-track-title track-adv"><span class="nav-part-no">PART 5</span>중급 활용</div>
+<ul>
+<li><a href="../lessons/l17.html" data-slug="l17"><span class="nav-no">L17</span>주변기기 모듈 활용</a></li>
+<li><a href="../lessons/l18.html" data-slug="l18"><span class="nav-no">L18</span>DMA — CPU 없이 옮기기</a></li>
+<li><a href="../lessons/l19.html" data-slug="l19"><span class="nav-no">L19</span>입력 캡처 — 펄스 재기</a></li>
+<li><a href="../lessons/l20.html" data-slug="l20"><span class="nav-no">L20</span>워치독과 리셋</a></li>
+<li><a href="../lessons/l21.html" data-slug="l21"><span class="nav-no">L21</span>RTC 와 저전력 모드</a></li>
+<li><a href="../lessons/l22.html" data-slug="l22"><span class="nav-no">L22</span>FreeRTOS 기초</a></li>
+<li><a href="../lessons/l23.html" data-slug="l23"><span class="nav-no">L23</span>FreeRTOS 통신과 동기화</a></li>
 </ul>
 </div>
 </nav>
@@ -213,7 +225,7 @@ g_pfnVectors:
   ...
   .weak      EXTI15_10_IRQHandler
   .thumb_set EXTI15_10_IRQHandler,Default_Handler     /* 정의하지 않으면 Default_Handler (무한 루프) */</code></pre></div>
-<ul><li>모든 핸들러는 <strong>weak</strong> 심볼로 <code>Default_Handler</code>(무한 루프)에 묶여 있습니다. 사용자가 같은 이름의 C 함수를 정의하면 링커가 그것으로 바꿔 줍니다. 그래서 <code>stm32f4xx_it.c</code> 에 <code>void EXTI15_10_IRQHandler(void)</code> 를 쓰기만 하면 벡터 테이블에 들어갑니다.</li><li><strong>이름을 한 글자라도 틀리면</strong> 컴파일 오류 없이 조용히 Default_Handler 가 남아, 인터럽트가 나는 순간 프로그램이 무한 루프에 갇힙니다. "인터럽트 켜면 멈춘다" 의 가장 흔한 원인입니다.</li><li><code>IRQn_Type</code> 열거형(<code>stm32f411xe.h</code>)이 이름과 번호를 잇습니다: <code>EXTI15_10_IRQn = 40</code>, <code>TIM3_IRQn = 29</code>, <code>USART2_IRQn = 38</code>, 시스템 예외는 음수 (<code>SysTick_IRQn = -1</code>, <code>PendSV_IRQn = -2</code>, <code>SVCall_IRQn = -5</code>).</li><li>F411 은 벡터 위치 85 (SPI5) 까지 있고 그중 일부는 예약(비어 있음)입니다. F103 은 위치 59 까지 (RM0008), 이름도 조금 다릅니다 (<code>USB_LP_CAN1_RX0_IRQn</code> 등).</li></ul>
+<ul><li>모든 핸들러는 <strong>weak</strong> 심볼로 <code>Default_Handler</code>(무한 루프)에 묶여 있습니다. 사용자가 같은 이름의 C 함수를 정의하면 링커가 그것으로 바꿔 줍니다. 그래서 <code>stm32f4xx_it.c</code> 에 <code>void EXTI15_10_IRQHandler(void)</code> 를 쓰기만 하면 벡터 테이블에 들어갑니다.</li><li><strong>이름을 한 글자라도 틀리면</strong> 컴파일 오류 없이 조용히 Default_Handler 가 남아, 인터럽트가 나는 순간 프로그램이 무한 루프에 갇힙니다. "인터럽트 켜면 멈춘다" 의 가장 흔한 원인입니다.</li><li><code>IRQn_Type</code> 열거형(<code>stm32f411xe.h</code>)이 이름과 번호를 잇습니다: <code>EXTI15_10_IRQn = 40</code>, <code>TIM3_IRQn = 29</code>, <code>USART2_IRQn = 38</code>, 시스템 예외는 음수 (<code>SysTick_IRQn = -1</code>, <code>PendSV_IRQn = -2</code>, <code>SVCall_IRQn = -5</code>).</li><li>F411 은 벡터 위치 85 (SPI5, 주소 0x194) 까지 있고 그중 여러 칸이 예약(비어 있음)이라, 실제 마스크 가능한 인터럽트는 <strong>52개</strong>입니다 (RM0383 10.1.1 · Table 37). F103 은 제품 밀도에 따라 위치 42 (중밀도, BluePill 의 C8) ~ 59 (고밀도) 까지 (RM0008), 이름도 조금 다릅니다 (<code>USB_LP_CAN1_RX0_IRQn</code> 등).</li></ul>
 <h2 id="nvic-우선순위">NVIC 우선순위<a class="anchor" href="#nvic-우선순위">#</a></h2>
 <p><strong>NVIC(Nested Vectored Interrupt Controller)</strong> 는 코어 안에 있으며, 각 IRQ 의 인에이블 · pending · 우선순위를 관리하고 가장 급한 것을 코어에 넘깁니다.</p>
 <div class="table-wrap"><table><thead><tr><th>레지스터</th><th>역할</th><th>CMSIS 함수</th></tr></thead><tbody><tr><td>ISER / ICER</td><td>인에이블 set / clear (IRQ 당 1비트)</td><td><code>NVIC_EnableIRQ</code> / <code>NVIC_DisableIRQ</code></td></tr><tr><td>ISPR / ICPR</td><td>pending set / clear</td><td><code>NVIC_SetPendingIRQ</code> / <code>NVIC_ClearPendingIRQ</code></td></tr><tr><td>IABR</td><td>활성(실행 중) 표시, 읽기 전용</td><td><code>NVIC_GetActive</code></td></tr><tr><td>IPR[n]</td><td>우선순위 (IRQ 당 8비트, ST 는 상위 4비트 사용)</td><td><code>NVIC_SetPriority</code></td></tr><tr><td>SCB-&gt;SHP</td><td>시스템 예외(SysTick 등) 우선순위</td><td><code>NVIC_SetPriority</code> (음수 IRQn)</td></tr><tr><td>SCB-&gt;AIRCR.PRIGROUP</td><td>프리엠션/서브 비트 나누기</td><td><code>NVIC_SetPriorityGrouping</code></td></tr></tbody></table></div>
@@ -236,6 +248,7 @@ g_pfnVectors:
 <h2 id="exti-핀-인터럽트">EXTI: 핀 → 인터럽트<a class="anchor" href="#exti-핀-인터럽트">#</a></h2>
 <p>GPIO 핀은 NVIC 에 직접 연결되지 않고 <strong>EXTI(External Interrupt/event controller)</strong> 를 거칩니다.</p>
 <div class="table-wrap regmap"><table><thead><tr><th>EXTI 라인</th><th>연결</th><th>IRQ (F411)</th></tr></thead><tbody><tr><td>0 ~ 15</td><td>GPIO 핀 번호 (PA0 · PB0 · … 중 SYSCFG_EXTICR 로 하나 선택)</td><td>EXTI0 ~ EXTI4 는 각각, <strong>5~9 는 EXTI9_5 (IRQ 23) 로 공유, 10~15 는 EXTI15_10 (IRQ 40) 로 공유</strong></td></tr><tr><td>16</td><td>PVD (전압 감시)</td><td>PVD_IRQn</td></tr><tr><td>17</td><td>RTC 알람</td><td>RTC_Alarm_IRQn</td></tr><tr><td>18</td><td>USB OTG FS 웨이크업</td><td>OTG_FS_WKUP_IRQn</td></tr><tr><td>21</td><td>RTC 탬퍼 · 타임스탬프</td><td>TAMP_STAMP_IRQn</td></tr><tr><td>22</td><td>RTC 웨이크업</td><td>RTC_WKUP_IRQn</td></tr></tbody></table></div>
+<p>라인 19 · 20 은 F411 에서 쓰이지 않습니다 (F407 등에서는 Ethernet · USB HS 웨이크업). 표는 RM0383 10.2.5 "External interrupt/event line mapping" 기준입니다.</p>
 <p>핵심 규칙 두 가지입니다.</p>
 <ol><li><strong>핀 번호 = EXTI 라인 번호.</strong> PC13 은 라인 13, PA0 은 라인 0 입니다.</li><li><strong>같은 번호의 핀은 한 번에 하나만.</strong> PA5 와 PB5 는 둘 다 라인 5 이므로 동시에 EXTI 로 쓸 수 없습니다. 어느 포트를 라인에 붙일지 <code>SYSCFG-&gt;EXTICR[n]</code> (4비트 필드, 0 = PA, 1 = PB, 2 = PC …) 이 정합니다. F1 은 <code>AFIO-&gt;EXTICR</code> 입니다.</li></ol>
 <div class="code-block"><div class="code-head"><span class="code-lang">c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* HAL_GPIO_Init 이 PC13 을 GPIO_MODE_IT_FALLING 으로 설정할 때 하는 일 (요약) */</span>
@@ -320,6 +333,6 @@ g_pfnVectors:
 </article>
 
 </main>
-<script src="../assets/js/site.js?v=20260928b"></script>
+<script src="../assets/js/site.js?v=20260928d"></script>
 </body>
 </html>

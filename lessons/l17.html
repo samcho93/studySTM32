@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L17. 주변기기 모듈 활용 · studySTM32</title>
+<meta name="description" content="SSD1306 OLED 의 명령과 페이지 주소, HC-SR04 초음파, 4x4 키패드 스캔, 4자리 FND 멀티플렉싱, DHT11 단일 선 타이밍, 릴레이 안전, 로터리 엔코더 직교 신호, 조이스틱을 HAL 로 구동합니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
+<link rel="stylesheet" href="../assets/css/main.css?v=20260928d">
+<link rel="stylesheet" href="../assets/css/stm32.css?v=20260928d">
+<link rel="stylesheet" href="../assets/css/ml-theme.css?v=20260928d">
+<link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
+<script src="../assets/js/theme.js?v=20260928d"></script>
+</head>
+<body class="lesson-page track-page-adv">
+<button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
+<aside class="sidebar" id="sidebar">
+<nav class="sidebar-nav">
+<div class="brand-row"><a class="brand" href="../index.html"><span class="brand-mark">32</span><span class="brand-text">studySTM32<small>STM32 HAL 인터랙티브 강좌</small></span></a></div>
+<div class="side-tools"><a class="side-tool" href="../sim/index.html">시뮬레이터</a><a class="side-tool" href="../lessons/hal-reference.html">HAL 레퍼런스</a></div>
+<div class="nav-track" data-track="theory">
+<div class="nav-track-title track-theory"><span class="nav-part-no">PART 0</span>STM32 이해하기</div>
+<ul>
+<li><a href="../lessons/t01.html" data-slug="t01"><span class="nav-no">T01</span>STM32 제품군 총람</a></li>
+<li><a href="../lessons/t02.html" data-slug="t02"><span class="nav-no">T02</span>Cortex-M 코어 구조</a></li>
+<li><a href="../lessons/t03.html" data-slug="t03"><span class="nav-no">T03</span>메모리 맵과 버스</a></li>
+<li><a href="../lessons/t04.html" data-slug="t04"><span class="nav-no">T04</span>클럭과 리셋 시스템</a></li>
+<li><a href="../lessons/t05.html" data-slug="t05"><span class="nav-no">T05</span>GPIO 내부 구조와 전기 특성</a></li>
+<li><a href="../lessons/t06.html" data-slug="t06"><span class="nav-no">T06</span>인터럽트·예외와 NVIC</a></li>
+<li><a href="../lessons/t07.html" data-slug="t07"><span class="nav-no">T07</span>타이머 구조</a></li>
+<li><a href="../lessons/t08.html" data-slug="t08"><span class="nav-no">T08</span>통신 인터페이스 원리</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="basics">
+<div class="nav-track-title track-basics"><span class="nav-part-no">PART 1</span>시작하기</div>
+<ul>
+<li><a href="../lessons/l01.html" data-slug="l01"><span class="nav-no">L01</span>STM32 시리즈와 개발 환경</a></li>
+<li><a href="../lessons/l02.html" data-slug="l02"><span class="nav-no">L02</span>시뮬레이터 둘러보기와 첫 프로젝트</a></li>
+<li><a href="../lessons/l03.html" data-slug="l03"><span class="nav-no">L03</span>GPIO 출력 — LED</a></li>
+<li><a href="../lessons/l04.html" data-slug="l04"><span class="nav-no">L04</span>GPIO 입력 — 스위치</a></li>
+<li><a href="../lessons/l05.html" data-slug="l05"><span class="nav-no">L05</span>외부 인터럽트 EXTI</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="comm">
+<div class="nav-track-title track-comm"><span class="nav-part-no">PART 2</span>통신·타이머·아날로그</div>
+<ul>
+<li><a href="../lessons/l06.html" data-slug="l06"><span class="nav-no">L06</span>UART와 printf</a></li>
+<li><a href="../lessons/l07.html" data-slug="l07"><span class="nav-no">L07</span>타이머 인터럽트</a></li>
+<li><a href="../lessons/l08.html" data-slug="l08"><span class="nav-no">L08</span>PWM — LED 밝기와 서보</a></li>
+<li><a href="../lessons/l09.html" data-slug="l09"><span class="nav-no">L09</span>ADC — 가변저항·조도센서</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="periph">
+<div class="nav-track-title track-periph"><span class="nav-part-no">PART 3</span>주변기기</div>
+<ul>
+<li><a href="../lessons/l10.html" data-slug="l10"><span class="nav-no">L10</span>I2C와 LCD1602</a></li>
+<li><a href="../lessons/l11.html" data-slug="l11"><span class="nav-no">L11</span>SPI 기초</a></li>
+<li><a href="../lessons/l12.html" data-slug="l12"><span class="nav-no">L12</span>7세그먼트 FND</a></li>
+<li><a href="../lessons/l13.html" data-slug="l13"><span class="nav-no">L13</span>DC 모터 드라이버</a></li>
+<li><a href="../lessons/l14.html" data-slug="l14"><span class="nav-no">L14</span>스텝모터</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="project">
+<div class="nav-track-title track-project"><span class="nav-part-no">PART 4</span>프로젝트</div>
+<ul>
+<li><a href="../lessons/l15.html" data-slug="l15"><span class="nav-no">L15</span>미니 프로젝트: 스마트 선풍기</a></li>
+<li><a href="../lessons/l16.html" data-slug="l16"><span class="nav-no">L16</span>실물 보드로 옮기기</a></li>
+</ul>
+</div>
+<div class="nav-track" data-track="adv">
+<div class="nav-track-title track-adv"><span class="nav-part-no">PART 5</span>중급 활용</div>
+<ul>
+<li><a href="../lessons/l17.html" class="active" data-slug="l17"><span class="nav-no">L17</span>주변기기 모듈 활용</a></li>
+<li><a href="../lessons/l18.html" data-slug="l18"><span class="nav-no">L18</span>DMA — CPU 없이 옮기기</a></li>
+<li><a href="../lessons/l19.html" data-slug="l19"><span class="nav-no">L19</span>입력 캡처 — 펄스 재기</a></li>
+<li><a href="../lessons/l20.html" data-slug="l20"><span class="nav-no">L20</span>워치독과 리셋</a></li>
+<li><a href="../lessons/l21.html" data-slug="l21"><span class="nav-no">L21</span>RTC 와 저전력 모드</a></li>
+<li><a href="../lessons/l22.html" data-slug="l22"><span class="nav-no">L22</span>FreeRTOS 기초</a></li>
+<li><a href="../lessons/l23.html" data-slug="l23"><span class="nav-no">L23</span>FreeRTOS 통신과 동기화</a></li>
+</ul>
+</div>
+</nav>
+</aside>
+<div class="sidebar-scrim" id="scrim"></div>
+<main class="main">
+<header class="topbar"><a class="topbar-brand" href="../index.html"><span class="brand-mark">32</span>studySTM32</a><nav class="topnav" aria-label="사이트 메뉴"><a href="../index.html">강의 홈</a><a href="../sim/index.html">시뮬레이터</a><a href="../lessons/hal-reference.html">HAL 레퍼런스</a></nav><button class="theme-icon" type="button" data-theme-toggle data-theme-icon aria-label="테마 전환"></button></header>
+
+<article class="lesson" data-slug="l17" data-track="adv">
+  <div class="lesson-head">
+    <div class="crumbs"><span class="track-pill track-adv">PART 5</span> 중급 활용 &middot; 약 60분 &middot; 중급</div>
+    <h1><span class="lesson-no">L17</span>주변기기 모듈 활용</h1>
+    <p class="lede">SSD1306 OLED 의 명령과 페이지 주소, HC-SR04 초음파, 4x4 키패드 스캔, 4자리 FND 멀티플렉싱, DHT11 단일 선 타이밍, 릴레이 안전, 로터리 엔코더 직교 신호, 조이스틱을 HAL 로 구동합니다.</p>
+    <div class="requires">선수 레슨: <a href="l10.html">L10</a> <a href="l12.html">L12</a></div>
+    <div class="lesson-actions">
+      <label class="done-toggle"><input type="checkbox" id="doneCheck"><span>학습 완료로 표시</span></label>
+      <a class="ghost-btn tool-sim" href="../sim/index.html?ex=l17-oled" data-sim-src="../sim/index.html?ex=l17-oled&amp;embed=1">시뮬레이터에서 실습</a><a class="ghost-btn" href="hal-reference.html">HAL 레퍼런스</a>
+    </div>
+  </div>
+  <div class="lesson-grid">
+    <div class="lesson-body">
+<h2 id="학습-목표">학습 목표<a class="anchor" href="#학습-목표">#</a></h2>
+<ul><li>SSD1306 OLED 의 <strong>제어 바이트(0x00 명령 / 0x40 데이터)</strong>, 페이지 주소 방식, 1024바이트 화면 버퍼를 이해하고 글자를 그립니다.</li><li>HC-SR04 의 TRIG · ECHO 타이밍으로 거리를 계산합니다 (<strong>cm = µs / 58</strong>).</li><li>4x4 키패드 <strong>행 스캔</strong>과 4자리 FND <strong>멀티플렉싱</strong>의 원리와 전류 한계를 설명합니다.</li><li>DHT11 <strong>단일 선 프로토콜</strong>의 µs 단위 타이밍을 타이머로 재서 40비트를 읽습니다.</li><li>릴레이(능동 LOW) · 로터리 엔코더(직교 신호) · 조이스틱(ADC 2채널)을 안전하게 연결합니다.</li></ul>
+<h2 id="모듈-한눈에-보기">모듈 한눈에 보기<a class="anchor" href="#모듈-한눈에-보기">#</a></h2>
+<p>이 레슨의 예제는 모두 NUCLEO-F411RE 기준이며, 실물에서도 같은 핀으로 연결하면 그대로 동작합니다.</p>
+<div class="table-wrap pinmap"><table><thead><tr><th>모듈</th><th>인터페이스</th><th>이 예제의 핀</th><th>전원</th><th>핵심</th></tr></thead><tbody><tr><td>SSD1306 OLED 128x64</td><td>I2C (0x3C)</td><td>PB8 SCL, PB9 SDA</td><td>3.3 V</td><td>제어 바이트, 페이지 8개</td></tr><tr><td>HC-SR04 초음파</td><td>GPIO 출력 + 입력</td><td>PA8 TRIG, PA9 ECHO</td><td><strong>5 V</strong></td><td>ECHO HIGH 폭 = 왕복 시간</td></tr><tr><td>4x4 키패드</td><td>GPIO 8개</td><td>PC0~PC3 행, PC4~PC7 열</td><td>—</td><td>행 하나씩 LOW, 열 풀업</td></tr><tr><td>4자리 FND</td><td>GPIO 12개</td><td>PB0~PB7 세그먼트, PC0~PC3 자리</td><td>3.3 V</td><td>한 번에 한 자리만 켬</td></tr><tr><td>DHT11</td><td>단일 선(양방향)</td><td>PA1</td><td>3.3~5 V</td><td>18 ms 시작, 26/70 µs 비트</td></tr><tr><td>릴레이 모듈</td><td>GPIO 출력</td><td>PA8</td><td>5 V</td><td>대부분 LOW 에서 켜짐</td></tr><tr><td>KY-040 엔코더</td><td>GPIO 입력 3개</td><td>PA8 CLK, PA9 DT, PA10 SW</td><td>3.3 V</td><td>CLK 하강 때 DT 로 방향</td></tr><tr><td>조이스틱</td><td>ADC 2채널 + GPIO</td><td>PA0 VRx, PA1 VRy, PB5 SW</td><td><strong>3.3 V</strong></td><td>가운데 약 2048</td></tr></tbody></table></div>
+<h2 id="ssd1306-oled">SSD1306 OLED<a class="anchor" href="#ssd1306-oled">#</a></h2>
+<p>SSD1306 은 128x64 픽셀 OLED 컨트롤러입니다. 내부 GDDRAM 은 <strong>128 열 × 8 페이지 = 1024 바이트</strong>이고, 한 바이트가 세로 8픽셀(비트0 = 위)을 맡습니다. 화면 한 줄의 글자(높이 8픽셀)가 페이지 하나에 딱 들어갑니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">text</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-text">          열 0   열 1   ...  열 127
+페이지 0  [b0]   [b0]         ← 픽셀 y = 0
+          [..]   [..]
+          [b7]   [b7]         ← 픽셀 y = 7
+페이지 1  ...                    y = 8 ~ 15
+ ...
+페이지 7  ...                    y = 56 ~ 63</code></pre></div>
+<p>I2C 로 보내는 바이트마다 앞에 <strong>제어 바이트</strong>가 붙습니다. <code>0x00</code> 이면 뒤의 바이트가 명령, <code>0x40</code> 이면 화면 데이터입니다. HAL 의 <code>HAL_I2C_Mem_Write</code> 는 "메모리 주소" 1바이트를 먼저 보내므로, 이 자리에 제어 바이트를 넣으면 코드가 짧아집니다.</p>
+<div class="table-wrap regmap"><table><thead><tr><th>명령</th><th>값</th><th>뜻</th></tr></thead><tbody><tr><td>Display OFF / ON</td><td><code>0xAE</code> / <code>0xAF</code></td><td>초기화는 OFF 상태에서</td></tr><tr><td>Memory addressing mode</td><td><code>0x20</code>, <code>0x00</code>/<code>0x01</code>/<code>0x02</code></td><td>수평 / 수직 / 페이지 (리셋 기본 = 페이지)</td></tr><tr><td>Page start (페이지 모드)</td><td><code>0xB0</code> ~ <code>0xB7</code></td><td>쓸 페이지 고르기</td></tr><tr><td>Column low / high</td><td><code>0x00</code>~<code>0x0F</code>, <code>0x10</code>~<code>0x1F</code></td><td>열 주소 하위·상위 4비트</td></tr><tr><td>Column / Page range (수평·수직 모드)</td><td><code>0x21 a b</code>, <code>0x22 a b</code></td><td>쓸 범위 지정</td></tr><tr><td>Contrast</td><td><code>0x81</code>, <code>0x00</code>~<code>0xFF</code></td><td>밝기</td></tr><tr><td>Segment remap / COM scan</td><td><code>0xA0</code>/<code>0xA1</code>, <code>0xC0</code>/<code>0xC8</code></td><td>좌우·상하 뒤집기</td></tr><tr><td>Normal / Inverse</td><td><code>0xA6</code> / <code>0xA7</code></td><td>흑백 반전</td></tr><tr><td>Multiplex ratio</td><td><code>0xA8</code>, <code>0x3F</code></td><td>64줄</td></tr><tr><td>COM pins</td><td><code>0xDA</code>, <code>0x12</code></td><td>128x64 배선</td></tr><tr><td>Charge pump</td><td><code>0x8D</code>, <code>0x14</code></td><td><strong>켜지 않으면 화면이 안 켜짐</strong></td></tr></tbody></table></div>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l17-oled" data-sim-src="../sim/index.html?ex=l17-oled&amp;embed=1" data-sim-id="l17-oled"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">SSD1306 OLED 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l17-oled" target="_blank" rel="noopener">새 창</a><code class="sim-id">l17-oled</code></div>
+<div class="code-block code-example" data-example="l17-oled"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN 0 */</span>
+<span class="tk-c">/* 제어 바이트 0x00 = 뒤따르는 바이트는 명령, 0x40 = 화면 데이터 */</span>
+<span class="tk-t">void</span> <span class="tk-f">oled_cmd</span>(<span class="tk-t">uint8_t</span> c)
+{
+  <span class="tk-h">HAL_I2C_Mem_Write</span>(&amp;hi2c1, <span class="tk-m">OLED_ADDR</span>, <span class="tk-n">0x00</span>, <span class="tk-m">I2C_MEMADD_SIZE_8BIT</span>, &amp;c, <span class="tk-n">1</span>, <span class="tk-n">100</span>);
+}
+
+<span class="tk-t">void</span> <span class="tk-f">oled_init</span>(<span class="tk-t">void</span>)
+{
+  <span class="tk-h">HAL_Delay</span>(<span class="tk-n">100</span>);                        <span class="tk-c">// 전원 안정화</span>
+  <span class="tk-f">oled_cmd</span>(<span class="tk-n">0xAE</span>);                        <span class="tk-c">// 디스플레이 OFF</span>
+  <span class="tk-f">oled_cmd</span>(<span class="tk-n">0x20</span>); <span class="tk-f">oled_cmd</span>(<span class="tk-n">0x02</span>);        <span class="tk-c">// 메모리 주소 모드: 페이지 (0xB0~0xB7 로 줄 선택)</span>
+  <span class="tk-f">oled_cmd</span>(<span class="tk-n">0xB0</span>);                        <span class="tk-c">// 페이지 0</span>
+  <span class="tk-f">oled_cmd</span>(<span class="tk-n">0xC8</span>);                        <span class="tk-c">// COM 스캔 방향: 역방향 (위아래 뒤집힘 보정)</span>
+  <span class="tk-f">oled_cmd</span>(<span class="tk-n">0x00</span>); <span class="tk-f">oled_cmd</span>(<span class="tk-n">0x10</span>);        <span class="tk-c">// 열 주소 0</span>
+  <span class="tk-f">oled_cmd</span>(<span class="tk-n">0x40</span>);                        <span class="tk-c">// 시작 줄 0</span>
+  <span class="tk-f">oled_cmd</span>(<span class="tk-n">0x81</span>); <span class="tk-f">oled_cmd</span>(<span class="tk-n">0xFF</span>);        <span class="tk-c">// 명암(contrast)</span>
+  <span class="tk-f">oled_cmd</span>(<span class="tk-n">0xA1</span>);                        <span class="tk-c">// 세그먼트 재매핑 (좌우 뒤집힘 보정)</span>
+  <span class="tk-f">oled_cmd</span>(<span class="tk-n">0xA6</span>);                        <span class="tk-c">// 정상 표시 (0xA7 = 반전)</span>
+  <span class="tk-f">oled_cmd</span>(<span class="tk-n">0xA8</span>); <span class="tk-f">oled_cmd</span>(<span class="tk-n">0x3F</span>);        <span class="tk-c">// 멀티플렉스 64</span>
+  <span class="tk-f">oled_cmd</span>(<span class="tk-n">0xA4</span>);                        <span class="tk-c">// RAM 내용 표시</span>
+  <span class="tk-f">oled_cmd</span>(<span class="tk-n">0xD3</span>); <span class="tk-f">oled_cmd</span>(<span class="tk-n">0x00</span>);        <span class="tk-c">// 표시 오프셋 0</span>
+  <span class="tk-f">oled_cmd</span>(<span class="tk-n">0xD5</span>); <span class="tk-f">oled_cmd</span>(<span class="tk-n">0xF0</span>);        <span class="tk-c">// 클럭 분주</span>
+  <span class="tk-f">oled_cmd</span>(<span class="tk-n">0xD9</span>); <span class="tk-f">oled_cmd</span>(<span class="tk-n">0x22</span>);        <span class="tk-c">// 프리차지</span>
+  <span class="tk-f">oled_cmd</span>(<span class="tk-n">0xDA</span>); <span class="tk-f">oled_cmd</span>(<span class="tk-n">0x12</span>);        <span class="tk-c">// COM 핀 구성</span>
+  <span class="tk-f">oled_cmd</span>(<span class="tk-n">0xDB</span>); <span class="tk-f">oled_cmd</span>(<span class="tk-n">0x20</span>);        <span class="tk-c">// VCOMH</span>
+  <span class="tk-f">oled_cmd</span>(<span class="tk-n">0x8D</span>); <span class="tk-f">oled_cmd</span>(<span class="tk-n">0x14</span>);        <span class="tk-c">// 차지 펌프 ON (없으면 화면이 켜지지 않음)</span>
+  <span class="tk-f">oled_cmd</span>(<span class="tk-n">0xAF</span>);                        <span class="tk-c">// 디스플레이 ON</span>
+}
+
+<span class="tk-t">void</span> <span class="tk-f">oled_clear</span>(<span class="tk-t">void</span>)
+{
+  <span class="tk-f">memset</span>(oled_buf, <span class="tk-n">0</span>, <span class="tk-k">sizeof</span>(oled_buf));
+}
+
+<span class="tk-c">/* 화면 버퍼 → OLED: 페이지마다 위치를 정하고 128바이트를 한 번에 보냅니다. */</span>
+<span class="tk-t">void</span> <span class="tk-f">oled_update</span>(<span class="tk-t">void</span>)
+{
+  <span class="tk-k">for</span> (<span class="tk-t">uint8_t</span> p = <span class="tk-n">0</span>; p &lt; <span class="tk-n">8</span>; p++) {
+    <span class="tk-f">oled_cmd</span>(<span class="tk-n">0xB0</span> + p);
+    <span class="tk-f">oled_cmd</span>(<span class="tk-n">0x00</span>);
+    <span class="tk-f">oled_cmd</span>(<span class="tk-n">0x10</span>);
+    <span class="tk-h">HAL_I2C_Mem_Write</span>(&amp;hi2c1, <span class="tk-m">OLED_ADDR</span>, <span class="tk-n">0x40</span>, <span class="tk-m">I2C_MEMADD_SIZE_8BIT</span>, &amp;oled_buf[<span class="tk-n">128</span> * p], <span class="tk-n">128</span>, <span class="tk-n">100</span>);
+  }
+}
+
+<span class="tk-t">int</span> <span class="tk-f">font_index</span>(<span class="tk-t">char</span> ch)
+{
+  <span class="tk-k">for</span> (<span class="tk-t">int</span> i = <span class="tk-n">0</span>; <span class="tk-m">FONT_CH</span>[i] != <span class="tk-n">0</span>; i++) {
+    <span class="tk-k">if</span> (<span class="tk-m">FONT_CH</span>[i] == ch) <span class="tk-k">return</span> i;
+  }
+  <span class="tk-k">return</span> <span class="tk-n">0</span>;                               <span class="tk-c">// 없는 글자는 공백</span>
+}
+
+<span class="tk-c">/* x: 0~127 열, page: 0~7 줄 (글자 한 칸 = 6열) */</span>
+<span class="tk-t">void</span> <span class="tk-f">oled_puts</span>(<span class="tk-t">uint8_t</span> x, <span class="tk-t">uint8_t</span> page, <span class="tk-k">const</span> <span class="tk-t">char</span> *s)
+{
+  <span class="tk-k">while</span> (*s &amp;&amp; x &lt;= <span class="tk-n">122</span>) {
+    <span class="tk-t">int</span> idx = <span class="tk-f">font_index</span>(*s++);
+    <span class="tk-k">for</span> (<span class="tk-t">int</span> c = <span class="tk-n">0</span>; c &lt; <span class="tk-n">5</span>; c++) oled_buf[page * <span class="tk-n">128</span> + x + c] = FONT5x7[idx][c];
+    oled_buf[page * <span class="tk-n">128</span> + x + <span class="tk-n">5</span>] = <span class="tk-n">0</span>;
+    x += <span class="tk-n">6</span>;
+  }
+}
+<span class="tk-c">/* USER CODE END 0 */</span></code></pre></div>
+<ul><li>화면에 직접 그리지 않고 **RAM 의 <code>oled_buf[1024]</code> 에 그린 뒤** <code>oled_update()</code> 로 한꺼번에 보냅니다. 이것이 프레임 버퍼 방식입니다.</li><li>400 kHz I2C 에서 1024바이트는 비트로 약 9,200개(바이트마다 ACK 포함)라 <strong>한 화면 전송에 약 25 ms</strong> 가 걸립니다. 바뀐 페이지만 보내면 빨라집니다.</li><li>흔한 모듈의 주소는 <code>0x3C</code>, 뒷면 저항(SA0)을 옮기면 <code>0x3D</code> 입니다. HAL 에는 <code>0x3C &lt;&lt; 1</code> 을 넘깁니다(L10).</li></ul>
+<div class="callout callout-info"><div class="callout-title">1.3인치 모듈은 SH1106 인 경우가 많습니다</div><div class="callout-body"><p>겉모양이 같아도 1.3인치 OLED 는 SH1106 컨트롤러(132열 RAM)인 경우가 많습니다. 이때는 열 주소를 2 만큼 밀어야 화면이 맞고, 수평 주소 모드가 없으므로 페이지 모드로만 씁니다.</p></div></div>
+<h2 id="hc-sr04-초음파-거리">HC-SR04 초음파 거리<a class="anchor" href="#hc-sr04-초음파-거리">#</a></h2>
+<ol><li>TRIG 에 <strong>10 µs 이상</strong> HIGH 펄스를 줍니다.</li><li>모듈이 40 kHz 초음파를 8번 쏘고 ECHO 를 HIGH 로 올립니다.</li><li>반사파가 돌아오면 ECHO 가 LOW 로 내려갑니다. <strong>HIGH 폭 = 왕복 시간</strong>입니다.</li></ol>
+<p>소리는 20 °C 에서 약 343 m/s 이므로 1 cm 를 가는 데 29.2 µs, 왕복 58.3 µs 입니다. 그래서 <strong>거리(cm) = 폭(µs) / 58</strong> 입니다. 측정 범위는 약 2~400 cm, 400 cm 의 왕복 시간은 약 23 ms 입니다. 측정 간격은 <strong>60 ms 이상</strong>을 권장합니다.</p>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l17-ultrasonic" data-sim-src="../sim/index.html?ex=l17-ultrasonic&amp;embed=1" data-sim-id="l17-ultrasonic"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">HC-SR04 폴링 측정 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l17-ultrasonic" target="_blank" rel="noopener">새 창</a><code class="sim-id">l17-ultrasonic</code></div>
+<div class="code-block code-example" data-example="l17-ultrasonic"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN 0 */</span>
+<span class="tk-c">/* TIM2 는 1 MHz 로 셉니다 (PSC = 83). 카운터 한 칸 = 1 µs */</span>
+<span class="tk-t">void</span> <span class="tk-f">delay_us</span>(<span class="tk-t">uint16_t</span> us)
+{
+  <span class="tk-h">__HAL_TIM_SET_COUNTER</span>(&amp;htim2, <span class="tk-n">0</span>);
+  <span class="tk-k">while</span> (<span class="tk-h">__HAL_TIM_GET_COUNTER</span>(&amp;htim2) &lt; us) { }
+}
+<span class="tk-c">/* 거리(cm)를 돌려줍니다. 음수 = 응답 없음 */</span>
+<span class="tk-t">int32_t</span> <span class="tk-f">hcsr04_read_cm</span>(<span class="tk-t">void</span>)
+{
+  <span class="tk-t">uint32_t</span> t_start, t_end;
+
+  <span class="tk-h">HAL_GPIO_WritePin</span>(TRIG_GPIO_Port, TRIG_Pin, <span class="tk-m">GPIO_PIN_SET</span>);    <span class="tk-c">// 1) 10 µs 트리거 펄스</span>
+  <span class="tk-f">delay_us</span>(<span class="tk-n">10</span>);
+  <span class="tk-h">HAL_GPIO_WritePin</span>(TRIG_GPIO_Port, TRIG_Pin, <span class="tk-m">GPIO_PIN_RESET</span>);
+
+  <span class="tk-h">__HAL_TIM_SET_COUNTER</span>(&amp;htim2, <span class="tk-n">0</span>);                             <span class="tk-c">// 2) ECHO 가 HIGH 가 될 때까지</span>
+  <span class="tk-k">while</span> (<span class="tk-h">HAL_GPIO_ReadPin</span>(ECHO_GPIO_Port, ECHO_Pin) == <span class="tk-m">GPIO_PIN_RESET</span>) {
+    <span class="tk-k">if</span> (<span class="tk-h">__HAL_TIM_GET_COUNTER</span>(&amp;htim2) &gt; <span class="tk-n">30000</span>) <span class="tk-k">return</span> -<span class="tk-n">1</span>;
+  }
+  t_start = <span class="tk-h">__HAL_TIM_GET_COUNTER</span>(&amp;htim2);
+
+  <span class="tk-k">while</span> (<span class="tk-h">HAL_GPIO_ReadPin</span>(ECHO_GPIO_Port, ECHO_Pin) == <span class="tk-m">GPIO_PIN_SET</span>) {   <span class="tk-c">// 3) HIGH 가 끝날 때까지</span>
+    <span class="tk-k">if</span> (<span class="tk-h">__HAL_TIM_GET_COUNTER</span>(&amp;htim2) - t_start &gt; <span class="tk-n">30000</span>) <span class="tk-k">return</span> -<span class="tk-n">2</span>;
+  }
+  t_end = <span class="tk-h">__HAL_TIM_GET_COUNTER</span>(&amp;htim2);
+
+  <span class="tk-k">return</span> (t_end - t_start + <span class="tk-n">29</span>) / <span class="tk-n">58</span>;                           <span class="tk-c">// 4) 왕복 시간 → cm (반올림)</span>
+}
+<span class="tk-c">/* USER CODE END 0 */</span></code></pre></div>
+<p>이 방식은 ECHO 가 끝날 때까지 CPU 가 <code>while</code> 에서 기다립니다(최대 23 ms). L19 에서는 <strong>입력 캡처</strong>로 기다리지 않고 재는 방법을 배웁니다.</p>
+<h2 id="4x4-키패드-스캔">4x4 키패드 스캔<a class="anchor" href="#4x4-키패드-스캔">#</a></h2>
+<p>키 16개를 핀 16개로 읽지 않고, 4행 × 4열 <strong>매트릭스</strong>로 8개 핀만 씁니다. 키를 누르면 그 행과 열이 연결됩니다.</p>
+<ul><li>행(R1~R4)은 출력, 열(C1~C4)은 <strong>풀업 입력</strong>입니다. 평소 열은 HIGH 입니다.</li><li>행 하나만 LOW 로 만들고 열을 읽으면, LOW 로 읽힌 열의 키가 그 행에서 눌린 키입니다.</li><li>네 행을 차례로 반복하면 16개 키를 모두 확인합니다. 20 ms 마다 스캔하면 채터링도 걸러집니다.</li></ul>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l17-keypad" data-sim-src="../sim/index.html?ex=l17-keypad&amp;embed=1" data-sim-id="l17-keypad"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">4x4 키패드 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l17-keypad" target="_blank" rel="noopener">새 창</a><code class="sim-id">l17-keypad</code></div>
+<div class="code-block code-example" data-example="l17-keypad"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN 0 */</span>
+<span class="tk-c">/* 눌린 키 문자를 돌려줍니다. 없으면 0 */</span>
+<span class="tk-t">char</span> <span class="tk-f">keypad_scan</span>(<span class="tk-t">void</span>)
+{
+  <span class="tk-t">char</span> key = <span class="tk-n">0</span>;
+  <span class="tk-k">for</span> (<span class="tk-t">int</span> r = <span class="tk-n">0</span>; r &lt; <span class="tk-n">4</span>; r++) {
+    <span class="tk-k">for</span> (<span class="tk-t">int</span> k = <span class="tk-n">0</span>; k &lt; <span class="tk-n">4</span>; k++)                       <span class="tk-c">// r 번째 행만 LOW</span>
+      <span class="tk-h">HAL_GPIO_WritePin</span>(ROW1_GPIO_Port, <span class="tk-m">ROW_PIN</span>[k], (k == r) ? <span class="tk-m">GPIO_PIN_RESET</span> : <span class="tk-m">GPIO_PIN_SET</span>);
+    <span class="tk-k">for</span> (<span class="tk-t">int</span> c = <span class="tk-n">0</span>; c &lt; <span class="tk-n">4</span>; c++) {
+      <span class="tk-k">if</span> (<span class="tk-h">HAL_GPIO_ReadPin</span>(COL1_GPIO_Port, <span class="tk-m">COL_PIN</span>[c]) == <span class="tk-m">GPIO_PIN_RESET</span>) key = <span class="tk-m">KEYMAP</span>[r][c];
+    }
+  }
+  <span class="tk-k">for</span> (<span class="tk-t">int</span> k = <span class="tk-n">0</span>; k &lt; <span class="tk-n">4</span>; k++) <span class="tk-h">HAL_GPIO_WritePin</span>(ROW1_GPIO_Port, <span class="tk-m">ROW_PIN</span>[k], <span class="tk-m">GPIO_PIN_SET</span>);
+  <span class="tk-k">return</span> key;
+}
+<span class="tk-c">/* USER CODE END 0 */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    <span class="tk-t">char</span> key = <span class="tk-f">keypad_scan</span>();
+    <span class="tk-k">if</span> (key != <span class="tk-n">0</span> &amp;&amp; key != last_key) {                <span class="tk-c">// 새로 눌린 순간만</span>
+      <span class="tk-f">printf</span>(<span class="tk-s">"Key: %c\r\n"</span>, key);
+      <span class="tk-k">if</span> (key == <span class="tk-s">'#'</span>) {
+        input[input_len] = <span class="tk-n">0</span>;
+        <span class="tk-f">printf</span>(<span class="tk-s">"Input: %s\r\n"</span>, input);
+        input_len = <span class="tk-n">0</span>;
+      } <span class="tk-k">else</span> <span class="tk-k">if</span> (key == <span class="tk-s">'*'</span>) {
+        input_len = <span class="tk-n">0</span>;
+        <span class="tk-f">printf</span>(<span class="tk-s">"Clear\r\n"</span>);
+      } <span class="tk-k">else</span> <span class="tk-k">if</span> (input_len &lt; <span class="tk-n">16</span>) {
+        input[input_len++] = key;
+      }
+    }
+    last_key = key;
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">20</span>);                                    <span class="tk-c">// 20 ms 마다 스캔 (디바운스 겸용)</span>
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span></code></pre></div>
+<div class="callout callout-warn"><div class="callout-title">두 키를 동시에 누를 때</div><div class="callout-body"><p>같은 열의 두 키를 누르면 LOW 인 행과 HIGH 인 행이 버튼을 통해 직접 연결됩니다. 행 출력을 <strong>오픈드레인</strong>으로 설정하거나 행마다 <strong>330 Ω~1 kΩ 직렬 저항</strong>을 넣으면 핀끼리 합선되지 않습니다.</p></div></div>
+<h2 id="4자리-fnd-멀티플렉싱">4자리 FND 멀티플렉싱<a class="anchor" href="#4자리-fnd-멀티플렉싱">#</a></h2>
+<p>4자리 FND 는 8개 세그먼트 선(a~g, dp)을 네 자리가 <strong>함께 씁니다</strong>. 자리 선택선(D1~D4) 중 하나만 켜서 그 자리에 숫자를 쓰고, 2~3 ms 뒤 다음 자리로 넘어갑니다. 눈은 빠른 깜빡임을 연속으로 보므로 네 자리가 동시에 켜진 것처럼 보입니다.</p>
+<ul><li>한 바퀴(프레임) = 4 자리 × 2 ms = <strong>8 ms → 125 Hz</strong>. 60 Hz 아래로 느려지면 깜빡임이 보입니다.</li><li>한 자리는 1/4 시간만 켜지므로 1자리 FND(L12)보다 어둡습니다. 세그먼트 저항을 조금 줄여 보정합니다.</li><li><strong>자리를 바꿀 때는 먼저 모든 자리를 끄고</strong> 세그먼트를 바꾼 뒤 새 자리를 켭니다. 순서가 바뀌면 옆 자리에 잔상(고스트)이 남습니다.</li></ul>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l17-fnd4" data-sim-src="../sim/index.html?ex=l17-fnd4&amp;embed=1" data-sim-id="l17-fnd4"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">4자리 FND 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l17-fnd4" target="_blank" rel="noopener">새 창</a><code class="sim-id">l17-fnd4</code></div>
+<div class="code-block code-example" data-example="l17-fnd4"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN 0 */</span>
+<span class="tk-c">/* pos(0~3) 자리에 숫자 num 하나를 켭니다 */</span>
+<span class="tk-t">void</span> <span class="tk-f">fnd_show</span>(<span class="tk-t">uint8_t</span> pos, <span class="tk-t">uint8_t</span> num)
+{
+  <span class="tk-k">for</span> (<span class="tk-t">int</span> d = <span class="tk-n">0</span>; d &lt; <span class="tk-n">4</span>; d++) <span class="tk-h">HAL_GPIO_WritePin</span>(DIG1_GPIO_Port, <span class="tk-m">DIG_PIN</span>[d], <span class="tk-m">GPIO_PIN_SET</span>);   <span class="tk-c">// 1) 모든 자리 끄기 (잔상 방지)</span>
+  <span class="tk-t">uint8_t</span> pat = <span class="tk-m">DIGIT_PAT</span>[num];
+  <span class="tk-k">for</span> (<span class="tk-t">int</span> s = <span class="tk-n">0</span>; s &lt; <span class="tk-n">8</span>; s++)                                                                  <span class="tk-c">// 2) 세그먼트 패턴</span>
+    <span class="tk-h">HAL_GPIO_WritePin</span>(SEG_A_GPIO_Port, <span class="tk-m">SEG_PIN</span>[s], ((pat &gt;&gt; s) &amp; <span class="tk-n">1</span>) ? <span class="tk-m">GPIO_PIN_SET</span> : <span class="tk-m">GPIO_PIN_RESET</span>);
+  <span class="tk-h">HAL_GPIO_WritePin</span>(DIG1_GPIO_Port, <span class="tk-m">DIG_PIN</span>[pos], <span class="tk-m">GPIO_PIN_RESET</span>);                              <span class="tk-c">// 3) 이 자리만 켜기</span>
+}
+<span class="tk-c">/* USER CODE END 0 */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    <span class="tk-t">uint16_t</span> v = counter;
+    <span class="tk-f">fnd_show</span>(<span class="tk-n">3</span>, v % <span class="tk-n">10</span>);        <span class="tk-h">HAL_Delay</span>(<span class="tk-n">2</span>);
+    <span class="tk-f">fnd_show</span>(<span class="tk-n">2</span>, v / <span class="tk-n">10</span> % <span class="tk-n">10</span>);   <span class="tk-h">HAL_Delay</span>(<span class="tk-n">2</span>);
+    <span class="tk-f">fnd_show</span>(<span class="tk-n">1</span>, v / <span class="tk-n">100</span> % <span class="tk-n">10</span>);  <span class="tk-h">HAL_Delay</span>(<span class="tk-n">2</span>);
+    <span class="tk-f">fnd_show</span>(<span class="tk-n">0</span>, v / <span class="tk-n">1000</span> % <span class="tk-n">10</span>); <span class="tk-h">HAL_Delay</span>(<span class="tk-n">2</span>);
+
+    <span class="tk-k">if</span> (<span class="tk-h">HAL_GetTick</span>() - last_count &gt;= <span class="tk-n">100</span>) {    <span class="tk-c">// 0.1 초마다 +1</span>
+      last_count = <span class="tk-h">HAL_GetTick</span>();
+      counter = (counter + <span class="tk-n">1</span>) % <span class="tk-n">10000</span>;
+    }
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span></code></pre></div>
+<div class="callout callout-danger"><div class="callout-title">자리 공통 핀 전류</div><div class="callout-body"><p>세그먼트 8개가 모두 켜지면 공통 핀 하나로 8 × 10 mA = 80 mA 가 흐릅니다. STM32F4 핀 하나의 절대 최대 전류는 <strong>25 mA</strong> 이고 칩 전체도 120 mA 를 넘으면 안 됩니다(데이터시트 확인). 실물에서는 자리 공통 핀을 <strong>트랜지스터(예: 2N3904/2N3906, S8050)</strong> 로 구동하고, 세그먼트마다 저항을 답니다.</p></div></div>
+<h2 id="dht11-단일-선-프로토콜">DHT11 단일 선 프로토콜<a class="anchor" href="#dht11-단일-선-프로토콜">#</a></h2>
+<p>DHT11 은 선 하나(DATA)로 명령과 데이터를 모두 주고받습니다. 선은 오픈드레인처럼 쓰고 <strong>풀업(4.7~10 kΩ)</strong> 이 HIGH 를 만듭니다.</p>
+<div class="table-wrap regmap"><table><thead><tr><th>단계</th><th>누가</th><th>시간</th></tr></thead><tbody><tr><td>시작 신호</td><td>MCU 가 LOW</td><td><strong>18 ms 이상</strong></td></tr><tr><td>선 놓기</td><td>MCU 가 입력(풀업)으로 전환</td><td>20~40 µs 뒤 센서 응답</td></tr><tr><td>응답</td><td>센서 LOW → HIGH</td><td>80 µs + 80 µs</td></tr><tr><td>비트 40개</td><td>센서 LOW 50 µs 뒤 HIGH</td><td>HIGH 26~28 µs = <code>0</code>, 70 µs = <code>1</code></td></tr><tr><td>데이터</td><td>습도 정수·소수, 온도 정수·소수, 체크섬</td><td>체크섬 = 앞 4바이트 합의 하위 8비트</td></tr></tbody></table></div>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l17-dht11" data-sim-src="../sim/index.html?ex=l17-dht11&amp;embed=1" data-sim-id="l17-dht11"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">DHT11 온습도 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l17-dht11" target="_blank" rel="noopener">새 창</a><code class="sim-id">l17-dht11</code></div>
+<div class="code-block code-example" data-example="l17-dht11"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN 0 */</span>
+<span class="tk-c">/* TIM2 는 1 MHz 로 셉니다 (PSC = 83). 카운터 한 칸 = 1 µs */</span>
+<span class="tk-t">void</span> <span class="tk-f">delay_us</span>(<span class="tk-t">uint16_t</span> us)
+{
+  <span class="tk-h">__HAL_TIM_SET_COUNTER</span>(&amp;htim2, <span class="tk-n">0</span>);
+  <span class="tk-k">while</span> (<span class="tk-h">__HAL_TIM_GET_COUNTER</span>(&amp;htim2) &lt; us) { }
+}
+<span class="tk-t">void</span> <span class="tk-f">dht_pin_output</span>(<span class="tk-t">void</span>)
+{
+  dht_io.Pin = DHT_Pin;
+  dht_io.Mode = <span class="tk-m">GPIO_MODE_OUTPUT_PP</span>;
+  dht_io.Pull = <span class="tk-m">GPIO_NOPULL</span>;
+  dht_io.Speed = <span class="tk-m">GPIO_SPEED_FREQ_LOW</span>;
+  <span class="tk-h">HAL_GPIO_Init</span>(DHT_GPIO_Port, &amp;dht_io);
+}
+
+<span class="tk-t">void</span> <span class="tk-f">dht_pin_input</span>(<span class="tk-t">void</span>)
+{
+  dht_io.Pin = DHT_Pin;
+  dht_io.Mode = <span class="tk-m">GPIO_MODE_INPUT</span>;
+  dht_io.Pull = <span class="tk-m">GPIO_PULLUP</span>;               <span class="tk-c">// 선을 놓으면 풀업이 HIGH 로 올림</span>
+  <span class="tk-h">HAL_GPIO_Init</span>(DHT_GPIO_Port, &amp;dht_io);
+}
+
+<span class="tk-c">/* 핀이 level 이 될 때까지 기다린 시간(µs). timeout 을 넘으면 -1 */</span>
+<span class="tk-t">int</span> <span class="tk-f">dht_wait</span>(<span class="tk-t">uint8_t</span> level, <span class="tk-t">uint16_t</span> timeout)
+{
+  <span class="tk-h">__HAL_TIM_SET_COUNTER</span>(&amp;htim2, <span class="tk-n">0</span>);
+  <span class="tk-k">while</span> (<span class="tk-h">HAL_GPIO_ReadPin</span>(DHT_GPIO_Port, DHT_Pin) != level) {
+    <span class="tk-k">if</span> (<span class="tk-h">__HAL_TIM_GET_COUNTER</span>(&amp;htim2) &gt; timeout) <span class="tk-k">return</span> -<span class="tk-n">1</span>;
+  }
+  <span class="tk-k">return</span> <span class="tk-h">__HAL_TIM_GET_COUNTER</span>(&amp;htim2);
+}
+
+<span class="tk-c">/* 0 = 성공, 그 밖 = 실패 단계 번호 */</span>
+<span class="tk-t">int</span> <span class="tk-f">dht_read</span>(<span class="tk-t">void</span>)
+{
+  <span class="tk-f">dht_pin_output</span>();
+  <span class="tk-h">HAL_GPIO_WritePin</span>(DHT_GPIO_Port, DHT_Pin, <span class="tk-m">GPIO_PIN_RESET</span>);   <span class="tk-c">// 1) 시작 신호: 18 ms 이상 LOW</span>
+  <span class="tk-h">HAL_Delay</span>(<span class="tk-n">18</span>);
+  <span class="tk-f">dht_pin_input</span>();                                            <span class="tk-c">// 2) 선을 놓음</span>
+
+  <span class="tk-k">if</span> (<span class="tk-f">dht_wait</span>(<span class="tk-n">0</span>, <span class="tk-n">100</span>) &lt; <span class="tk-n">0</span>) <span class="tk-k">return</span> <span class="tk-n">1</span>;                         <span class="tk-c">// 3) 응답: 80 µs LOW</span>
+  <span class="tk-k">if</span> (<span class="tk-f">dht_wait</span>(<span class="tk-n">1</span>, <span class="tk-n">100</span>) &lt; <span class="tk-n">0</span>) <span class="tk-k">return</span> <span class="tk-n">2</span>;                         <span class="tk-c">//         80 µs HIGH</span>
+  <span class="tk-k">if</span> (<span class="tk-f">dht_wait</span>(<span class="tk-n">0</span>, <span class="tk-n">100</span>) &lt; <span class="tk-n">0</span>) <span class="tk-k">return</span> <span class="tk-n">3</span>;
+
+  <span class="tk-k">for</span> (<span class="tk-t">int</span> i = <span class="tk-n">0</span>; i &lt; <span class="tk-n">5</span>; i++) dht[i] = <span class="tk-n">0</span>;
+  <span class="tk-k">for</span> (<span class="tk-t">int</span> i = <span class="tk-n">0</span>; i &lt; <span class="tk-n">40</span>; i++) {                              <span class="tk-c">// 4) 40비트</span>
+    <span class="tk-k">if</span> (<span class="tk-f">dht_wait</span>(<span class="tk-n">1</span>, <span class="tk-n">80</span>) &lt; <span class="tk-n">0</span>) <span class="tk-k">return</span> <span class="tk-n">4</span>;                        <span class="tk-c">//    50 µs LOW 끝</span>
+    <span class="tk-t">int</span> high = <span class="tk-f">dht_wait</span>(<span class="tk-n">0</span>, <span class="tk-n">100</span>);                              <span class="tk-c">//    HIGH 길이 재기</span>
+    <span class="tk-k">if</span> (high &lt; <span class="tk-n">0</span>) <span class="tk-k">return</span> <span class="tk-n">5</span>;
+    dht[i / <span class="tk-n">8</span>] &lt;&lt;= <span class="tk-n">1</span>;
+    <span class="tk-k">if</span> (high &gt; <span class="tk-n">40</span>) dht[i / <span class="tk-n">8</span>] |= <span class="tk-n">1</span>;                           <span class="tk-c">//    26 µs = 0, 70 µs = 1</span>
+  }
+  <span class="tk-k">if</span> ((<span class="tk-t">uint8_t</span>)(dht[<span class="tk-n">0</span>] + dht[<span class="tk-n">1</span>] + dht[<span class="tk-n">2</span>] + dht[<span class="tk-n">3</span>]) != dht[<span class="tk-n">4</span>]) <span class="tk-k">return</span> <span class="tk-n">6</span>;   <span class="tk-c">// 5) 체크섬</span>
+  <span class="tk-k">return</span> <span class="tk-n">0</span>;
+}
+<span class="tk-c">/* USER CODE END 0 */</span></code></pre></div>
+<ul><li>µs 단위로 재야 하므로 1 MHz 로 도는 TIM2 의 카운터를 씁니다(<code>__HAL_TIM_GET_COUNTER</code>).</li><li>HIGH 폭이 40 µs 보다 길면 <code>1</code> 로 판정합니다. 26 µs 와 70 µs 사이의 가운데 값입니다.</li><li><strong>1초에 한 번 이하</strong>로 읽고, 전원을 넣은 뒤 1초는 기다립니다. 읽는 동안 긴 인터럽트가 끼면 비트가 틀어져 체크섬 오류가 납니다.</li><li>DHT11 은 0~50 °C(±2 °C), 20~90 %RH(±5 %) 범위의 저가 센서입니다. 더 정밀해야 하면 DHT22 나 I2C 센서(SHT3x 등)를 씁니다.</li></ul>
+<h2 id="릴레이-모듈">릴레이 모듈<a class="anchor" href="#릴레이-모듈">#</a></h2>
+<p>릴레이는 작은 전류(코일)로 큰 전류(접점)를 켜고 끄는 기계식 스위치입니다. 5 V 릴레이 코일은 약 70 mA 가 필요해 GPIO 로 직접 구동할 수 없습니다. 흔한 릴레이 <strong>모듈</strong>에는 트랜지스터(또는 포토커플러)와 <strong>역기전력 다이오드</strong>가 들어 있어 GPIO 로 IN 만 제어하면 됩니다.</p>
+<ul><li>대부분의 모듈은 <strong>IN 이 LOW 일 때 켜집니다(능동 LOW)</strong>. 그래서 예제는 초기값을 HIGH 로 두어 부팅 중에 릴레이가 붙지 않게 합니다.</li><li>코일 전류가 끊기는 순간 코일은 수십~수백 V 의 역기전력을 만듭니다. 모듈 없이 직접 만들 때는 코일에 <strong>다이오드(1N4148, 1N4007)를 역방향 병렬</strong>로 꼭 답니다.</li></ul>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l17-relay" data-sim-src="../sim/index.html?ex=l17-relay&amp;embed=1" data-sim-id="l17-relay"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">릴레이 토글 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l17-relay" target="_blank" rel="noopener">새 창</a><code class="sim-id">l17-relay</code></div>
+<div class="code-block code-example" data-example="l17-relay"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN PV */</span>
+<span class="tk-p">#define</span> <span class="tk-m">RELAY_ON</span>   <span class="tk-m">GPIO_PIN_RESET</span>        <span class="tk-c">// 이 모듈은 LOW 에서 켜짐 (active-low)</span>
+<span class="tk-p">#define</span> <span class="tk-m">RELAY_OFF</span>  <span class="tk-m">GPIO_PIN_SET</span>
+<span class="tk-t">uint8_t</span> relay_on = <span class="tk-n">0</span>;
+<span class="tk-t">uint8_t</span> last_btn = <span class="tk-n">1</span>;
+<span class="tk-c">/* USER CODE END PV */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    <span class="tk-t">uint8_t</span> btn = <span class="tk-h">HAL_GPIO_ReadPin</span>(B1_GPIO_Port, B1_Pin);
+    <span class="tk-k">if</span> (last_btn == <span class="tk-n">1</span> &amp;&amp; btn == <span class="tk-n">0</span>) {                 <span class="tk-c">// 누르는 순간 (HIGH → LOW)</span>
+      relay_on = !relay_on;
+      <span class="tk-h">HAL_GPIO_WritePin</span>(RELAY_GPIO_Port, RELAY_Pin, relay_on ? <span class="tk-m">RELAY_ON</span> : <span class="tk-m">RELAY_OFF</span>);
+      <span class="tk-h">HAL_GPIO_WritePin</span>(LD2_GPIO_Port, LD2_Pin, relay_on ? <span class="tk-m">GPIO_PIN_SET</span> : <span class="tk-m">GPIO_PIN_RESET</span>);
+      <span class="tk-f">printf</span>(<span class="tk-s">"Relay %s\r\n"</span>, relay_on ? <span class="tk-s">"ON"</span> : <span class="tk-s">"OFF"</span>);
+    }
+    last_btn = btn;
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">20</span>);                                   <span class="tk-c">// 채터링 무시</span>
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span></code></pre></div>
+<div class="callout callout-safety"><div class="callout-title">릴레이와 교류(AC) 부하</div><div class="callout-body"><ul><li><strong>AC 220 V 는 감전으로 생명을 잃을 수 있습니다.</strong> 실습은 5~12 V 직류 부하(LED 띠, 소형 팬)로만 하세요. 교류 배선은 자격 있는 사람이 절연된 함체 안에서만 합니다.</li><li>접점 정격(예: 10 A 250 VAC / 10 A 30 VDC)을 넘기지 마세요. 모터·전구처럼 켜는 순간 큰 전류가 흐르는 부하는 정격의 절반 이하로 씁니다.</li><li>모듈의 JD-VCC 점퍼를 빼고 릴레이 코일 전원을 따로 주면 포토커플러로 <strong>MCU 쪽과 전기적으로 분리</strong>됩니다.</li><li>배선은 전원을 모두 끈 상태에서 하고, 릴레이 뒷면의 납땜면(고전압 쪽)을 손이나 금속에 닿지 않게 합니다.</li></ul></div></div>
+<h2 id="로터리-엔코더-ky-040">로터리 엔코더 (KY-040)<a class="anchor" href="#로터리-엔코더-ky-040">#</a></h2>
+<p>엔코더를 돌리면 CLK(A)와 DT(B) 두 신호가 <strong>90° 어긋난 사각파(직교 신호)</strong> 로 나옵니다. 어느 쪽이 먼저 떨어지는지로 방향을 압니다.</p>
+<div class="code-block"><div class="code-head"><span class="code-lang">text</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-text">시계 방향      CLK ‾‾\____/‾‾‾‾      CLK 가 먼저 LOW → 그 순간 DT 는 아직 HIGH → +1
+               DT  ‾‾‾‾\____/‾‾
+반시계 방향    CLK ‾‾‾‾\____/‾‾      CLK 가 떨어질 때 DT 는 이미 LOW → -1
+               DT  ‾‾\____/‾‾‾‾</code></pre></div>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l17-encoder" data-sim-src="../sim/index.html?ex=l17-encoder&amp;embed=1" data-sim-id="l17-encoder"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">로터리 엔코더 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l17-encoder" target="_blank" rel="noopener">새 창</a><code class="sim-id">l17-encoder</code></div>
+<div class="code-block code-example" data-example="l17-encoder"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c">  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    <span class="tk-t">uint8_t</span> clk = <span class="tk-h">HAL_GPIO_ReadPin</span>(ENC_CLK_GPIO_Port, ENC_CLK_Pin);
+    <span class="tk-k">if</span> (last_clk == <span class="tk-n">1</span> &amp;&amp; clk == <span class="tk-n">0</span>) {                              <span class="tk-c">// CLK 하강 에지</span>
+      <span class="tk-k">if</span> (<span class="tk-h">HAL_GPIO_ReadPin</span>(ENC_DT_GPIO_Port, ENC_DT_Pin) == <span class="tk-n">1</span>) position++;   <span class="tk-c">// DT 아직 HIGH → 시계 방향</span>
+      <span class="tk-k">else</span> position--;                                                        <span class="tk-c">// DT 먼저 LOW → 반시계</span>
+      <span class="tk-f">printf</span>(<span class="tk-s">"Position: %ld\r\n"</span>, position);
+    }
+    last_clk = clk;
+
+    <span class="tk-t">uint8_t</span> sw = <span class="tk-h">HAL_GPIO_ReadPin</span>(ENC_SW_GPIO_Port, ENC_SW_Pin);
+    <span class="tk-k">if</span> (last_sw == <span class="tk-n">1</span> &amp;&amp; sw == <span class="tk-n">0</span>) {
+      position = <span class="tk-n">0</span>;
+      <span class="tk-f">printf</span>(<span class="tk-s">"Reset\r\n"</span>);
+    }
+    last_sw = sw;
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">1</span>);
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span></code></pre></div>
+<ul><li>KY-040 은 한 바퀴에 <strong>20 딸깍(detent)</strong> 이 흔합니다. 한 딸깍에 CLK 가 한 번 떨어집니다.</li><li>빨리 돌리면 1 ms 폴링으로는 에지를 놓칠 수 있습니다. 실물에서는 EXTI 인터럽트를 쓰거나, 타이머의 <strong>엔코더 모드</strong>(<code>HAL_TIM_Encoder_Start</code>, 시뮬레이터 미지원)로 하드웨어가 직접 세게 합니다.</li><li>모듈의 CLK · DT 에는 10 kΩ 풀업이 있지만 SW 는 없는 모듈도 있어 내부 풀업을 켭니다.</li></ul>
+<h2 id="조이스틱">조이스틱<a class="anchor" href="#조이스틱">#</a></h2>
+<p>조이스틱은 10 kΩ 가변저항 두 개(X, Y)와 누름 스위치입니다. VRx · VRy 를 ADC 두 채널로 스캔하면 가운데가 약 2048 입니다. 실물은 가운데 값이 정확히 2048 이 아니고 흔들리므로 <strong>데드존</strong>(예: 1000~3000 은 가운데로 봄)을 둡니다.</p>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=l17-joystick" data-sim-src="../sim/index.html?ex=l17-joystick&amp;embed=1" data-sim-id="l17-joystick"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">조이스틱 열기</span></a><a class="sim-newtab" href="../sim/index.html?ex=l17-joystick" target="_blank" rel="noopener">새 창</a><code class="sim-id">l17-joystick</code></div>
+<div class="code-block code-example" data-example="l17-joystick"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c"><span class="tk-c">/* USER CODE BEGIN 0 */</span>
+<span class="tk-k">const</span> <span class="tk-t">char</span> *<span class="tk-f">joy_dir</span>(<span class="tk-t">uint32_t</span> x, <span class="tk-t">uint32_t</span> y)
+{
+  <span class="tk-k">if</span> (x &lt; <span class="tk-n">1000</span>) <span class="tk-k">return</span> <span class="tk-s">"LEFT"</span>;
+  <span class="tk-k">if</span> (x &gt; <span class="tk-n">3000</span>) <span class="tk-k">return</span> <span class="tk-s">"RIGHT"</span>;
+  <span class="tk-k">if</span> (y &lt; <span class="tk-n">1000</span>) <span class="tk-k">return</span> <span class="tk-s">"UP"</span>;
+  <span class="tk-k">if</span> (y &gt; <span class="tk-n">3000</span>) <span class="tk-k">return</span> <span class="tk-s">"DOWN"</span>;
+  <span class="tk-k">return</span> <span class="tk-s">"CENTER"</span>;
+}
+<span class="tk-c">/* USER CODE END 0 */</span>
+
+  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
+  <span class="tk-k">while</span> (<span class="tk-n">1</span>)
+  {
+    <span class="tk-c">/* USER CODE END WHILE */</span>
+
+    <span class="tk-c">/* USER CODE BEGIN 3 */</span>
+    <span class="tk-h">HAL_ADC_Start</span>(&amp;hadc1);                       <span class="tk-c">// rank 1 (IN0) → rank 2 (IN1) 순서로 변환</span>
+    <span class="tk-h">HAL_ADC_PollForConversion</span>(&amp;hadc1, <span class="tk-n">10</span>);
+    joy_x = <span class="tk-h">HAL_ADC_GetValue</span>(&amp;hadc1);
+    <span class="tk-h">HAL_ADC_PollForConversion</span>(&amp;hadc1, <span class="tk-n">10</span>);
+    joy_y = <span class="tk-h">HAL_ADC_GetValue</span>(&amp;hadc1);
+    <span class="tk-h">HAL_ADC_Stop</span>(&amp;hadc1);
+
+    <span class="tk-k">if</span> (<span class="tk-h">HAL_GetTick</span>() - last_print &gt;= <span class="tk-n">250</span>) {
+      last_print = <span class="tk-h">HAL_GetTick</span>();
+      <span class="tk-t">int</span> sw = <span class="tk-h">HAL_GPIO_ReadPin</span>(JOY_SW_GPIO_Port, JOY_SW_Pin) == <span class="tk-m">GPIO_PIN_RESET</span>;
+      <span class="tk-f">printf</span>(<span class="tk-s">"X=%4lu Y=%4lu SW=%d %s\r\n"</span>, joy_x, joy_y, sw, <span class="tk-f">joy_dir</span>(joy_x, joy_y));
+    }
+    <span class="tk-h">HAL_Delay</span>(<span class="tk-n">10</span>);
+  }
+  <span class="tk-c">/* USER CODE END 3 */</span></code></pre></div>
+<div class="callout callout-safety"><div class="callout-title">5 V 모듈을 3.3 V MCU 에 연결할 때</div><div class="callout-body"><ul><li>조이스틱 · 가변저항처럼 <strong>ADC 로 읽는 모듈은 반드시 3.3 V 로 전원</strong>을 줍니다. 5 V 를 주면 출력이 3.3 V 를 넘어 ADC 핀이 손상될 수 있습니다.</li><li>HC-SR04 의 ECHO 는 5 V 신호입니다. 연결할 핀이 데이터시트 핀 표에서 <strong>FT(5 V 허용)</strong> 인지 확인하거나, 1 kΩ / 2 kΩ 분압으로 약 3.3 V 로 낮춥니다.</li><li>배선은 전원을 끈 상태에서 하고, 5 V · 3.3 V · GND 를 서로 직접 잇지 않았는지 확인한 뒤 USB 를 꽂습니다.</li></ul></div></div>
+<div class="callout callout-task"><div class="callout-title">실습</div><div class="callout-body"><ol><li>OLED 예제에 <code>oled_puts</code> 로 두 번째 줄을 추가하고, <code>0xA7</code> 명령으로 화면을 반전해 보세요.</li><li>HC-SR04 예제의 거리 값을 OLED 에 표시하세요. I2C1 과 TIM2 를 함께 켜면 됩니다.</li><li>키패드로 4자리 숫자를 입력해 4자리 FND 에 표시하세요. 스캔 20 ms 동안에도 FND 가 꺼지지 않게 하려면 어떻게 할까요?</li><li>엔코더 값으로 LCD 나 OLED 의 메뉴 커서를 움직이고 SW 로 선택하세요.</li></ol></div></div>
+<div class="callout callout-check"><div class="callout-title">스스로 확인</div><div class="callout-body"><ul><li>ECHO 폭이 2900 µs 이면 거리는 몇 cm 인가요?</li><li>OLED 의 픽셀 (x = 10, y = 20) 은 <code>oled_buf</code> 의 몇 번째 바이트, 몇 번째 비트인가요?</li><li>4자리 FND 에서 자리마다 5 ms 씩 켜면 프레임 주파수는 몇 Hz 인가요? 깜빡임이 보일까요?</li></ul></div></div>
+<h2 id="자주-나는-오류와-해결">자주 나는 오류와 해결<a class="anchor" href="#자주-나는-오류와-해결">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인</th><th>해결</th></tr></thead><tbody><tr><td>OLED 가 아무것도 표시하지 않음</td><td>차지 펌프 <code>0x8D 0x14</code> 누락, 주소 <code>0x3C</code> 를 시프트하지 않음</td><td>초기화 순서 확인, <code>0x3C &lt;&lt; 1</code></td></tr><tr><td>OLED 글자가 좌우·상하로 뒤집힘</td><td><code>0xA0/0xA1</code>, <code>0xC0/0xC8</code> 조합</td><td>모듈 방향에 맞게 둘 중 하나 변경</td></tr><tr><td>초음파 값이 늘 0 또는 "No echo"</td><td>TRIG 펄스 10 µs 미만, ECHO 5 V 를 분압 없이 비FT 핀에</td><td>펄스 폭 확인, 분압 · FT 핀</td></tr><tr><td>초음파 값이 가끔 튐</td><td>측정 간격이 60 ms 보다 짧아 이전 반사파를 받음</td><td>간격 늘리기, 중앙값 필터</td></tr><tr><td>키가 여러 번 입력됨</td><td>눌린 동안 매 스캔마다 처리</td><td>이전 키와 비교해 새로 눌린 순간만 처리</td></tr><tr><td>FND 옆 자리에 흐린 숫자</td><td>자리 전환 순서가 틀림</td><td>모든 자리 끄기 → 세그먼트 → 새 자리 켜기</td></tr><tr><td>DHT11 체크섬 오류</td><td>읽는 도중 인터럽트, 풀업 없음, 1초보다 자주 읽음</td><td>읽는 동안 긴 ISR 피하기, 4.7 kΩ 풀업, 2초 간격</td></tr><tr><td>릴레이가 부팅할 때 잠깐 붙음</td><td>출력 초기값이 LOW (능동 LOW 모듈)</td><td>CubeMX GPIO output level 을 High 로</td></tr><tr><td>엔코더 값이 반대로 셈</td><td>CLK · DT 배선이 바뀜</td><td>선을 바꾸거나 코드의 ++/-- 교환</td></tr></tbody></table></div>
+<h2 id="과제">과제<a class="anchor" href="#과제">#</a></h2>
+<ol><li>OLED 에 초음파 거리를 막대그래프(0~100 cm → 0~128 픽셀)로 그리세요.</li><li>DHT11 의 온도가 28 °C 를 넘으면 릴레이(선풍기)를 켜고 26 °C 아래로 내려가면 끄는 <strong>히스테리시스 제어</strong>를 만드세요.</li><li>조이스틱으로 OLED 위의 점(8x8 사각형)을 움직이는 간단한 게임을 만드세요.</li></ol>
+<h2 id="참고자료">참고자료<a class="anchor" href="#참고자료">#</a></h2>
+<ul><li>Solomon Systech, <em>SSD1306 Datasheet</em> — 명령표(10장)와 GDDRAM 주소 방식(8.7장)</li><li><em>HC-SR04 Ultrasonic Ranging Module</em> 사용 설명서 (타이밍 다이어그램)</li><li>Aosong, <em>DHT11 Humidity &amp; Temperature Sensor</em> 데이터시트</li><li>ST, <em>STM32F411xC/E Datasheet</em> — 핀 표의 FT 표시, 전류 절대 최대 정격(6.2절)</li><li>ST, <em>AN4776 — General-purpose timer cookbook</em> (엔코더 모드)</li><li>이 사이트의 <a href="hal-reference.html#i2c">HAL 레퍼런스 — I2C</a>, <a href="hal-reference.html#tim-pwm">TIM · PWM</a></li></ul>
+      <nav class="pager"><a class="pager-prev" href="l16.html"><span>이전 · L16</span>실물 보드로 옮기기</a><a class="pager-next" href="l18.html"><span>다음 · L18</span>DMA — CPU 없이 옮기기</a></nav>
+    </div>
+    <aside class="lesson-toc"><div class="toc-title">이 레슨의 내용</div><div class="toc-links"><a class="toc-l2" href="#학습-목표">학습 목표</a><a class="toc-l2" href="#모듈-한눈에-보기">모듈 한눈에 보기</a><a class="toc-l2" href="#ssd1306-oled">SSD1306 OLED</a><a class="toc-l2" href="#hc-sr04-초음파-거리">HC-SR04 초음파 거리</a><a class="toc-l2" href="#4x4-키패드-스캔">4x4 키패드 스캔</a><a class="toc-l2" href="#4자리-fnd-멀티플렉싱">4자리 FND 멀티플렉싱</a><a class="toc-l2" href="#dht11-단일-선-프로토콜">DHT11 단일 선 프로토콜</a><a class="toc-l2" href="#릴레이-모듈">릴레이 모듈</a><a class="toc-l2" href="#로터리-엔코더-ky-040">로터리 엔코더 (KY-040)</a><a class="toc-l2" href="#조이스틱">조이스틱</a><a class="toc-l2" href="#자주-나는-오류와-해결">자주 나는 오류와 해결</a><a class="toc-l2" href="#과제">과제</a><a class="toc-l2" href="#참고자료">참고자료</a></div></aside>
+  </div>
+</article>
+
+</main>
+<script src="../assets/js/site.js?v=20260928d"></script>
+</body>
+</html>
