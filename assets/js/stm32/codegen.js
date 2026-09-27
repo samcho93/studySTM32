@@ -36,7 +36,7 @@
 
   function portOf(pin) { return 'GPIO' + pin[1]; }
   function numOf(pin) { return parseInt(pin.slice(2), 10); }
-  function exti(n) { return n <= 4 ? 'EXTI' + n : n <= 9 ? 'EXTI9_5' : 'EXTI15_10'; }
+  function exti(n, chip) { return C.extiLine(chip, n); }
 
   function pinDefName(pin, cfg) {
     return cfg.label ? cfg.label.replace(/[^\w]/g, '_') : null;
@@ -85,7 +85,7 @@
 
   // ------------------------------------------------------------ main.h
   function genMainH(project) {
-    var chip = C.chipOf(project.board);
+    var chip = C.chipOf(project);
     var s = '/* USER CODE BEGIN Header */\n/**\n  ******************************************************************************\n' +
       '  * @file           : main.h\n  * @brief          : Header for main.c file.\n' +
       '  *                   This file contains the common defines of the application.\n' +
@@ -103,7 +103,7 @@
       var n = pinDefName(pin, cfg);
       s += '#define ' + n + '_Pin GPIO_PIN_' + numOf(pin) + '\n';
       s += '#define ' + n + '_GPIO_Port ' + portOf(pin) + '\n';
-      if (cfg.signal === 'GPIO_EXTI') s += '#define ' + n + '_EXTI_IRQn ' + exti(numOf(pin)) + '_IRQn\n';
+      if (cfg.signal === 'GPIO_EXTI') s += '#define ' + n + '_EXTI_IRQn ' + exti(numOf(pin), chip) + '_IRQn\n';
     });
     s += '\n#ifdef __cplusplus\n}\n#endif\n\n#endif /* __MAIN_H */\n';
     return s;
@@ -112,7 +112,7 @@
   // ------------------------------------------------------------ main.c
   function genMainC(project, user) {
     user = user || {};
-    var chip = C.chipOf(project.board), f4 = chip.series === 'F4';
+    var chip = C.chipOf(project), f4 = chip.series === 'F4';
     var act = activePeriph(project);
     var P = project.periph || {}, N = project.nvic || {};
     var out = [];
@@ -158,9 +158,9 @@
 
     out.push(genClock(project, chip));
     if (dma) out.push(['/**', '  * Enable DMA controller clock', '  */', 'static void MX_DMA_Init(void)', '{', '',
-      '  /* DMA controller clock enable */', '  __HAL_RCC_DMA2_CLK_ENABLE();', '', '  /* DMA interrupt init */',
-      '  /* DMA2_Stream0_IRQn interrupt configuration */', '  HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 0, 0);',
-      '  HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);', '', '}', ''].join('\n'));
+      '  /* DMA controller clock enable */', (chip.series === 'F4' ? '  __HAL_RCC_DMA2_CLK_ENABLE();' : '  __HAL_RCC_DMA1_CLK_ENABLE();'), '', '  /* DMA interrupt init */',
+      '  /* DMA interrupt configuration */', '  HAL_NVIC_SetPriority(' + (chip.series === 'F4' ? 'DMA2_Stream0' : 'DMA1_Channel1') + '_IRQn, 0, 0);',
+      '  HAL_NVIC_EnableIRQ(' + (chip.series === 'F4' ? 'DMA2_Stream0' : 'DMA1_Channel1') + '_IRQn);', '', '}', ''].join('\n'));
     act.forEach(function (p) { out.push(genInit(p, project, chip)); });
     out.push(genGpio(project, chip));
     out.push(sec(user, '4') + '/* USER CODE END 4 */\n');
@@ -171,34 +171,56 @@
   }
 
   function genClock(project, chip) {
-    var mhz = (project.clock && project.clock.sysclk) || chip.defClk;
-    var f4 = chip.series === 'F4';
-    var s = '/**\n  * @brief System Clock Configuration (SYSCLK = ' + mhz + ' MHz)\n  * @retval None\n  */\nvoid SystemClock_Config(void)\n{\n' +
+    var mhz = (project.clock && project.clock.sysclk) || chip.defClk, fam = chip.series, ck = C.clocks(chip, mhz), hsi = chip.hsi, pll = mhz !== hsi;
+    var s = '/**\n  * @brief System Clock Configuration (SYSCLK = ' + mhz + ' MHz, ' + chip.family + ')\n  * @retval None\n  */\nvoid SystemClock_Config(void)\n{\n' +
       '  RCC_OscInitTypeDef RCC_OscInitStruct = {0};\n  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};\n\n';
-    var hsi = f4 ? 16 : 8, pll = mhz !== hsi;
-    if (f4) s += '  /** Configure the main internal regulator output voltage\n  */\n  __HAL_RCC_PWR_CLK_ENABLE();\n  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE' + (mhz > 84 ? 1 : 2) + ');\n\n';
-    s += '  /** Initializes the RCC Oscillators according to the specified parameters\n  * in the RCC_OscInitTypeDef structure.\n  */\n' +
-      '  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;\n  RCC_OscInitStruct.HSIState = RCC_HSI_ON;\n' +
-      '  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;\n';
-    if (pll) {
-      s += '  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;\n';
-      if (f4) {
-        var plln = { 48: 192, 84: 336, 100: 200 }[mhz] || 336, pllp = mhz === 100 ? 2 : 4, pllm = mhz === 100 ? 8 : 16;
-        s += '  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;\n  RCC_OscInitStruct.PLL.PLLM = ' + pllm + ';\n' +
-          '  RCC_OscInitStruct.PLL.PLLN = ' + plln + ';\n  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV' + pllp + ';\n  RCC_OscInitStruct.PLL.PLLQ = ' + (mhz === 48 ? 4 : 7) + ';\n';
-      } else {
-        var mul = Math.round(mhz / 4);
-        s += '  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI_DIV2;\n  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL' + Math.min(16, mul) + ';\n';
+    var lat, useHse = false;
+    if (fam === 'F4') {
+      s += '  /** Configure the main internal regulator output voltage\n  */\n  __HAL_RCC_PWR_CLK_ENABLE();\n  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE' + (mhz > 84 ? 1 : mhz > 64 ? 2 : 3) + ');\n\n';
+      lat = mhz > 150 ? 5 : mhz > 120 ? 4 : mhz > 90 ? 3 : mhz > 60 ? 2 : mhz > 30 ? 1 : 0;
+    } else if (fam === 'F1') { useHse = mhz > 64; lat = mhz > 48 ? 2 : mhz > 24 ? 1 : 0; }
+    else if (fam === 'F0') lat = mhz > 24 ? 1 : 0;
+    else if (fam === 'G0') lat = mhz > 48 ? 2 : mhz > 24 ? 1 : 0;
+    else if (fam === 'L4') {
+      s += '  /** Configure the main internal regulator output voltage\n  */\n  if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1) != HAL_OK)\n  {\n    Error_Handler();\n  }\n\n';
+      lat = mhz > 64 ? 4 : mhz > 48 ? 3 : mhz > 32 ? 2 : mhz > 16 ? 1 : 0;
+    }
+    s += '  /** Initializes the RCC Oscillators according to the specified parameters\n  * in the RCC_OscInitTypeDef structure.\n  */\n';
+    if (useHse) {
+      var bypass = !!(project.board && /NUCLEO/.test(project.board));
+      s += '  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;\n  RCC_OscInitStruct.HSEState = ' + (bypass ? 'RCC_HSE_BYPASS' : 'RCC_HSE_ON') + ';   /* 8 MHz ' + (bypass ? 'ST-Link MCO' : '크리스털') + ' */\n' +
+        '  RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;\n  RCC_OscInitStruct.HSIState = RCC_HSI_ON;\n  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;\n' +
+        '  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;\n  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL' + Math.round(mhz / 8) + ';\n';
+    } else {
+      s += '  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;\n  RCC_OscInitStruct.HSIState = RCC_HSI_ON;\n' +
+        (fam === 'G0' ? '  RCC_OscInitStruct.HSIDiv = RCC_HSI_DIV1;\n' : '') +
+        '  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;\n';
+      if (!pll) s += '  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;\n';
+      else {
+        s += '  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;\n';
+        if (fam === 'F4') {
+          var plln = mhz * 2, pllq = Math.max(2, Math.min(15, Math.round(plln / 48)));
+          s += '  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;\n  RCC_OscInitStruct.PLL.PLLM = 16;\n  RCC_OscInitStruct.PLL.PLLN = ' + plln + ';\n  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;\n  RCC_OscInitStruct.PLL.PLLQ = ' + pllq + ';\n';
+        } else if (fam === 'F1') {
+          s += '  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI_DIV2;\n  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL' + Math.round(mhz / 4) + ';\n';
+        } else if (fam === 'F0') {
+          s += '  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;\n  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL' + Math.round(mhz / 4) + ';\n  RCC_OscInitStruct.PLL.PREDIV = RCC_PREDIV_DIV2;\n';
+        } else if (fam === 'G0') {
+          s += '  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;\n  RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV1;\n  RCC_OscInitStruct.PLL.PLLN = 8;\n  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;\n  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;\n  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV' + (mhz >= 64 ? 2 : 4) + ';\n';
+        } else if (fam === 'L4') {
+          s += '  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;\n  RCC_OscInitStruct.PLL.PLLM = 1;\n  RCC_OscInitStruct.PLL.PLLN = 10;\n  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV7;\n  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;\n  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV' + (mhz >= 80 ? 2 : 4) + ';\n';
+        }
       }
-    } else s += '  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;\n';
-    s += '  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)\n  {\n    Error_Handler();\n  }\n\n' +
-      '  /** Initializes the CPU, AHB and APB buses clocks\n  */\n' +
-      '  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK\n                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;\n' +
+    }
+    s += '  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)\n  {\n    Error_Handler();\n  }\n';
+    if (fam === 'F4' && mhz > 168) s += '\n  /** Activate the Over-Drive mode\n  */\n  if (HAL_PWREx_EnableOverDrive() != HAL_OK)\n  {\n    Error_Handler();\n  }\n';
+    var noApb2 = fam === 'F0' || fam === 'G0';
+    s += '\n  /** Initializes the CPU, AHB and APB buses clocks\n  */\n' +
+      '  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK\n                              |RCC_CLOCKTYPE_PCLK1' + (noApb2 ? '' : '|RCC_CLOCKTYPE_PCLK2') + ';\n' +
       '  RCC_ClkInitStruct.SYSCLKSource = ' + (pll ? 'RCC_SYSCLKSOURCE_PLLCLK' : 'RCC_SYSCLKSOURCE_HSI') + ';\n' +
-      '  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;\n' +
-      '  RCC_ClkInitStruct.APB1CLKDivider = ' + (mhz > chip.apb1Max ? 'RCC_HCLK_DIV2' : 'RCC_HCLK_DIV1') + ';\n' +
-      '  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;\n\n' +
-      '  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_' + (f4 ? (mhz > 90 ? 3 : mhz > 64 ? 2 : mhz > 30 ? 1 : 0) : (mhz > 48 ? 2 : mhz > 24 ? 1 : 0)) + ') != HAL_OK)\n  {\n    Error_Handler();\n  }\n}\n';
+      '  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;\n  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV' + ck.div1 + ';\n' +
+      (noApb2 ? '' : '  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV' + ck.div2 + ';\n') +
+      '\n  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_' + lat + ') != HAL_OK)\n  {\n    Error_Handler();\n  }\n}\n';
     return s;
   }
 
@@ -273,23 +295,30 @@
       return s + tail(p);
     }
     if (p === 'ADC1') {
-      var chans = c.channels || [0];
+      var chans = c.channels || [0], m0 = chip.series === 'F0' || chip.series === 'G0', l4 = chip.series === 'L4', f1 = chip.series === 'F1', g0 = chip.series === 'G0';
       s = head(p, '  ADC_ChannelConfTypeDef sConfig = {0};\n\n') +
         '  /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)\n  */\n' +
-        '  hadc1.Instance = ADC1;\n' +
-        (f4 ? '  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;\n  hadc1.Init.Resolution = ADC_RESOLUTION_12B;\n' : '') +
-        '  hadc1.Init.ScanConvMode = ' + (chans.length > 1 ? 'ENABLE' : 'DISABLE') + ';\n' +
+        '  hadc1.Instance = ADC1;\n';
+      if (f4) s += '  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;\n  hadc1.Init.Resolution = ADC_RESOLUTION_12B;\n';
+      else if (l4) s += '  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;\n  hadc1.Init.Resolution = ADC_RESOLUTION_12B;\n  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;\n';
+      else if (m0) s += '  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;\n  hadc1.Init.Resolution = ADC_RESOLUTION_12B;\n  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;\n';
+      s += '  hadc1.Init.ScanConvMode = ' + (m0 ? 'ADC_SCAN_DIRECTION_FORWARD' : l4 ? (chans.length > 1 ? 'ADC_SCAN_ENABLE' : 'ADC_SCAN_DISABLE') : (chans.length > 1 ? 'ENABLE' : 'DISABLE')) + ';\n' +
+        ((f4 || l4 || m0) ? '  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;\n' : '') +
+        ((l4 || m0) ? '  hadc1.Init.LowPowerAutoWait = DISABLE;\n' : '') + (m0 ? '  hadc1.Init.LowPowerAutoPowerOff = DISABLE;\n' : '') +
         '  hadc1.Init.ContinuousConvMode = ' + (c.continuous ? 'ENABLE' : 'DISABLE') + ';\n' +
+        (m0 ? '' : '  hadc1.Init.NbrOfConversion = ' + chans.length + ';\n') +
         '  hadc1.Init.DiscontinuousConvMode = DISABLE;\n' +
-        (f4 ? '  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;\n' : '') +
-        '  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;\n  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;\n' +
-        '  hadc1.Init.NbrOfConversion = ' + chans.length + ';\n' +
-        (f4 ? '  hadc1.Init.DMAContinuousRequests = ' + (c.dma ? 'ENABLE' : 'DISABLE') + ';\n  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;\n' : '') +
+        (f1 ? '' : '  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;\n') +
+        '  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;\n' + ((f4 || f1) ? '  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;\n' : '') +
+        ((f4 || l4 || m0) ? '  hadc1.Init.DMAContinuousRequests = ' + (c.dma ? 'ENABLE' : 'DISABLE') + ';\n' : '') +
+        ((l4 || m0) ? '  hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;\n' : '') + (l4 ? '  hadc1.Init.OversamplingMode = DISABLE;\n' : '') +
+        (g0 ? '  hadc1.Init.SamplingTimeCommon1 = ADC_SAMPLINGTIME_COMMON_1;\n  hadc1.Init.TriggerFrequencyMode = ADC_TRIGGER_FREQ_HIGH;\n' : '') +
         errChk('HAL_ADC_Init(&hadc1)') + '\n';
       chans.forEach(function (ch, i) {
         s += '  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.\n  */\n' +
-          '  sConfig.Channel = ADC_CHANNEL_' + ch + ';\n  sConfig.Rank = ' + (f4 ? (i + 1) : 'ADC_REGULAR_RANK_' + (i + 1)) + ';\n' +
-          (i === 0 ? '  sConfig.SamplingTime = ' + (f4 ? 'ADC_SAMPLETIME_84CYCLES' : 'ADC_SAMPLETIME_55CYCLES_5') + ';\n' : '') +
+          '  sConfig.Channel = ADC_CHANNEL_' + ch + ';\n  sConfig.Rank = ' + (f4 ? (i + 1) : m0 ? 'ADC_RANK_CHANNEL_NUMBER' : 'ADC_REGULAR_RANK_' + (i + 1)) + ';\n' +
+          (i === 0 || m0 ? '  sConfig.SamplingTime = ' + (f4 ? 'ADC_SAMPLETIME_84CYCLES' : f1 ? 'ADC_SAMPLETIME_55CYCLES_5' : l4 ? 'ADC_SAMPLETIME_47CYCLES_5' : g0 ? 'ADC_SAMPLINGTIME_COMMON_1' : 'ADC_SAMPLETIME_239CYCLES_5') + ';\n' : '') +
+          (l4 && i === 0 ? '  sConfig.SingleDiff = ADC_SINGLE_ENDED;\n  sConfig.OffsetNumber = ADC_OFFSET_NONE;\n  sConfig.Offset = 0;\n' : '') +
           errChk('HAL_ADC_ConfigChannel(&hadc1, &sConfig)');
       });
       if (N[info.irq] || N.ADC1) s += '  /* ADC1 interrupt Init (MSP) */\n' + nvicLines(info.irq);
@@ -308,8 +337,8 @@
     var s = '/**\n  * @brief GPIO Initialization Function\n  * @param None\n  * @retval None\n  */\nstatic void MX_GPIO_Init(void)\n{\n' +
       (gp.length ? '  GPIO_InitTypeDef GPIO_InitStruct = {0};\n' : '') +
       '/* USER CODE BEGIN MX_GPIO_Init_1 */\n\n/* USER CODE END MX_GPIO_Init_1 */\n\n  /* GPIO Ports Clock Enable */\n';
-    var allPorts = ['C', 'H', 'D', 'A', 'B'].filter(function (x) {
-      return ports[x] || (x === 'A') || ((x === 'H' || x === 'D') && chip.pins.indexOf('P' + x + '0') >= 0);
+    var allPorts = ['E', 'C', 'H', 'F', 'D', 'A', 'B'].filter(function (x) {
+      return ports[x] || (x === 'A') || ((x === 'H' || x === 'D' || x === 'F') && chip.pins.indexOf('P' + x + '0') >= 0 && C.reserved(chip, 'P' + x + '0'));
     });
     allPorts.forEach(function (x) { s += '  __HAL_RCC_GPIO' + x + '_CLK_ENABLE();\n'; });
     s += '\n';
@@ -352,7 +381,7 @@
     });
     // EXTI NVIC
     var lines = {};
-    gp.forEach(function (p) { if (pins[p].signal === 'GPIO_EXTI') lines[exti(numOf(p))] = 1; });
+    gp.forEach(function (p) { if (pins[p].signal === 'GPIO_EXTI') lines[exti(numOf(p), chip)] = 1; });
     var en = Object.keys(lines).filter(function (l) { return N[l]; });
     if (en.length) {
       s += '  /* EXTI interrupt init*/\n';
@@ -364,10 +393,10 @@
 
   // ------------------------------------------------------------ .ioc (보기용)
   function genIoc(project) {
-    var chip = C.chipOf(project.board);
+    var chip = C.chipOf(project);
     var L = ['#MicroXplorer Configuration settings - do not modify', 'File.Version=6',
       'Mcu.Family=' + chip.family + 'xx', 'Mcu.Name=' + chip.name, 'Mcu.Package=' + chip.pkg,
-      'Mcu.UserName=' + chip.name.replace(/x$/, '') + 'Tx', 'ProjectManager.ProjectName=' + (project.name || 'stm32_project'),
+      'Mcu.UserName=' + chip.name, 'board=' + (project.board || 'custom'), 'ProjectManager.ProjectName=' + (project.name || 'stm32_project'),
       'ProjectManager.TargetToolchain=STM32CubeIDE', 'RCC.SYSCLKFreq_VALUE=' + (((project.clock && project.clock.sysclk) || chip.defClk) * 1e6)];
     var ip = activePeriph(project);
     ip.forEach(function (p, i) { L.push('Mcu.IP' + i + '=' + p); });

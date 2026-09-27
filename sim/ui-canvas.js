@@ -64,12 +64,13 @@
     this.gNodes.innerHTML = ''; this.gWires.innerHTML = ''; this.pinPos = {}; this.portPos = {};
     // MCU
     var gp = chip.pins.filter(function (p, i) { return global.STM32Chips.isGpio(p) && chip.pins.indexOf(p) === i; });
-    var left = gp.filter(function (p) { return p[1] === 'A' || p[1] === 'B'; }), right = gp.filter(function (p) { return p[1] !== 'A' && p[1] !== 'B'; });
+    var half = Math.ceil(gp.length / 2), sorted = gp.slice().sort(function (a, b) { return a[1] === b[1] ? (+a.slice(2) - +b.slice(2)) : (a[1] < b[1] ? -1 : 1); });
+    var left = sorted.slice(0, half), right = sorted.slice(half);
     var rows = Math.max(left.length, right.length), h = rows * ROW + 52;
     var mcu = el('g', { class: 'mcu', transform: 'translate(' + MCU_X + ',' + MCU_Y + ')' }, this.gNodes);
     el('rect', { class: 'body', x: 0, y: 0, width: MCU_W, height: h }, mcu);
     el('text', { class: 'chip-name', x: MCU_W / 2, y: 20, 'text-anchor': 'middle' }, mcu).textContent = chip.name.replace(/Tx$/, '');
-    el('text', { class: 'sub', x: MCU_W / 2, y: 34, 'text-anchor': 'middle', 'font-size': 9.5, fill: 'var(--text-faint)', 'font-family': 'var(--mono)' }, mcu).textContent = app.board.title;
+    el('text', { class: 'sub', x: MCU_W / 2, y: 34, 'text-anchor': 'middle', 'font-size': 9.5, fill: 'var(--text-faint)', 'font-family': 'var(--mono)' }, mcu).textContent = app.board ? app.board.title : chip.family + ' · ' + chip.pkg;
     function pinRow(name, i, side) {
       var y = 44 + i * ROW, cfg = P.pins[name], used = cfg && cfg.signal && cfg.signal !== 'Reset_State';
       var g = el('g', { class: 'pin' + (used ? ' used' : ''), 'data-pin': name, transform: 'translate(' + (side === 'L' ? 6 : MCU_W / 2 + 2) + ',' + y + ')' }, mcu);

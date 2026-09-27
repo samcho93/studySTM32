@@ -32,10 +32,12 @@
   // ---------------------------------------------------------------- 렌더러
   Props.prototype.r_project = function () {
     var app = this.app, P = app.project;
-    return '<h4>프로젝트 <span class="type">' + esc(app.board.title) + '</span></h4>' +
+    return '<h4>프로젝트 <span class="type">' + esc(app.chip.part) + '</span></h4>' +
       '<div class="prow"><label>이름</label><input type="text" data-k="proj.name" value="' + esc(P.name || '') + '"></div>' +
-      '<div class="prow"><label>보드</label><select data-k="proj.board">' + opt(Object.keys(global.STM32Chips.BOARDS).map(function (b) { return [b, global.STM32Chips.BOARDS[b].title]; }), P.board) + '</select></div>' +
-      '<div class="pdesc">' + esc(app.board.desc) + '</div>' +
+      '<div class="prow"><label>MCU</label><select data-k="proj.mcu">' + app.mcuOptions(P.mcu) + '</select></div>' +
+      '<div class="pdesc">' + esc(app.chip.family) + ' · ' + esc(app.chip.core) + ' · ' + esc(app.chip.pkg) + ' · ' + esc(app.chip.desc) + (app.chip.note ? '<br>' + esc(app.chip.note) : '') + '</div>' +
+      '<div class="prow"><label>보드 프리셋</label><select data-k="proj.board">' + app.boardOptions(P.mcu, P.board) + '</select></div>' +
+      '<div class="pdesc">' + (app.board ? esc(app.board.desc) : 'MCU 만 놓고 직접 배선합니다. 보드를 고르면 내장 LED·버튼·가상 COM 포트가 회로에 들어갑니다.') + '</div>' +
       '<div class="prow"><label>SYSCLK</label><select data-k="proj.sysclk">' + opt(app.chip.sysclks.map(function (m) { return [m, m + ' MHz']; }), (P.clock && P.clock.sysclk) || app.chip.defClk) + '</select></div>' +
       '<div class="prow"><label>printf float</label><input type="checkbox" data-k="proj.printfFloat"' + (P.settings && P.settings.printfFloat !== false ? ' checked' : '') + '></div>' +
       '<div class="pdesc">CubeIDE 의 <code>-u _printf_float</code> 링커 옵션에 해당합니다. 꺼져 있으면 %f 가 비어서 출력됩니다.</div>' +
@@ -46,7 +48,7 @@
     var app = this.app, n = app.nodeById(c.id); if (!n) return '<div class="empty">선택된 장치가 없습니다.</div>';
     var d = global.STM32Devices.DEVICES[n.type], html = '<h4>' + esc(d.name) + ' <span class="type">' + esc(n.id) + '</span></h4>';
     html += '<h4 style="margin-top:8px">포트 연결</h4>';
-    var gpio = app.chip.pins.filter(function (p, i) { return global.STM32Chips.isGpio(p) && !global.STM32Chips.RESERVED[p] && app.chip.pins.indexOf(p) === i; });
+    var gpio = app.chip.pins.filter(function (p, i) { return global.STM32Chips.isGpio(p) && !global.STM32Chips.reserved(app.chip, p) && app.chip.pins.indexOf(p) === i; });
     d.ports.forEach(function (p) {
       var cur = n.conn && n.conn[p.id] || '';
       html += '<div class="prow"><label>' + esc(p.label || p.id) + ' <span class="type">' + p.dir + '</span></label><select data-k="port.' + p.id + '"><option value="">— 연결 안 함 —</option>' + opt(gpio, cur) + '</select></div>';
@@ -86,9 +88,9 @@
   };
   Props.prototype.r_pin = function (c) {
     var app = this.app, pin = c.pin, cfg = app.project.pins[pin] || {}, sigs = global.STM32Chips.pinSignals(app.chip, pin), C = global.STM32Chips;
-    var html = '<h4>핀 ' + pin + ' <span class="type">' + (C.RESERVED[pin] ? C.RESERVED[pin] : 'GPIO' + pin[1] + ' · PIN ' + pin.slice(2)) + '</span></h4>';
+    var html = '<h4>핀 ' + pin + ' <span class="type">' + (C.reserved(app.chip, pin) ? C.reserved(app.chip, pin) : 'GPIO' + pin[1] + ' · PIN ' + pin.slice(2)) + '</span></h4>';
     if (!C.isGpio(pin)) return html + '<div class="pdesc">전원/리셋 핀입니다.</div>';
-    if (C.RESERVED[pin]) return html + '<div class="pdesc">디버그(SWD) 또는 오실레이터로 예약된 핀입니다. 실물에서도 쓰지 않는 것이 좋습니다.</div>';
+    if (C.reserved(app.chip, pin)) return html + '<div class="pdesc">디버그(SWD) 또는 오실레이터로 예약된 핀입니다. 실물에서도 쓰지 않는 것이 좋습니다.</div>';
     html += '<div class="prow"><label>신호</label><select data-k="pin.signal">' + opt(sigs, cfg.signal || 'Reset_State') + '</select></div>';
     var s = cfg.signal || '';
     if (/^GPIO_/.test(s)) html += '<div class="prow"><label>사용자 라벨</label><input type="text" data-k="pin.label" value="' + esc(cfg.label || '') + '" placeholder="예: LED1 → LED1_Pin"></div>';
@@ -96,7 +98,7 @@
       '<div class="prow"><label>출력 형태</label><select data-k="pin.od">' + opt([[0, 'Push-pull'], [1, 'Open-drain']], cfg.od ? 1 : 0) + '</select></div>';
     if (s === 'GPIO_Input' || s === 'GPIO_EXTI' || s === 'GPIO_Output') html += '<div class="prow"><label>풀업/풀다운</label><select data-k="pin.pull">' + opt([['none', 'No pull-up and no pull-down'], ['up', 'Pull-up'], ['down', 'Pull-down']], cfg.pull || 'none') + '</select></div>';
     if (s === 'GPIO_EXTI') {
-      var line = global.STM32Codegen.exti(+pin.slice(2));
+      var line = global.STM32Codegen.exti(+pin.slice(2), app.chip);
       html += '<div class="prow"><label>트리거</label><select data-k="pin.trigger">' + opt([['falling', 'Falling edge (하강)'], ['rising', 'Rising edge (상승)'], ['both', 'Rising/Falling 둘 다']], cfg.trigger || 'falling') + '</select></div>' +
         '<div class="chk"><input type="checkbox" data-k="nvic.' + line + '"' + (app.project.nvic[line] ? ' checked' : '') + '><span>NVIC: ' + line + ' 인터럽트 켜기</span><span class="irq">' + line + '_IRQn</span></div>' +
         '<div class="pdesc">콜백: <code>void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)</code> 에서 <code>GPIO_Pin == GPIO_PIN_' + (+pin.slice(2)) + '</code> 로 구분합니다.</div>';
@@ -131,10 +133,10 @@
     } else if (/^TIM/.test(k)) {
       html += '<div class="prow"><label>활성화</label><input type="checkbox" data-k="pp.enabled"' + (on ? ' checked' : '') + '></div>';
       if (on) {
-        var psc = cfg.psc != null ? cfg.psc : 0, arr = cfg.arr != null ? cfg.arr : 65535, f = app.timclk / (psc + 1) / (arr + 1);
+        var tclk = app.timclkOf(k), psc = cfg.psc != null ? cfg.psc : 0, arr = cfg.arr != null ? cfg.arr : 65535, f = tclk / (psc + 1) / (arr + 1);
         html += '<div class="prow"><label>Prescaler (PSC)</label><input type="number" min="0" max="65535" data-k="pp.psc" value="' + psc + '"></div>' +
           '<div class="prow"><label>Counter Period (ARR)</label><input type="number" min="1" max="' + (info.bits === 32 ? 4294967295 : 65535) + '" data-k="pp.arr" value="' + arr + '"></div>' +
-          '<div class="pdesc">타이머 클럭 ' + (app.timclk / 1e6) + ' MHz → 카운트 ' + (app.timclk / (psc + 1) / 1e3).toFixed(3) + ' kHz → 주기 <b>' + (f >= 1 ? f.toFixed(3) + ' Hz' : (1 / f).toFixed(3) + ' s') + '</b> (' + (1000 / f).toFixed(3) + ' ms)</div>';
+          '<div class="pdesc">타이머 클럭 ' + (tclk / 1e6) + ' MHz (' + (info.bus || 'APB1') + ') → 카운트 ' + (tclk / (psc + 1) / 1e3).toFixed(3) + ' kHz → 주기 <b>' + (f >= 1 ? f.toFixed(3) + ' Hz' : (1 / f).toFixed(3) + ' s') + '</b> (' + (1000 / f).toFixed(3) + ' ms)</div>';
         [1, 2, 3, 4].forEach(function (ch) {
           var pin = info.chPins && info.chPins[ch], v = (cfg.ch || {})[ch] || 'disable';
           html += '<div class="prow"><label>Channel ' + ch + ' <span class="type">' + esc(app.pinsFor(k, 'CH' + ch).join('/') || pin || '') + '</span></label><select data-k="pp.ch' + ch + '">' + opt([['disable', 'Disable'], ['pwm', 'PWM Generation CH' + ch]], v) + '</select></div>';
@@ -161,7 +163,7 @@
   Props.prototype.r_NVIC = function () {
     var app = this.app, P = app.project, chip = app.chip, html = '<h4>NVIC 인터럽트</h4><div class="pdesc">켠 인터럽트만 HAL 콜백이 호출됩니다 (CubeMX 의 NVIC Settings 탭).</div>';
     var lines = {};
-    Object.keys(P.pins).forEach(function (p) { if (P.pins[p].signal === 'GPIO_EXTI') lines[global.STM32Codegen.exti(+p.slice(2))] = (lines[global.STM32Codegen.exti(+p.slice(2))] || []).concat(p); });
+    Object.keys(P.pins).forEach(function (p) { if (P.pins[p].signal === 'GPIO_EXTI') { var l = global.STM32Codegen.exti(+p.slice(2), chip); lines[l] = (lines[l] || []).concat(p); } });
     Object.keys(lines).forEach(function (l) { html += '<div class="chk"><input type="checkbox" data-k="nvic.' + l + '"' + (P.nvic[l] ? ' checked' : '') + '><span>' + l + ' (' + lines[l].join(', ') + ')</span><span class="irq">EXTI</span></div>'; });
     global.STM32Codegen.activePeriph(P).forEach(function (k) { var irq = chip.periph[k].irq; if (irq) html += '<div class="chk"><input type="checkbox" data-k="nvic.' + irq + '"' + (P.nvic[irq] ? ' checked' : '') + '><span>' + k + ' global interrupt</span><span class="irq">' + irq + '</span></div>'; });
     return html;
@@ -176,7 +178,7 @@
   Props.prototype.apply = function (key, v, inp) {
     var app = this.app, P = app.project, c = this.ctx, parts = key.split('.'), head = parts[0], k = parts.slice(1).join('.');
     if (head === 'proj') {
-      if (k === 'name') P.name = v; else if (k === 'board') { app.setBoard(v); return; }
+      if (k === 'name') P.name = v; else if (k === 'board') { app.setBoard(v); return; } else if (k === 'mcu') { app.setMcu(v, null); return; }
       else if (k === 'sysclk') { P.clock = { sysclk: +v }; app.onClockChange(); }
       else if (k === 'printfFloat') { P.settings = P.settings || {}; P.settings.printfFloat = !!v; }
       app.dirty(); app.refreshHeader(); return;

@@ -3,7 +3,7 @@
  */
 (function (global) {
   'use strict';
-  var C = global.STM32Chips, G = global.STM32Codegen, R = global.STM32Runtime, D = global.STM32Devices;
+  var C = global.STM32Chips, G = global.STM32Codegen, R = global.STM32Runtime, D = global.STM32Devices, PJ = global.STM32Project;
   var STORE = 'studystm32.sim.project.v1';
   var $ = function (id) { return document.getElementById(id); };
 
@@ -14,58 +14,50 @@
   global.app = app;
 
   // ---------------------------------------------------------------- 프로젝트
-  function emptyProject(boardId) {
-    var b = C.BOARDS[boardId] || C.BOARDS['NUCLEO-F411RE'];
-    return { v: 1, name: 'stm32_project', board: b.title === 'Blue Pill (F103C8)' ? 'BLUEPILL-F103C8' : boardId, clock: {},
-      pins: JSON.parse(JSON.stringify(b.defaults.pins)), periph: JSON.parse(JSON.stringify(b.defaults.periph)), nvic: JSON.parse(JSON.stringify(b.defaults.nvic || {})),
-      settings: { printfFloat: true }, nodes: [], wires: [], user: null, mainc: null, lesson: null, example: null };
-  }
-  function boardNodes(P) {
-    // 보드 내장 장치 노드는 항상 존재
-    var b = C.BOARDS[P.board], y = 40;
-    P.nodes = P.nodes.filter(function (n) { return !D.DEVICES[n.type] || !D.DEVICES[n.type].builtin; });
-    P.wires = P.wires.filter(function (w) { return !/^(LD2|B1|VCP|LED)\./.test(w[1]); });
-    b.builtin.forEach(function (bi) {
-      var node = { id: bi.id, type: bi.type, x: 560, y: y, props: JSON.parse(JSON.stringify(bi.props)) }; y += 90;
-      P.nodes.push(node);
-      if (bi.pin) P.wires.push([bi.pin, bi.id + '.' + (bi.type === 'board-led' ? 'in' : 'out')]);
-      if (bi.pins) { P.wires.push([bi.pins.rx, bi.id + '.rx']); P.wires.push([bi.pins.tx, bi.id + '.tx']); }
-    });
-  }
+  function emptyProject(mcu, board) { return PJ.create(mcu, board); }
   app.loadProject = function (P) {
     app.stop();
-    app.project = P; app.board = C.BOARDS[P.board] || C.BOARDS['NUCLEO-F411RE']; app.chip = C.CHIPS[app.board.chip];
-    P.pins = P.pins || {}; P.periph = P.periph || {}; P.nvic = P.nvic || {}; P.nodes = P.nodes || []; P.wires = P.wires || []; P.settings = P.settings || {};
-    boardNodes(P);
-    app.timclk = ((P.clock && P.clock.sysclk) || app.chip.defClk) * 1e6;
+    PJ.normalize(P);
+    app.project = P; app.chip = C.CHIPS[P.mcu]; app.board = P.board ? C.BOARDS[P.board] : null;
+    app.onClockChange();
     app.selPin = null; app.selPeriph = null;
     if (!P.mainc) P.mainc = G.genMainC(P, P.user ? G.userFromExample(P.user) : {});
     app.openFiles();
     app.refreshHeader(); app.refreshDesign(); app.props.set({ kind: 'project' });
     app.makeMachine();
     app.result.clearLog();
-    app.result.log('info', '프로젝트 열림: ' + (P.name || '') + ' — ' + app.board.title);
+    app.result.log('info', '프로젝트 열림: ' + (P.name || '') + ' — ' + app.chip.part + (app.board ? ' / ' + app.board.title : ' (MCU 만)'));
     setTimeout(function () { app.canvas.fit(); }, 30);
   };
-  app.newProject = function () { if (!confirm('새 프로젝트를 만들까요? 현재 작업은 사라집니다.')) return; app.loadProject(emptyProject(app.project.board)); app.dirty(); };
-  app.setBoard = function (id) {
-    var P = app.project, np = emptyProject(id);
-    // 사용자 장치와 코드는 유지, 핀/주변장치는 새 보드 기본값으로
-    np.name = P.name; np.nodes = P.nodes.filter(function (n) { return !D.DEVICES[n.type].builtin; }); np.wires = P.wires.filter(function (w) { return !/^(LD2|B1|VCP|LED)\./.test(w[1]); });
-    np.user = G.extractUser(P.mainc); np.mainc = null; np.settings = P.settings;
-    np.wires = np.wires.filter(function (w) { return C.CHIPS[C.BOARDS[id].chip].pins.indexOf(w[0]) >= 0; });
+  app.newProject = function () { if (!confirm('새 프로젝트를 만들까요? 현재 작업은 사라집니다.')) return; app.loadProject(emptyProject(app.project.mcu, app.project.board)); app.dirty(); };
+  /** MCU / 보드 바꾸기: 사용자 장치·배선·USER CODE 는 유지, 핀·주변장치는 새 기본값 */
+  app.setMcu = function (mcu, board) {
+    var P = app.project, np = emptyProject(mcu, board);
+    np.name = P.name; np.nodes = P.nodes.filter(function (n) { return !D.DEVICES[n.type].builtin; });
+    var ids = {}; np.nodes.forEach(function (n) { ids[n.id] = 1; });
+    np.wires = P.wires.filter(function (w) { return ids[w[1].split('.')[0]]; });
+    np.user = G.extractUser(P.mainc); np.mainc = null; np.settings = P.settings; np.lesson = P.lesson;
     app.loadProject(np); app.regen(); app.dirty();
+    app.toast(C.CHIPS[np.mcu].part + (np.board ? ' · ' + C.BOARDS[np.board].title : ' (MCU 만)'));
   };
+  app.setBoard = function (id) { app.setMcu(id && C.BOARDS[id] ? C.BOARDS[id].chip : app.project.mcu, id || null); };
   app.dirty = function () { app.dirtyFlag = true; clearTimeout(app._saveT); app._saveT = setTimeout(app.save, 500); };
   app.save = function () {
     try { app.project.mainc = app.editor.get('Core/Src/main.c'); localStorage.setItem(STORE, JSON.stringify(app.project)); } catch (e) { }
   };
   app.refreshHeader = function () {
-    $('proj-name').textContent = app.project.name || 'stm32_project'; $('proj-board').textContent = app.board.title;
+    $('proj-name').textContent = app.project.name || 'stm32_project'; $('proj-board').textContent = app.chip.part + (app.board ? ' · ' + app.board.title : '');
     var l = $('lesson-link'); if (app.project.lesson) { l.hidden = false; l.href = '../lessons/' + app.project.lesson + '.html'; } else l.hidden = true;
   };
   app.refreshDesign = function () { app.canvas.render(); app.pinout.render(); app.tree(); };
-  app.onClockChange = function () { app.timclk = ((app.project.clock && app.project.clock.sysclk) || app.chip.defClk) * 1e6; app.clockPane(); };
+  app.onClockChange = function () {
+    var mhz = (app.project.clock && app.project.clock.sysclk) || app.chip.defClk;
+    if (app.chip.sysclks.indexOf(mhz) < 0) { mhz = app.chip.defClk; app.project.clock = {}; }
+    app.clk = C.clocks(app.chip, mhz); app.timclk = app.clk.tim1 * 1e6;
+    if ($('area-design').querySelector('.tabpane[data-pane=clock]').classList.contains('active')) app.clockPane();
+  };
+  /** 타이머 k 의 클럭(Hz) — APB2 타이머(TIM1/9/10/11)는 apb2 기준 */
+  app.timclkOf = function (k) { var info = app.chip.periph[k]; return ((info && info.bus === 'APB2') ? app.clk.tim2 : app.clk.tim1) * 1e6; };
 
   // ---------------------------------------------------------------- 파일
   app.openFiles = function () {
@@ -123,7 +115,7 @@
     if (cfg && cfg.signal && cfg.signal !== 'Reset_State' && !(n.type === 'servo' || n.type === 'lcd1602' || n.type === 'uart' || n.type === 'i2cdev' || n.type === 'spidev' || (n.type === 'motor' && port === 'en'))) return;
     var af = app.chip.af[pin] || [], pick = function (re) { return af.filter(function (s) { return re.test(s); })[0]; }, sig = null, extra = {};
     if (n.type === 'servo' || (n.type === 'motor' && port === 'en') || (n.type === 'buzzer' && n.props.kind === 'passive')) {
-      sig = pick(/^TIM\d+_CH\d$/); if (sig) { var m = /^(TIM\d+)_CH(\d)$/.exec(sig); app.onPeriphOn(m[1]); app.onPwmOn(m[1], +m[2]); if (n.type === 'servo') { P.periph[m[1]].psc = Math.round(app.timclk / 1e6) - 1; P.periph[m[1]].arr = 19999; } else if (P.periph[m[1]].arr === 65535) { P.periph[m[1]].psc = Math.round(app.timclk / 1e6) - 1; P.periph[m[1]].arr = 999; } }
+      sig = pick(/^TIM\d+_CH\d$/); if (sig) { var m = /^(TIM\d+)_CH(\d)$/.exec(sig); app.onPeriphOn(m[1]); app.onPwmOn(m[1], +m[2]); if (n.type === 'servo') { P.periph[m[1]].psc = Math.round(app.timclkOf(m[1]) / 1e6) - 1; P.periph[m[1]].arr = 19999; } else if (P.periph[m[1]].arr === 65535) { P.periph[m[1]].psc = Math.round(app.timclkOf(m[1]) / 1e6) - 1; P.periph[m[1]].arr = 999; } }
       else { sig = 'GPIO_Output'; app.toast(pin + ' 에는 타이머 채널이 없어 GPIO 출력으로 설정했습니다.'); }
     } else if (pdef.dir === 'in') { sig = n.type === 'uart' || n.type === 'vcp' ? (pick(/^USART\d_TX$/) || null) : 'GPIO_Output'; if (n.type === 'uart' && sig) app.onPeriphOn(sig.split('_')[0]); }
     else if (pdef.dir === 'out') {
@@ -147,7 +139,7 @@
     if (m) app.onPeriphOn(m[1]);
     var t = /^(TIM\d+)_CH(\d)$/.exec(sig); if (t) app.onPwmOn(t[1], +t[2]);
     var a = /^ADC1_IN(\d+)$/.exec(sig); if (a) { P.periph.ADC1 = P.periph.ADC1 || { channels: [] }; if (P.periph.ADC1.channels.indexOf(+a[1]) < 0) P.periph.ADC1.channels.push(+a[1]); }
-    if (sig === 'GPIO_EXTI') { P.nvic[G.exti(+pin.slice(2))] = true; if (!P.pins[pin].trigger) P.pins[pin].trigger = 'falling'; }
+    if (sig === 'GPIO_EXTI') { P.nvic[G.exti(+pin.slice(2), app.chip)] = true; if (!P.pins[pin].trigger) P.pins[pin].trigger = 'falling'; }
     // 같은 신호를 다른 핀이 갖고 있으면 그쪽을 지운다 (CubeMX 처럼 한 신호 = 한 핀)
     if (m || a) Object.keys(P.pins).forEach(function (p) { if (p !== pin && P.pins[p].signal === sig) delete P.pins[p]; });
     if (!quiet) app.toast(pin + ' → ' + sig);
@@ -206,25 +198,35 @@
   };
 
   // ---------------------------------------------------------------- 클럭/프로젝트 탭
+  app.mcuOptions = function (cur) {
+    var fams = {}; Object.keys(C.CHIPS).forEach(function (k) { var c = C.CHIPS[k]; (fams[c.family] = fams[c.family] || []).push(c); });
+    return Object.keys(fams).map(function (f) { return '<optgroup label="' + f + ' · ' + fams[f][0].core + '">' + fams[f].map(function (c) { return '<option value="' + c.part + '"' + (c.part === cur ? ' selected' : '') + '>' + c.part + ' — ' + c.desc + '</option>'; }).join('') + '</optgroup>'; }).join('');
+  };
+  app.boardOptions = function (mcu, cur) {
+    return '<option value=""' + (!cur ? ' selected' : '') + '>없음 — MCU 만 (맨 칩)</option>' + C.boardsFor(mcu).map(function (b) { return '<option value="' + b + '"' + (b === cur ? ' selected' : '') + '>' + C.BOARDS[b].title + ' (' + C.BOARDS[b].kind + ')</option>'; }).join('');
+  };
   app.clockPane = function () {
-    var P = app.project, mhz = (P.clock && P.clock.sysclk) || app.chip.defClk, f4 = app.chip.series === 'F4', apb1 = mhz > app.chip.apb1Max ? mhz / 2 : mhz;
-    $('clockpane').innerHTML = '<h4>클럭 구성 (Clock Configuration)</h4><div class="clock-diagram">' +
-      '<div class="clock-box"><b>HSI</b>' + (f4 ? 16 : 8) + ' MHz</div><span class="clock-arrow">→</span>' +
-      (mhz !== (f4 ? 16 : 8) ? '<div class="clock-box"><b>PLL</b>' + (f4 ? '/M ×N /P' : '/2 ×' + Math.round(mhz / 4)) + '</div><span class="clock-arrow">→</span>' : '') +
-      '<div class="clock-box"><b>SYSCLK</b><select id="clk-sel">' + app.chip.sysclks.map(function (m) { return '<option value="' + m + '"' + (m === mhz ? ' selected' : '') + '>' + m + ' MHz</option>'; }).join('') + '</select></div><span class="clock-arrow">→</span>' +
+    var P = app.project, ck = app.clk, mhz = ck.sysclk, ch = app.chip, fam = ch.series, hsi = ch.hsi;
+    var pllTxt = fam === 'F4' ? '/16 ×' + (mhz * 2) + ' /2' : fam === 'F1' ? (mhz > 64 ? 'HSE 8 MHz ×' + Math.round(mhz / 8) : '/2 ×' + Math.round(mhz / 4)) : fam === 'F0' ? '/2 ×' + Math.round(mhz / 4) : fam === 'G0' ? '/1 ×8 /' + (mhz >= 64 ? 2 : 4) : '/1 ×10 /' + (mhz >= 80 ? 2 : 4);
+    $('clockpane').innerHTML = '<h4>클럭 구성 (Clock Configuration) — ' + ch.part + '</h4><div class="clock-diagram">' +
+      '<div class="clock-box"><b>' + (fam === 'F1' && mhz > 64 ? 'HSE' : 'HSI') + '</b>' + (fam === 'F1' && mhz > 64 ? 8 : hsi) + ' MHz</div><span class="clock-arrow">→</span>' +
+      (mhz !== hsi ? '<div class="clock-box"><b>PLL</b>' + pllTxt + '</div><span class="clock-arrow">→</span>' : '') +
+      '<div class="clock-box"><b>SYSCLK</b><select id="clk-sel">' + ch.sysclks.map(function (m) { return '<option value="' + m + '"' + (m === mhz ? ' selected' : '') + '>' + m + ' MHz</option>'; }).join('') + '</select></div><span class="clock-arrow">→</span>' +
       '<div class="clock-box"><b>HCLK (AHB)</b>' + mhz + ' MHz</div><span class="clock-arrow">→</span>' +
-      '<div class="clock-box"><b>APB1</b>' + apb1 + ' MHz<br><small>타이머 ×2 = ' + (apb1 < mhz ? apb1 * 2 : apb1) + ' MHz</small></div>' +
-      '<div class="clock-box"><b>APB2</b>' + mhz + ' MHz</div><div class="clock-box"><b>SysTick</b>1 kHz (HAL_Delay)</div></div>' +
-      '<div class="pdesc">타이머 클럭(TIMCLK) = APB1 이 분주되면 ×2. 이 시뮬레이터는 모든 타이머에 <b>' + (app.timclk / 1e6) + ' MHz</b> 를 씁니다. 업데이트 주기 = (PSC+1)×(ARR+1)/TIMCLK.</div>' +
+      '<div class="clock-box"><b>APB1</b>/' + ck.div1 + ' = ' + ck.apb1 + ' MHz<br><small>TIM2–5 클럭 ' + ck.tim1 + ' MHz</small></div>' +
+      '<div class="clock-box"><b>APB2</b>/' + ck.div2 + ' = ' + ck.apb2 + ' MHz<br><small>TIM1 클럭 ' + ck.tim2 + ' MHz</small></div><div class="clock-box"><b>SysTick</b>1 kHz (HAL_Delay)</div></div>' +
+      '<div class="pdesc">APB 버스가 분주되면 그 버스의 타이머 클럭은 ×2 입니다. 업데이트 주기 = (PSC+1)×(ARR+1)/TIMCLK. 최대 클럭 ' + ch.maxClk + ' MHz.</div>' +
       '<h4>프로젝트 관리자</h4>' +
       '<div class="form-row"><label>프로젝트 이름</label><input type="text" id="pm-name" value="' + (P.name || '') + '"></div>' +
-      '<div class="form-row"><label>보드</label><select id="pm-board">' + Object.keys(C.BOARDS).map(function (b) { return '<option value="' + b + '"' + (b === P.board ? ' selected' : '') + '>' + C.BOARDS[b].title + '</option>'; }).join('') + '</select></div>' +
-      '<div class="form-row"><label>MCU</label><span>' + app.chip.name + ' · ' + app.chip.core + ' · Flash ' + app.chip.flash + ' KB · RAM ' + app.chip.ram + ' KB</span></div>' +
+      '<div class="form-row"><label>MCU</label><select id="pm-mcu">' + app.mcuOptions(P.mcu) + '</select></div>' +
+      '<div class="form-row"><label>보드 프리셋</label><select id="pm-board">' + app.boardOptions(P.mcu, P.board) + '</select><span class="desc">보드를 고르면 내장 LED·버튼·가상 COM 이 회로에 들어가고 기본 핀이 설정됩니다. "없음"은 MCU 만 놓고 직접 배선합니다.</span></div>' +
+      '<div class="form-row"><label>MCU 정보</label><span>' + ch.name + ' · ' + ch.core + ' · ' + ch.pkg + ' · Flash ' + ch.flash + ' KB · RAM ' + ch.ram + ' KB' + (ch.note ? '<br><small class="desc">' + ch.note + '</small>' : '') + '</span></div>' +
       '<div class="form-row"><label>툴체인</label><span>STM32CubeIDE (시뮬레이터)</span></div>' +
       '<div class="form-row"><label>printf float</label><input type="checkbox" id="pm-float"' + (P.settings.printfFloat !== false ? ' checked' : '') + '><span class="desc">링커 옵션 -u _printf_float — 켜야 %f 가 출력됩니다.</span></div>' +
       '<div class="form-row"><label>코드 생성</label><span><button class="tb" id="pm-gen">main.c / main.h 다시 생성</button> <small class="desc">USER CODE 구역 보존</small></span></div>';
     $('clk-sel').onchange = function () { P.clock = { sysclk: +this.value }; app.onClockChange(); app.dirty(); app.props.render(); };
     $('pm-name').onchange = function () { P.name = this.value.replace(/[^\w-]/g, '_') || 'stm32_project'; app.refreshHeader(); app.dirty(); app.tree(); };
+    $('pm-mcu').onchange = function () { app.setMcu(this.value, null); };
     $('pm-board').onchange = function () { app.setBoard(this.value); };
     $('pm-float').onchange = function () { P.settings.printfFloat = this.checked; app.dirty(); };
     $('pm-gen').onclick = app.regen;
@@ -350,35 +352,17 @@
   // ---------------------------------------------------------------- 예제 · 파일
   app.loadExample = function (id) {
     var ex = (global.STM32_EXAMPLES || {})[id]; if (!ex) { app.toast('예제 "' + id + '" 가 없습니다.'); return false; }
-    var P = emptyProject(ex.board || 'NUCLEO-F411RE');
-    P.name = id.replace(/[^\w-]/g, '_'); P.example = id; P.lesson = ex.lesson || null; P.title = ex.title;
-    P.pins = Object.assign(P.pins, JSON.parse(JSON.stringify(ex.pins || {})));
-    P.periph = Object.assign(P.periph, JSON.parse(JSON.stringify(ex.periph || {})));
-    P.nvic = Object.assign(P.nvic, JSON.parse(JSON.stringify(ex.nvic || {})));
-    P.settings = Object.assign(P.settings, ex.settings || {});
-    P.nodes = JSON.parse(JSON.stringify(ex.nodes || [])); P.wires = JSON.parse(JSON.stringify(ex.wires || []));
-    P.nodes.forEach(function (n) { var d = D.DEVICES[n.type]; if (d) { n.props = n.props || {}; d.props.forEach(function (p) { if (n.props[p.key] == null) n.props[p.key] = p.default; }); } });
-    P.user = ex.user || {};
-    // 예제가 안 적은 주변장치 기본 핀 채우기
-    Object.keys(P.periph).forEach(function (k) { if (/^(USART|I2C|SPI|TIM)/.test(k)) app._P = P, fillDefaultPins(P, k); });
-    (P.periph.ADC1 && P.periph.ADC1.channels || []).forEach(function (ch) { var pin = C.adcPin(C.chipOf(P.board), ch); if (pin && !P.pins[pin]) P.pins[pin] = { signal: 'ADC1_IN' + ch }; });
-    Object.keys(P.periph).forEach(function (k) { var c = P.periph[k]; if (/^TIM/.test(k) && c.ch) Object.keys(c.ch).forEach(function (ch) { if (c.ch[ch] === 'pwm') { var sig = k + '_CH' + ch; if (!Object.keys(P.pins).some(function (p) { return P.pins[p].signal === sig; })) { var pin = C.chipOf(P.board).periph[k].chPins[ch]; if (pin && !P.pins[pin]) P.pins[pin] = { signal: sig }; } } }); });
+    var P = PJ.fromExample(id, ex);
     app.loadProject(P);
     $('proj-name').textContent = ex.title || id;
     app.result.log('info', '예제 "' + (ex.title || id) + '" 를 열었습니다. [실행]을 눌러 보세요.');
     app.dirty();
     return true;
   };
-  function fillDefaultPins(P, k) {
-    var chip = C.chipOf(P.board), info = chip.periph[k]; if (!info || !info.pins) return;
-    Object.keys(info.pins).forEach(function (s) {
-      if (!Object.keys(P.pins).some(function (p) { return P.pins[p].signal === k + '_' + s; })) { var pin = info.pins[s]; if (!P.pins[pin] || !P.pins[pin].signal) P.pins[pin] = { signal: k + '_' + s }; }
-    });
-  }
   app.examplesModal = function () {
     var EX = global.STM32_EXAMPLES || {}, ids = Object.keys(EX), html = '<div class="ex-list">';
     if (!ids.length) html += '<div class="dev-empty">등록된 예제가 없습니다.</div>';
-    ids.forEach(function (id) { var e = EX[id]; html += '<div class="ex-item" data-ex="' + id + '"><b>' + (e.title || id) + '</b><small>' + id + (e.lesson ? ' · ' + e.lesson.toUpperCase() : '') + '</small><div class="ex-board">' + (e.board || 'NUCLEO-F411RE') + '</div></div>'; });
+    ids.forEach(function (id) { var e = EX[id], cid = C.chipOf(e.mcu || e.board || 'NUCLEO-F411RE').part; html += '<div class="ex-item" data-ex="' + id + '"><b>' + (e.title || id) + '</b><small>' + id + (e.lesson ? ' · ' + e.lesson.toUpperCase() : '') + '</small><div class="ex-board">' + cid + (e.board ? ' · ' + e.board : '') + '</div></div>'; });
     app.modal('레슨 예제', html + '</div>');
     $('modal-body').querySelectorAll('.ex-item').forEach(function (it) { it.onclick = function () { app.closeModal(); app.loadExample(it.dataset.ex); }; });
   };
@@ -388,7 +372,7 @@
     a.href = URL.createObjectURL(blob); a.download = (app.project.name || 'stm32_project') + '.stm32sim.json'; a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
   };
   app.loadFile = function (file) {
-    var rd = new FileReader(); rd.onload = function () { try { var P = JSON.parse(rd.result); if (!P.board || !C.BOARDS[P.board]) throw new Error('보드 정보 없음'); app.loadProject(P); app.dirty(); app.toast('프로젝트를 열었습니다'); } catch (e) { app.toast('파일을 읽을 수 없습니다: ' + e.message); } }; rd.readAsText(file);
+    var rd = new FileReader(); rd.onload = function () { try { var P = JSON.parse(rd.result); if (!P.mcu && !P.board) throw new Error('MCU 정보 없음'); app.loadProject(P); app.dirty(); app.toast('프로젝트를 열었습니다'); } catch (e) { app.toast('파일을 읽을 수 없습니다: ' + e.message); } }; rd.readAsText(file);
   };
   app.modal = function (title, html) { $('modal-title').textContent = title; $('modal-body').innerHTML = html; $('modal').hidden = false; };
   app.closeModal = function () { $('modal').hidden = true; };
@@ -442,7 +426,7 @@
     if (q.get('embed')) document.body.classList.add('embed');
     var loaded = false;
     if (q.get('ex')) loaded = app.loadExample(q.get('ex'));
-    if (!loaded) { var saved = null; try { saved = JSON.parse(localStorage.getItem(STORE)); } catch (e) { } if (saved && saved.board && C.BOARDS[saved.board]) app.loadProject(saved); else app.loadProject(emptyProject('NUCLEO-F411RE')); }
+    if (!loaded) { var saved = null; try { saved = JSON.parse(localStorage.getItem(STORE)); } catch (e) { } if (saved && (saved.mcu || saved.board)) app.loadProject(saved); else app.loadProject(emptyProject('STM32F411RE', 'NUCLEO-F411RE')); }
     app.setRunState();
     document.addEventListener('themechange', function () { app.canvas.render(); });
   }

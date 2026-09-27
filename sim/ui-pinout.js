@@ -20,7 +20,7 @@
   Pinout.prototype.cls = function (pin) {
     var cfg = this.app.project.pins[pin], C = global.STM32Chips;
     if (!C.isGpio(pin)) return 'pwr';
-    if (C.RESERVED[pin]) return 'res';
+    if (C.reserved(this.app.chip, pin)) return 'res';
     if (!cfg || !cfg.signal || cfg.signal === 'Reset_State') return '';
     if (cfg.signal === 'GPIO_Output') return 'out used'; if (cfg.signal === 'GPIO_Input') return 'in used';
     if (cfg.signal === 'GPIO_EXTI') return 'exti used'; if (cfg.signal === 'GPIO_Analog' || /^ADC/.test(cfg.signal)) return 'analog used';
@@ -34,7 +34,7 @@
     el('rect', { class: 'chipbody', x: ox, y: oy, width: body, height: body, rx: 10 }, this.svg);
     el('circle', { cx: ox + 18, cy: oy + 18, r: 6, fill: 'var(--bg-elev)', stroke: 'var(--text-faint)' }, this.svg);
     el('text', { class: 'chiptxt', x: ox + body / 2, y: oy + body / 2 - 6, 'text-anchor': 'middle' }, this.svg).textContent = chip.name;
-    el('text', { class: 'chipsub', x: ox + body / 2, y: oy + body / 2 + 12, 'text-anchor': 'middle' }, this.svg).textContent = chip.pkg + ' · ' + app.board.title;
+    el('text', { class: 'chipsub', x: ox + body / 2, y: oy + body / 2 + 12, 'text-anchor': 'middle' }, this.svg).textContent = chip.pkg + ' · ' + (app.board ? app.board.title : chip.core) + (chip.pinsApprox ? ' · 핀 번호 개략' : '');
     el('text', { class: 'chipsub', x: ox + body / 2, y: oy + body / 2 + 28, 'text-anchor': 'middle' }, this.svg).textContent = '핀을 클릭해 신호를 고르세요';
     pins.forEach(function (name, i) {
       var s = Math.floor(i / side), j = i % side, x, y, w = PL - 6, h = PW - 4, rot = 0, tx, ty, anchor;

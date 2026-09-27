@@ -8,30 +8,18 @@
 const path = require('path');
 const ROOT = path.resolve(__dirname, '..', '..');
 global.window = global;
-for (const f of ['chips', 'runtime', 'devices', 'codegen', 'examples']) require(path.join(ROOT, 'assets/js/stm32', f + '.js'));
+for (const f of ['chips', 'runtime', 'devices', 'codegen', 'project', 'examples']) require(path.join(ROOT, 'assets/js/stm32', f + '.js'));
 global.STM32C = require(path.join(ROOT, 'assets/js/stm32/ccompiler.js'));
 const C = global.STM32Chips, G = global.STM32Codegen, R = global.STM32Runtime, D = global.STM32Devices, EX = global.STM32_EXAMPLES || {};
 
 function project(id, ex) {
-  const b = C.BOARDS[ex.board || 'NUCLEO-F411RE'], chip = C.CHIPS[b.chip];
-  const P = { name: id, board: ex.board || 'NUCLEO-F411RE', clock: {}, settings: Object.assign({ printfFloat: true }, ex.settings || {}),
-    pins: Object.assign(JSON.parse(JSON.stringify(b.defaults.pins)), JSON.parse(JSON.stringify(ex.pins || {}))),
-    periph: Object.assign(JSON.parse(JSON.stringify(b.defaults.periph)), JSON.parse(JSON.stringify(ex.periph || {}))),
-    nvic: Object.assign({}, b.defaults.nvic || {}, ex.nvic || {}), nodes: JSON.parse(JSON.stringify(ex.nodes || [])), wires: JSON.parse(JSON.stringify(ex.wires || [])) };
-  // 주변장치 기본 핀
-  Object.keys(P.periph).forEach(k => { const info = chip.periph[k]; if (!info || !info.pins) return; Object.keys(info.pins).forEach(s => { if (!Object.keys(P.pins).some(p => P.pins[p].signal === k + '_' + s)) { const pin = info.pins[s]; if (!P.pins[pin] || !P.pins[pin].signal) P.pins[pin] = { signal: k + '_' + s }; } }); });
-  (P.periph.ADC1 && P.periph.ADC1.channels || []).forEach(ch => { const pin = C.adcPin(chip, ch); if (pin && !P.pins[pin]) P.pins[pin] = { signal: 'ADC1_IN' + ch }; });
-  Object.keys(P.periph).forEach(k => { const c = P.periph[k]; if (/^TIM/.test(k) && c.ch) Object.keys(c.ch).forEach(ch => { if (c.ch[ch] === 'pwm') { const sig = k + '_CH' + ch; if (!Object.keys(P.pins).some(p => P.pins[p].signal === sig)) { const pin = chip.periph[k].chPins[ch]; if (pin && !P.pins[pin]) P.pins[pin] = { signal: sig }; } } }); });
-  // 보드 내장 노드
-  let y = 40;
-  b.builtin.forEach(bi => { P.nodes.push({ id: bi.id, type: bi.type, x: 560, y: y += 90, props: JSON.parse(JSON.stringify(bi.props)) }); if (bi.pin) P.wires.push([bi.pin, bi.id + '.' + (bi.type === 'board-led' ? 'in' : 'out')]); if (bi.pins) { P.wires.push([bi.pins.rx, bi.id + '.rx']); P.wires.push([bi.pins.tx, bi.id + '.tx']); } });
-  P.nodes.forEach(n => { const d = D.DEVICES[n.type]; if (!d) throw new Error(id + ': 알 수 없는 장치 ' + n.type); n.props = n.props || {}; d.props.forEach(p => { if (n.props[p.key] == null) n.props[p.key] = p.default; }); });
+  const P = global.STM32Project.fromExample(id, ex);
   P.mainc = G.genMainC(P, G.userFromExample(ex.user || {}));
   return P;
 }
 
 function runOne(id, verbose) {
-  const ex = EX[id], P = project(id, ex), chip = C.chipOf(P.board);
+  const ex = EX[id], P = project(id, ex), chip = C.chipOf(P);
   const files = { 'Core/Src/main.c': P.mainc, 'Core/Inc/main.h': G.genMainH(P) }; files[chip.halPrefix + '_hal.h'] = '';
   const r = global.STM32C.compile({ files, entry: 'Core/Src/main.c', env: R.compilerEnv() });
   const out = { id, ok: r.ok, errors: r.errors || [], warnings: r.warnings || [], logs: [], term: '', toggles: {}, isr: 0 };
