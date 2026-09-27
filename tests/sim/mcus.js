@@ -49,7 +49,7 @@ Object.keys(C.CHIPS).forEach(id => {
     const B = C.BOARDS[b], Q = PJ.create(id, b), led = B.builtin.find(x => x.type === 'board-led');
     Q.pins[pwmPin] = Q.pins[pwmPin] || { signal: tim + '_CH1' }; Q.periph[tim] = { psc: Math.round(tclk) - 1, arr: 999, ch: { 1: 'pwm' } }; Q.nvic[tinfo.irq] = true;
     const btn = B.builtin.find(x => x.type === 'board-button'); if (btn) Q.nvic[C.extiLine(chip, +btn.pin.slice(2))] = true;
-    let qu = Object.keys(Q.periph).find(k => /UART/.test(k));
+    let qu = Object.keys(Q.periph).find(k => /US?ART/.test(k));
     if (!qu) { qu = uart; Q.periph[uart] = { mode: 'async', baud: 115200 }; Q.nodes.push({ id: 'ser1', type: 'uart', x: 0, y: 0, props: {} }); Q.wires.push([up.TX, 'ser1.rx'], [up.RX, 'ser1.tx']); }
     run(id + ' + ' + b, Q, userFor(tim, qu, led.id));
   });

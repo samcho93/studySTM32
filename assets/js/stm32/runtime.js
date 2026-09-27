@@ -100,7 +100,7 @@
   var IRQ_LIST = ['EXTI0', 'EXTI1', 'EXTI2', 'EXTI3', 'EXTI4', 'EXTI9_5', 'EXTI15_10', 'EXTI0_1', 'EXTI2_3', 'EXTI4_15',
     'ADC', 'ADC1', 'ADC1_2', 'ADC1_COMP', 'TIM1_UP_TIM10', 'TIM1_UP', 'TIM1_UP_TIM16', 'TIM1_BRK_UP_TRG_COM', 'TIM1_CC', 'TIM2', 'TIM3', 'TIM4', 'TIM5',
     'TIM6', 'TIM6_DAC', 'TIM7', 'TIM14', 'TIM15', 'TIM16', 'TIM17', 'I2C1_EV', 'I2C1_ER', 'I2C2_EV', 'I2C2_ER', 'I2C1', 'I2C2', 'SPI1', 'SPI2',
-    'USART1', 'USART2', 'USART3', 'USART3_4', 'USART6', 'LPUART1', 'RTC_TAMP', 'RTC', 'RTC_Alarm', 'WWDG', 'DMA', 'TIM21', 'TIM22', 'EXTI2_TSC', 'EXTI5', 'EXTI6', 'EXTI7', 'EXTI8', 'EXTI9', 'EXTI10', 'EXTI11', 'EXTI12', 'EXTI13', 'EXTI14', 'EXTI15', 'TIM1_UP_TIM16_', 'DMA1_Stream5', 'DMA1_Stream6', 'DMA2_Stream0', 'DMA1_Channel1', 'DMA1_Channel2_3', 'RTC_WKUP', 'PendSV', 'SVCall', 'NonMaskableInt', 'HardFault'];
+    'USART1', 'USART2', 'USART3', 'USART3_4', 'USART3_4_LPUART1', 'USART6', 'LPUART1', 'RTC_TAMP', 'RTC', 'RTC_Alarm', 'WWDG', 'DMA', 'TIM21', 'TIM22', 'EXTI2_TSC', 'EXTI5', 'EXTI6', 'EXTI7', 'EXTI8', 'EXTI9', 'EXTI10', 'EXTI11', 'EXTI12', 'EXTI13', 'EXTI14', 'EXTI15', 'TIM1_UP_TIM16_', 'DMA1_Stream5', 'DMA1_Stream6', 'DMA2_Stream0', 'DMA1_Channel1', 'DMA1_Channel2_3', 'RTC_WKUP', 'PendSV', 'SVCall', 'NonMaskableInt', 'HardFault'];
   IRQ_LIST.forEach(function (n, i) { K[n + '_IRQn'] = 100 + i; });
   var IRQ_NAME = {};
   Object.keys(K).forEach(function (k) { if (/_IRQn$/.test(k) && !(K[k] in IRQ_NAME)) IRQ_NAME[K[k]] = k.replace(/_IRQn$/, ''); });

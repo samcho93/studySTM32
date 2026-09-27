@@ -5,7 +5,7 @@
  *   CHIPS[part]  : 제품군, 코어, 패키지 핀 배열, 핀별 대체기능(AF), 주변장치·IRQ 이름, 클럭 정보, HAL 접두어
  *   BOARDS[id]   : chip 과 내장 장치(LED·버튼·VCP), 기본 핀 설정
  * 값은 각 데이터시트 "Pin definitions" 표와 레퍼런스 매뉴얼 벡터 표를 기준으로 추렸다.
- * LQFP 핀 순서는 F1/F4/L4 64핀과 F407 100핀은 데이터시트 순서이고, F0/G0 64핀은 주요 핀만 맞춘 개략 배치다(pinsApprox).
+ * LQFP 핀 순서: F030/F103/F4xx/G071/L476 64핀·F103 48핀·F407 100핀은 데이터시트 순서. 나머지(144핀 등)는 개략 배치(pinsApprox).
  */
 (function (global) {
   'use strict';
@@ -127,6 +127,56 @@
   AF_WB.PA2 = AF_WB.PA2.concat(['LPUART1_TX']); AF_WB.PA3 = AF_WB.PA3.concat(['LPUART1_RX']);
   AF_WB.PA5 = AF_WB.PA5.concat(['TIM2_CH1']); AF_WB.PB6 = ['USART1_TX', 'I2C1_SCL']; AF_WB.PB7 = ['USART1_RX', 'I2C1_SDA']; AF_WB.PD0 = []; AF_WB.PD1 = []; AF_WB.PE4 = [];
 
+  // DS9773 Table 11 (STM32F030R8, LQFP64) · DS12232 Table 12 (STM32G071RB, LQFP64) — 데이터시트 순서
+  var LQFP64_F030 = [
+    'VDD', 'PC13', 'PC14', 'PC15', 'PF0', 'PF1', 'NRST', 'PC0', 'PC1', 'PC2', 'PC3', 'VSSA', 'VDDA', 'PA0', 'PA1', 'PA2',
+    'PA3', 'PF4', 'PF5', 'PA4', 'PA5', 'PA6', 'PA7', 'PC4', 'PC5', 'PB0', 'PB1', 'PB2', 'PB10', 'PB11', 'VSS', 'VDD',
+    'PB12', 'PB13', 'PB14', 'PB15', 'PC6', 'PC7', 'PC8', 'PC9', 'PA8', 'PA9', 'PA10', 'PA11', 'PA12', 'PA13', 'PF6', 'PF7',
+    'PA14', 'PA15', 'PC10', 'PC11', 'PC12', 'PD2', 'PB3', 'PB4', 'PB5', 'PB6', 'PB7', 'BOOT0', 'PB8', 'PB9', 'VSS', 'VDD'
+  ];
+  var LQFP64_G071 = [
+    'PC11', 'PC12', 'PC13', 'PC14', 'PC15', 'VBAT', 'VREF+', 'VDD', 'VSS', 'PF0', 'PF1', 'NRST', 'PC0', 'PC1', 'PC2', 'PC3',
+    'PA0', 'PA1', 'PA2', 'PA3', 'PA4', 'PA5', 'PA6', 'PA7', 'PC4', 'PC5', 'PB0', 'PB1', 'PB2', 'PB10', 'PB11', 'PB12',
+    'PB13', 'PB14', 'PB15', 'PA8', 'PA9', 'PC6', 'PC7', 'PD8', 'PD9', 'PA10', 'PA11', 'PA12', 'PA13', 'PA14', 'PA15', 'PC8',
+    'PC9', 'PD0', 'PD1', 'PD2', 'PD3', 'PD4', 'PD5', 'PD6', 'PB3', 'PB4', 'PB5', 'PB6', 'PB7', 'PB8', 'PB9', 'PC10'
+  ];
+  var AF_F030 = {
+    PA0: ['ADC1_IN0'], PA1: ['ADC1_IN1'], PA2: ['ADC1_IN2', 'USART2_TX'], PA3: ['ADC1_IN3', 'USART2_RX'],
+    PA4: ['ADC1_IN4', 'SPI1_NSS'], PA5: ['ADC1_IN5', 'SPI1_SCK'], PA6: ['ADC1_IN6', 'SPI1_MISO', 'TIM3_CH1'],
+    PA7: ['ADC1_IN7', 'SPI1_MOSI', 'TIM3_CH2'], PA8: ['TIM1_CH1'], PA9: ['USART1_TX', 'TIM1_CH2'],
+    PA10: ['USART1_RX', 'TIM1_CH3'], PA11: ['TIM1_CH4'], PA12: [], PA13: [], PA14: ['USART2_TX'], PA15: ['USART2_RX', 'SPI1_NSS'],
+    PB0: ['ADC1_IN8', 'TIM3_CH3'], PB1: ['ADC1_IN9', 'TIM3_CH4'], PB2: [], PB3: ['SPI1_SCK'],
+    PB4: ['SPI1_MISO', 'TIM3_CH1'], PB5: ['SPI1_MOSI', 'TIM3_CH2'], PB6: ['I2C1_SCL', 'USART1_TX'], PB7: ['I2C1_SDA', 'USART1_RX'],
+    PB8: ['I2C1_SCL'], PB9: ['I2C1_SDA'], PB10: ['I2C2_SCL'], PB11: ['I2C2_SDA'],
+    PB12: ['SPI2_NSS'], PB13: ['SPI2_SCK'], PB14: ['SPI2_MISO'], PB15: ['SPI2_MOSI'],
+    PC0: ['ADC1_IN10'], PC1: ['ADC1_IN11'], PC2: ['ADC1_IN12'], PC3: ['ADC1_IN13'], PC4: ['ADC1_IN14'], PC5: ['ADC1_IN15'],
+    PC6: ['TIM3_CH1'], PC7: ['TIM3_CH2'], PC8: ['TIM3_CH3'], PC9: ['TIM3_CH4'],
+    PC10: [], PC11: [], PC12: [], PC13: [], PC14: [], PC15: [], PD2: [],
+    PF0: [], PF1: [], PF4: [], PF5: [], PF6: ['I2C2_SCL'], PF7: ['I2C2_SDA']
+  };
+  var AF_G071 = {
+    PA0: ['ADC1_IN0', 'SPI2_SCK', 'TIM2_CH1'], PA1: ['ADC1_IN1', 'SPI1_SCK', 'TIM2_CH2'],
+    PA2: ['ADC1_IN2', 'SPI1_MOSI', 'USART2_TX', 'TIM2_CH3'], PA3: ['ADC1_IN3', 'SPI2_MISO', 'USART2_RX', 'TIM2_CH4'],
+    PA4: ['ADC1_IN4', 'SPI1_NSS', 'SPI2_MOSI'], PA5: ['ADC1_IN5', 'SPI1_SCK', 'TIM2_CH1', 'USART3_TX'],
+    PA6: ['ADC1_IN6', 'SPI1_MISO', 'TIM3_CH1'], PA7: ['ADC1_IN7', 'SPI1_MOSI', 'TIM3_CH2'],
+    PA8: ['SPI2_NSS', 'TIM1_CH1'], PA9: ['USART1_TX', 'TIM1_CH2', 'SPI2_MISO', 'I2C1_SCL'],
+    PA10: ['USART1_RX', 'TIM1_CH3', 'SPI2_MOSI', 'I2C1_SDA'], PA11: ['SPI1_MISO', 'TIM1_CH4', 'I2C2_SCL'],
+    PA12: ['SPI1_MOSI', 'I2C2_SDA'], PA13: [], PA14: ['USART2_TX'], PA15: ['SPI1_NSS', 'USART2_RX', 'TIM2_CH1'],
+    PB0: ['ADC1_IN8', 'SPI1_NSS', 'TIM3_CH3', 'USART3_RX'], PB1: ['ADC1_IN9', 'TIM3_CH4'], PB2: ['ADC1_IN10', 'SPI2_MISO', 'USART3_TX'],
+    PB3: ['SPI1_SCK', 'TIM1_CH2', 'TIM2_CH2'], PB4: ['SPI1_MISO', 'TIM3_CH1'], PB5: ['SPI1_MOSI', 'TIM3_CH2'],
+    PB6: ['I2C1_SCL', 'USART1_TX', 'TIM1_CH3', 'SPI2_MISO'], PB7: ['I2C1_SDA', 'USART1_RX', 'SPI2_MOSI'],
+    PB8: ['I2C1_SCL', 'SPI2_SCK', 'USART3_TX'], PB9: ['I2C1_SDA', 'SPI2_NSS', 'USART3_RX'],
+    PB10: ['ADC1_IN11', 'I2C2_SCL', 'SPI2_SCK', 'TIM2_CH3', 'USART3_TX'], PB11: ['ADC1_IN15', 'I2C2_SDA', 'SPI2_MOSI', 'TIM2_CH4', 'USART3_RX'],
+    PB12: ['ADC1_IN16', 'SPI2_NSS'], PB13: ['SPI2_SCK', 'I2C2_SCL'], PB14: ['SPI2_MISO', 'I2C2_SDA'], PB15: ['SPI2_MOSI'],
+    PC0: [], PC1: [], PC2: ['SPI2_MISO'], PC3: ['SPI2_MOSI'],
+    PC4: ['ADC1_IN17', 'USART1_TX', 'USART3_TX', 'TIM2_CH1'], PC5: ['ADC1_IN18', 'USART1_RX', 'USART3_RX', 'TIM2_CH2'],
+    PC6: ['TIM3_CH1', 'TIM2_CH3'], PC7: ['TIM3_CH2', 'TIM2_CH4'], PC8: ['TIM3_CH3', 'TIM1_CH1'], PC9: ['TIM3_CH4', 'TIM1_CH2'],
+    PC10: ['USART3_TX', 'TIM1_CH3'], PC11: ['USART3_RX', 'TIM1_CH4'], PC12: [], PC13: [], PC14: [], PC15: [],
+    PD0: ['SPI2_NSS'], PD1: ['SPI2_SCK'], PD2: [], PD3: ['SPI2_MISO'], PD4: ['SPI2_MOSI'],
+    PD5: ['USART2_TX', 'SPI1_MISO'], PD6: ['USART2_RX', 'SPI1_MOSI'], PD8: ['USART3_TX', 'SPI1_SCK'], PD9: ['USART3_RX', 'SPI1_NSS'],
+    PF0: [], PF1: []
+  };
+
   // ---------------------------------------------------------------- 주변장치 · IRQ 이름 (제품군별)
   function periphSet(family, opts) {
     opts = opts || {};
@@ -142,12 +192,12 @@
       TIM1: { kind: 'tim', bits: 16, bus: 'APB2', chPins: { 1: 'PA8', 2: 'PA9', 3: 'PA10', 4: 'PA11' },
         irq: f4 ? 'TIM1_UP_TIM10' : f1 ? 'TIM1_UP' : l4 ? 'TIM1_UP_TIM16' : 'TIM1_BRK_UP_TRG_COM' },
       TIM3: { kind: 'tim', bits: 16, bus: 'APB1', chPins: { 1: 'PA6', 2: 'PA7', 3: 'PB0', 4: 'PB1' }, irq: 'TIM3' },
-      ADC1: { kind: 'adc', irq: f4 ? 'ADC' : (f1 || l4) ? 'ADC1_2' : 'ADC1' }
+      ADC1: { kind: 'adc', irq: f4 ? 'ADC' : (f1 || l4) ? 'ADC1_2' : family === 'G0' ? 'ADC1_COMP' : 'ADC1' }
     };
     if (!f0) p.TIM2 = { kind: 'tim', bits: (f4 || l4 || g0) ? 32 : 16, bus: 'APB1', chPins: { 1: 'PA0', 2: 'PA1', 3: 'PA2', 4: 'PA3' }, irq: 'TIM2' };
     if (f4 || f1 || l4) p.TIM4 = { kind: 'tim', bits: 16, bus: 'APB1', chPins: opts.tim4d ? { 1: 'PD12', 2: 'PD13', 3: 'PD14', 4: 'PD15' } : { 1: 'PB6', 2: 'PB7', 3: 'PB8', 4: 'PB9' }, irq: 'TIM4' };
     if (f4 || l4) p.TIM5 = { kind: 'tim', bits: 32, bus: 'APB1', chPins: { 1: 'PA0', 2: 'PA1', 3: 'PA2', 4: 'PA3' }, irq: 'TIM5' };
-    if (f1 || l4 || g0 || opts.usart3) p.USART3 = { kind: 'usart', pins: { TX: 'PB10', RX: 'PB11' }, bus: 'APB1', irq: g0 ? 'USART3_4' : 'USART3' };
+    if (f1 || l4 || g0 || opts.usart3) p.USART3 = { kind: 'usart', pins: { TX: 'PB10', RX: 'PB11' }, bus: 'APB1', irq: family === 'G0' ? 'USART3_4_LPUART1' : g0 ? 'USART3_4' : 'USART3' };
     if (f4 && opts.usart6) p.USART6 = { kind: 'usart', pins: { TX: 'PC6', RX: 'PC7' }, bus: 'APB2', irq: 'USART6' };
     (opts.remove || []).forEach(function (k) { delete p[k]; });
     Object.keys(opts.set || {}).forEach(function (k) { p[k] = opts.set[k]; });
@@ -183,7 +233,7 @@
   }
 
   var CHIPS = {
-    STM32F030R8: chip('STM32F030R8', { family: 'F0', pkg: 'LQFP64', pins: LQFP64_F0, pinsApprox: true, af: AF_F0, flash: 64, ram: 8, maxClk: 48, sysclks: [8, 24, 48], defClk: 48,
+    STM32F030R8: chip('STM32F030R8', { family: 'F0', pkg: 'LQFP64', pins: LQFP64_F030, af: AF_F030, flash: 64, ram: 8, maxClk: 48, sysclks: [8, 24, 48], defClk: 48,
       desc: 'Cortex-M0 48 MHz · 64 KB Flash · 8 KB RAM', note: 'TIM2/TIM4 가 없어 32비트 타이머와 TIM4 채널을 쓸 수 없습니다.' }),
     STM32F103C8: chip('STM32F103C8', { family: 'F1', pkg: 'LQFP48', pins: LQFP48, af: AF_F1, flash: 64, ram: 20, maxClk: 72, sysclks: [8, 36, 48, 64, 72], defClk: 72,
       desc: 'Cortex-M3 72 MHz · 64 KB Flash · 20 KB RAM (Blue Pill)' }),
@@ -197,7 +247,7 @@
       desc: 'Cortex-M4F 180 MHz · 512 KB Flash · 128 KB RAM' }),
     STM32F407VG: chip('STM32F407VG', { family: 'F4', pkg: 'LQFP100', pins: LQFP100_F4, af: AF_F4_100, flash: 1024, ram: 192, maxClk: 168, sysclks: [16, 48, 84, 168], defClk: 168, apb1Max: 42, apb2Max: 84, periph: { usart6: true, usart3: true, tim4d: true },
       desc: 'Cortex-M4F 168 MHz · 1 MB Flash · 192 KB RAM · 100핀' }),
-    STM32G071RB: chip('STM32G071RB', { family: 'G0', pkg: 'LQFP64', pins: LQFP64_F0, pinsApprox: true, af: AF_G0, flash: 128, ram: 36, maxClk: 64, sysclks: [16, 32, 64], defClk: 64,
+    STM32G071RB: chip('STM32G071RB', { family: 'G0', pkg: 'LQFP64', pins: LQFP64_G071, af: AF_G071, flash: 128, ram: 36, maxClk: 64, sysclks: [16, 32, 64], defClk: 64,
       desc: 'Cortex-M0+ 64 MHz · 128 KB Flash · 36 KB RAM' }),
     STM32L476RG: chip('STM32L476RG', { family: 'L4', pkg: 'LQFP64', pins: LQFP64_F4, af: AF_L4, flash: 1024, ram: 128, maxClk: 80, sysclks: [16, 40, 80], defClk: 80,
       desc: 'Cortex-M4F 80 MHz · 1 MB Flash · 128 KB RAM · 초저전력' }),
