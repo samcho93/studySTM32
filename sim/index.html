@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STM32 시뮬레이터 — studySTM32</title>
+<meta name="description" content="CubeMX 식 핀 설정과 CubeIDE 식 HAL 코드를 브라우저에서 바로 실행하는 STM32 시뮬레이터">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="../assets/css/ml-theme.css">
+<link rel="stylesheet" href="sim.css">
+<script src="../assets/js/theme.js"></script>
+</head>
+<body class="sim-body">
+
+<header class="sim-top">
+  <a class="sim-logo" href="../index.html" title="강의 홈"><span class="logo-tile">S</span><span class="logo-text">studySTM32</span></a>
+  <div class="sim-title">
+    <span id="proj-name" class="proj-name">새 프로젝트</span>
+    <span id="proj-board" class="proj-board">NUCLEO-F411RE</span>
+    <a id="lesson-link" class="lesson-link" href="#" hidden>← 레슨으로</a>
+  </div>
+  <div class="sim-tools">
+    <button class="tb" id="btn-gen" title="CubeMX 설정으로 main.c / main.h 를 다시 만듭니다 (USER CODE 구역은 보존)">
+      <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h7"/><path d="M17 15l3 3-3 3"/></svg>코드 생성</button>
+    <button class="tb" id="btn-build" title="컴파일 (Ctrl+B)"><svg viewBox="0 0 24 24"><path d="M14 4l-2 3 3 3 3-2M4 20l7-7"/><path d="M14.5 11.5L20 6l-2-2-5.5 5.5"/></svg>빌드</button>
+    <button class="tb primary" id="btn-run" title="빌드 후 실행 (F5)"><svg viewBox="0 0 24 24"><path d="M7 4l12 8-12 8z"/></svg><span>실행</span></button>
+    <button class="tb" id="btn-pause" title="일시정지 / 계속" disabled><svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button>
+    <button class="tb" id="btn-stop" title="정지 / 리셋" disabled><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1"/></svg></button>
+    <label class="speed" title="시뮬레이션 속도"><span>속도</span>
+      <select id="sel-speed"><option value="0.1">0.1×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="4">4×</option><option value="20">20×</option></select></label>
+    <span class="sep"></span>
+    <button class="tb" id="btn-examples" title="레슨 예제 열기"><svg viewBox="0 0 24 24"><path d="M4 5h6l2 2h8v12H4z"/></svg>예제</button>
+    <button class="tb" id="btn-save" title="프로젝트를 파일로 저장"><svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg></button>
+    <button class="tb" id="btn-load" title="프로젝트 파일 열기"><svg viewBox="0 0 24 24"><path d="M4 6h6l2 2h8v11H4z"/><path d="M12 11v6M9 14l3-3 3 3"/></svg></button>
+    <input type="file" id="file-load" accept=".json,.stm32sim" hidden>
+    <button class="tb" id="btn-help" title="사용법"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 1-1 1.7M12 17h.01"/></svg></button>
+    <button class="tb icon" data-theme-toggle data-theme-icon title="테마"></button>
+  </div>
+</header>
+
+<div class="sim-main">
+  <!-- 왼쪽: 프로젝트 탐색기 + 장치 팔레트 -->
+  <aside class="sim-left" id="sim-left">
+    <section class="panel">
+      <h3 class="panel-h">프로젝트 탐색기</h3>
+      <ul class="tree" id="tree"></ul>
+    </section>
+    <section class="panel palette">
+      <h3 class="panel-h">장치 팔레트 <span class="hint">끌어다 놓거나 클릭</span></h3>
+      <div id="palette"></div>
+    </section>
+  </aside>
+
+  <!-- 가운데: 디자인 영역 / 실습 결과 영역 -->
+  <div class="sim-center" id="sim-center">
+    <section class="area design" id="area-design">
+      <div class="area-tabs" role="tablist">
+        <span class="area-label">디자인</span>
+        <button class="atab active" data-tab="circuit">회로</button>
+        <button class="atab" data-tab="pinout">핀아웃 &amp; 설정</button>
+        <button class="atab" data-tab="clock">클럭 &amp; 프로젝트</button>
+        <button class="atab" data-tab="code">코드</button>
+        <span class="grow"></span>
+        <span class="design-hint" id="design-hint"></span>
+      </div>
+      <div class="area-body">
+        <div class="tabpane active" data-pane="circuit"><div id="canvas-wrap" class="canvas-wrap"><svg id="canvas" class="canvas" tabindex="0"></svg></div></div>
+        <div class="tabpane" data-pane="pinout"><div id="pinout" class="pinout"></div></div>
+        <div class="tabpane" data-pane="clock"><div id="clockpane" class="clockpane"></div></div>
+        <div class="tabpane" data-pane="code"><div id="editor" class="editor"></div></div>
+      </div>
+    </section>
+    <div class="vsplit" id="vsplit" title="끌어서 크기 조절"></div>
+    <section class="area result" id="area-result">
+      <div class="area-tabs" role="tablist">
+        <span class="area-label">실습 결과</span>
+        <button class="atab active" data-tab="devices">장치</button>
+        <button class="atab" data-tab="terminal">시리얼 터미널</button>
+        <button class="atab" data-tab="wave">파형</button>
+        <button class="atab" data-tab="vars">변수</button>
+        <button class="atab" data-tab="console">콘솔 <span class="badge" id="console-badge" hidden>0</span></button>
+        <span class="grow"></span>
+        <span class="run-status" id="run-status"><i></i><b>대기</b><em id="run-time">0.000 s</em></span>
+      </div>
+      <div class="area-body">
+        <div class="tabpane active" data-pane="devices"><div id="devices" class="devices"></div></div>
+        <div class="tabpane" data-pane="terminal"><div id="terminals" class="terminals"></div></div>
+        <div class="tabpane" data-pane="wave"><div id="wave" class="wave"></div></div>
+        <div class="tabpane" data-pane="vars"><div id="vars" class="vars"></div></div>
+        <div class="tabpane" data-pane="console"><div id="console" class="console"></div></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="hsplit" id="hsplit" title="끌어서 크기 조절"></div>
+
+  <!-- 오른쪽: Properties -->
+  <aside class="sim-right" id="sim-right">
+    <h3 class="panel-h">Properties</h3>
+    <div id="props" class="props"></div>
+  </aside>
+</div>
+
+<div class="modal" id="modal" hidden><div class="modal-box"><div class="modal-h"><span id="modal-title"></span><button class="tb icon" id="modal-close">✕</button></div><div class="modal-body" id="modal-body"></div></div></div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="../assets/js/stm32/chips.js"></script>
+<script src="../assets/js/stm32/ccompiler.js"></script>
+<script src="../assets/js/stm32/runtime.js"></script>
+<script src="../assets/js/stm32/devices.js"></script>
+<script src="../assets/js/stm32/codegen.js"></script>
+<script src="../assets/js/stm32/examples.js"></script>
+<script src="../assets/js/stm32/halheaders.js"></script>
+<script src="ui-editor.js"></script>
+<script src="ui-canvas.js"></script>
+<script src="ui-pinout.js"></script>
+<script src="ui-props.js"></script>
+<script src="ui-result.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
