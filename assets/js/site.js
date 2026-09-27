@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  var KEY = 'studydelta.progress.v1';
+  var KEY = 'studystm32.progress.v1';
 
   // ---------------------------------------------------------- 진행률 저장소
   function load() {
@@ -116,7 +116,7 @@
     });
     var pct = Math.round((done / cards.length) * 100);
     if (fill) fill.style.width = pct + '%';
-    if (text) text.textContent = done + ' / ' + cards.length + ' 챕터 완료 (' + pct + '%)';
+    if (text) text.textContent = done + ' / ' + cards.length + ' 레슨 완료 (' + pct + '%)';
   }
 
   if (reset) {
@@ -186,35 +186,28 @@
   }
 })();
 
-/* ---- studyDeltaRobot: lesson practice dock ----
- * 강의 본문의 실습(▶ 실행 코드, 시뮬레이터·도구 버튼)은 페이지를 떠나지 않고
- * 오른쪽 실습 패널(iframe)에서 엽니다. 좁은 화면에서는 아래쪽 시트로 열립니다.
- * Ctrl/⌘/가운데 클릭은 평소처럼 새 탭으로 엽니다.                                  */
+/* ---- studySTM32: lesson practice dock ----
+ * 레슨 본문의 @sim 버튼(.sim-btn, data-sim-src)과 시뮬레이터 링크는 페이지를 떠나지 않고
+ * 오른쪽 실습 패널(iframe, sim/index.html?ex=<id>&embed=1)에서 엽니다. 좁은 화면에서는 아래쪽 시트.
+ * Ctrl/⌘/가운데 클릭과 "새 창" 링크(target=_blank)는 평소처럼 새 탭으로 엽니다.            */
 (function () {
   'use strict';
   var article = document.querySelector('.lesson');
   if (!article) return;
-  var W_KEY = 'studydelta.dock.width';
+  var W_KEY = 'studystm32.dock.width';
 
-  function b64url(str) {
-    var bytes = new TextEncoder().encode(str);
-    var bin = '';
-    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  function isSim(u) {
+    return u.origin === location.origin && /\/sim\/(index\.html)?$/.test(u.pathname);
   }
-  function withDock(url) {
-    var u = new URL(url, location.href);
-    u.searchParams.set('dock', '1');
-    return u;
+  function embedUrl(u) {
+    var e = new URL(u.href);
+    e.searchParams.set('embed', '1');
+    return e;
   }
-  var TITLES = { 'sim/index.html': '3D 시뮬레이터', 'tools/playground.html': 'Python Playground',
-                 'tools/urdf-viewer.html': 'URDF 뷰어', 'tools/kinematics-lab.html': '기구학 실험실' };
-  function titleOf(u) {
-    for (var k in TITLES) if (u.pathname.slice(-k.length) === k) return TITLES[k];
-    return '실습';
-  }
-  function isTool(u) {
-    return u.origin === location.origin && /\/(sim|tools)\/[\w-]+\.html$/.test(u.pathname);
+  function plainUrl(u) {
+    var p = new URL(u.href);
+    p.searchParams.delete('embed');
+    return p;
   }
 
   // ------------------------------------------------------------ dock DOM
@@ -224,16 +217,15 @@
   dock.hidden = true;
   dock.innerHTML =
     '<div class="lab-dock-grip" title="끌어서 폭 조절" aria-hidden="true"></div>' +
-    '<div class="lab-dock-head"><b class="lab-dock-title">실습</b>' +
-    '<span class="lab-dock-note">강의를 보면서 여기서 바로 실행합니다</span>' +
-    '<a class="lab-dock-btn" target="_blank" rel="noopener" title="새 탭에서 크게 열기">↗ 새 탭</a>' +
-    '<button class="lab-dock-btn" type="button" data-act="close" title="패널 닫기">✕</button></div>' +
-    '<iframe class="lab-dock-frame" title="실습 화면" allow="gamepad; fullscreen; clipboard-write"></iframe>';
+    '<div class="lab-dock-head"><b class="lab-dock-title">시뮬레이터</b>' +
+    '<span class="lab-dock-note">레슨을 보면서 여기서 바로 실행합니다</span>' +
+    '<a class="lab-dock-btn" target="_blank" rel="noopener" title="새 창에서 크게 열기">새 창</a>' +
+    '<button class="lab-dock-btn" type="button" data-act="close" title="패널 닫기">닫기</button></div>' +
+    '<iframe class="lab-dock-frame" title="STM32 시뮬레이터" allow="fullscreen; clipboard-write; serial"></iframe>';
   document.body.appendChild(dock);
   var frame = dock.querySelector('iframe');
   var newTab = dock.querySelector('a.lab-dock-btn');
-  var current = '';          // pathname+search shown in the dock
-  var pgReady = false;       // playground in the dock has loaded (can take code by postMessage)
+  var current = '';
 
   try {
     var w = parseFloat(localStorage.getItem(W_KEY));
@@ -248,54 +240,38 @@
   function close() {
     dock.hidden = true;
     document.body.classList.remove('dock-open');
+    document.querySelectorAll('.sim-btn.is-open').forEach(function (b) { b.classList.remove('is-open'); });
   }
   dock.querySelector('[data-act="close"]').addEventListener('click', close);
 
-  function openUrl(url) {
-    var u = withDock(url);
-    var key = u.pathname + u.search;
-    newTab.href = url;
+  function openSim(u, btn) {
+    var e = embedUrl(u);
+    var key = e.pathname + e.search;
+    newTab.href = plainUrl(u).href;
     if (key !== current || !frame.getAttribute('src')) {
       current = key;
-      pgReady = false;
-      frame.src = u.href;
+      frame.src = e.href;
     }
-    show(titleOf(u));
+    var id = e.searchParams.get('ex');
+    show(id ? '시뮬레이터 · ' + id : '시뮬레이터');
+    document.querySelectorAll('.sim-btn.is-open').forEach(function (b) { b.classList.remove('is-open'); });
+    if (btn && btn.classList.contains('sim-btn')) btn.classList.add('is-open');
   }
-  function runCode(base, code) {
-    var u = withDock(base + 'tools/playground.html');
-    newTab.href = base + 'tools/playground.html#code=' + b64url(code);
-    show('Python Playground');
-    if (pgReady && current === u.pathname + u.search) {
-      frame.contentWindow.postMessage({ type: 'load-code', code: code, run: true }, '*');
-      return;
-    }
-    current = u.pathname + u.search;
-    pgReady = false;
-    frame.src = u.href + '#code=' + b64url(code);   // the Playground runs #code= on load
-  }
-  window.addEventListener('message', function (ev) {
-    if (ev.source === frame.contentWindow && ev.data && ev.data.type === 'playground-ready') pgReady = true;
-  });
 
-  // ------------------------------------------------------------ hooks
-  document.querySelectorAll('.run-btn[data-playground]').forEach(function (btn) {
-    btn.textContent = '▶ 오른쪽에서 실행';
-    btn.title = '오른쪽 실습 패널의 Playground에서 이 코드를 실행합니다';
-    btn.addEventListener('click', function () {
-      var code = btn.closest('.code-block').querySelector('code').textContent;
-      var base = btn.getAttribute('data-playground').replace(/playground$/, '');
-      runCode(base, code);
-    });
-  });
   article.addEventListener('click', function (e) {
     var a = e.target.closest && e.target.closest('a[href]');
     if (!a || e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
     if (a.target === '_blank') return;
-    var u = new URL(a.getAttribute('href'), location.href);
-    if (!isTool(u)) return;
+    var u = new URL(a.getAttribute('data-sim-src') || a.getAttribute('href'), location.href);
+    if (!isSim(u)) return;
     e.preventDefault();
-    openUrl(u.href);
+    openSim(u, a);
+  });
+
+  // 시뮬레이터(iframe)가 "레슨으로 돌아가기" 등을 요청하면 패널을 닫습니다.
+  window.addEventListener('message', function (ev) {
+    if (ev.source !== frame.contentWindow || !ev.data) return;
+    if (ev.data.type === 'stm32sim-close') close();
   });
 
   // ------------------------------------------------------------ width drag (wide screens)
@@ -317,29 +293,4 @@
     grip.addEventListener('pointerup', up);
     e.preventDefault();
   });
-})();
-
-/* ---- studyDeltaRobot: lightweight Python syntax colouring (ML Basic look) ---- */
-(function () {
-  'use strict';
-  var KW = /^(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)$/;
-  var BI = /^(print|range|len|round|min|max|sum|abs|sorted|enumerate|zip|list|dict|set|tuple|int|float|str|next|isinstance|open|super|any|all)$/;
-  var TOKEN = /("""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\.|[^"\\n])*"|'(?:\.|[^'\\n])*'|#[^\n]*|\b\d+(?:\.\d+)?(?:e[-+]?\d+)?\b|\b[A-Za-z_]\w*\b)/g;
-  function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-  function paint(code) {
-    var src = code.textContent, out = '', last = 0, m;
-    TOKEN.lastIndex = 0;
-    while ((m = TOKEN.exec(src))) {
-      var t = m[0], cls = null;
-      if (t[0] === '#') cls = 'tk-c';
-      else if (t[0] === '"' || t[0] === "'") cls = 'tk-s';
-      else if (/^\d/.test(t)) cls = 'tk-n';
-      else if (KW.test(t)) cls = 'tk-k';
-      else if (BI.test(t) || src[TOKEN.lastIndex] === '(') cls = 'tk-f';
-      out += esc(src.slice(last, m.index)) + (cls ? '<span class="' + cls + '">' + esc(t) + '</span>' : esc(t));
-      last = TOKEN.lastIndex;
-    }
-    code.innerHTML = out + esc(src.slice(last));
-  }
-  document.querySelectorAll('.code-block code.lang-python').forEach(paint);
 })();

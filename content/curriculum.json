@@ -1,0 +1,65 @@
+{
+  "title": "studySTM32",
+  "subtitle": "STM32 HAL 인터랙티브 강좌 — CubeMX 핀 설정부터 실물 보드까지",
+  "tracks": [
+    {
+      "id": "basics",
+      "title": "시작하기",
+      "desc": "STM32 시리즈와 개발 도구를 알아보고, 시뮬레이터에서 첫 프로젝트를 만든 뒤 GPIO 출력·입력과 외부 인터럽트를 익힙니다.",
+      "parts": [
+        { "no": "PART 1", "title": "시작하기", "chapters": ["l01", "l02", "l03", "l04", "l05"] }
+      ]
+    },
+    {
+      "id": "comm",
+      "title": "통신·타이머·아날로그",
+      "desc": "UART와 printf로 보드와 대화하고, 타이머 인터럽트와 PWM으로 시간을 다루며, ADC로 아날로그 값을 읽습니다.",
+      "parts": [
+        { "no": "PART 2", "title": "통신·타이머·아날로그", "chapters": ["l06", "l07", "l08", "l09"] }
+      ]
+    },
+    {
+      "id": "periph",
+      "title": "주변기기",
+      "desc": "I2C LCD, SPI 장치, 7세그먼트, DC 모터 드라이버, 스텝모터를 HAL로 직접 구동합니다.",
+      "parts": [
+        { "no": "PART 3", "title": "주변기기", "chapters": ["l10", "l11", "l12", "l13", "l14"] }
+      ]
+    },
+    {
+      "id": "project",
+      "title": "프로젝트",
+      "desc": "배운 것을 모아 스마트 선풍기를 만들고, 같은 코드를 STM32CubeIDE와 실물 보드로 옮깁니다.",
+      "parts": [
+        { "no": "PART 4", "title": "프로젝트", "chapters": ["l15", "l16"] }
+      ]
+    }
+  ],
+  "chapters": {
+    "l01": { "title": "STM32 시리즈와 개발 환경", "summary": "Cortex-M 코어와 F0·F1·F4·L4·H7 제품군, CubeIDE·CubeMX, HAL·LL·레지스터의 차이, Nucleo와 BluePill 보드를 정리합니다.", "duration": 40, "level": "입문", "tools": ["ref"] },
+    "l02": { "title": "시뮬레이터 둘러보기와 첫 프로젝트", "summary": "CubeMX 핀아웃 → Generate Code → USER CODE 구역 → Build → Run 흐름을 시뮬레이터에서 처음부터 끝까지 따라 합니다.", "duration": 50, "level": "입문", "tools": ["sim"] },
+    "l03": { "title": "GPIO 출력 — LED", "summary": "GPIO 출력 모드, HAL_GPIO_WritePin·TogglePin, 핀 라벨과 main.h 매크로, BSRR 레지스터 직접 쓰기까지 LED로 익힙니다.", "duration": 60, "level": "입문", "tools": ["sim", "ref"] },
+    "l04": { "title": "GPIO 입력 — 스위치", "summary": "풀업·풀다운과 active-low 버튼, 폴링으로 읽기, 에지 검출과 디바운스를 다룹니다.", "duration": 60, "level": "입문", "tools": ["sim", "ref"] },
+    "l05": { "title": "외부 인터럽트 EXTI", "summary": "폴링과 인터럽트의 차이, EXTI 라인과 NVIC, HAL_GPIO_EXTI_Callback과 volatile, 인터럽트 안 디바운스를 익힙니다.", "duration": 60, "level": "초급", "tools": ["sim", "ref"] },
+
+    "l06": { "title": "UART와 printf", "summary": "USART2(ST-Link VCP)로 문자를 주고받고, __io_putchar 리타깃으로 printf를 쓰며, 수신 인터럽트로 명령어를 처리합니다.", "duration": 70, "level": "초급", "tools": ["sim", "ref"] },
+    "l07": { "title": "타이머 인터럽트", "summary": "타이머 클럭·PSC·ARR 계산 공식을 84 MHz·72 MHz 예로 익히고, HAL_TIM_PeriodElapsedCallback으로 정확한 주기 작업을 만듭니다.", "duration": 60, "level": "초급", "tools": ["sim", "ref"] },
+    "l08": { "title": "PWM — LED 밝기와 서보", "summary": "PWM 주파수·듀티를 PSC·ARR·CCR로 정하고, LED 페이드와 50 Hz 서보 각도 제어를 구현합니다.", "duration": 70, "level": "초급", "tools": ["sim", "ref"] },
+    "l09": { "title": "ADC — 가변저항·조도센서", "summary": "12비트 ADC 폴링 변환으로 가변저항을 읽고, 여러 채널을 스캔 + DMA로 계속 받아 오는 방법을 익힙니다.", "duration": 70, "level": "중급", "tools": ["sim", "ref"] },
+
+    "l10": { "title": "I2C와 LCD1602", "summary": "I2C 주소와 HAL의 8비트 주소 규칙, PCF8574 4비트 LCD 프로토콜, 완성 드라이버와 I2C 스캐너를 만듭니다.", "duration": 90, "level": "중급", "tools": ["sim", "ref"] },
+    "l11": { "title": "SPI 기초", "summary": "SCK·MOSI·MISO·CS 네 선과 모드, CS를 GPIO로 제어하는 법, HAL_SPI_TransmitReceive로 장치 ID를 읽습니다.", "duration": 60, "level": "중급", "tools": ["sim", "ref"] },
+    "l12": { "title": "7세그먼트 FND", "summary": "공통 캐소드·애노드와 세그먼트 패턴 표를 만들고, HAL과 BSRR 레지스터 두 방식으로 숫자를 표시합니다.", "duration": 50, "level": "초급", "tools": ["sim"] },
+    "l13": { "title": "DC 모터 드라이버", "summary": "L298N의 IN1·IN2·ENA로 방향과 PWM 속도를 제어하고, 가변저항·버튼으로 속도와 방향을 바꿉니다.", "duration": 70, "level": "중급", "tools": ["sim"] },
+    "l14": { "title": "스텝모터", "summary": "28BYJ-48과 ULN2003으로 풀스텝·하프스텝 시퀀스를 구동하고, 스텝 수로 각도를 제어합니다.", "duration": 60, "level": "중급", "tools": ["sim"] },
+
+    "l15": { "title": "미니 프로젝트: 스마트 선풍기", "summary": "가변저항 → PWM 모터 속도, 버튼 모드 전환, LCD 표시, UART 로그를 하나의 프로그램으로 묶습니다.", "duration": 120, "level": "중급", "tools": ["sim", "ref"] },
+    "l16": { "title": "실물 보드로 옮기기", "summary": "STM32CubeIDE 설치, .ioc 설정, 빌드와 ST-Link 플래시·디버그, 시뮬레이터와 실물의 차이와 안전한 배선을 정리합니다.", "duration": 90, "level": "중급", "tools": ["sim", "ref"] }
+  },
+  "reference": {
+    "id": "hal-reference",
+    "src": "reference/hal.md",
+    "title": "HAL API 레퍼런스",
+    "summary": "시뮬레이터가 지원하는 STM32 HAL 함수의 원형, 인자, 반환값, 짧은 예제와 레지스터 직접 접근 비교."
+  }
+}

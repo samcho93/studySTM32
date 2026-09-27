@@ -9,7 +9,7 @@
  *   data-theme="dark"   → 항상 어둡게
  *
  * 테마가 바뀌면 document 에 'themechange' 이벤트를 보냅니다.
- * (3D 장면처럼 CSS 밖에서 색을 쓰는 곳이 따라오도록)
+ * (시뮬레이터 캔버스처럼 CSS 밖에서 색을 쓰는 곳이 따라오도록)
  */
 (function () {
   'use strict';
@@ -44,7 +44,7 @@
   function read() {
     try {
       var v = localStorage.getItem(KEY);
-      return MODES.indexOf(v) >= 0 ? v : 'light';      // ML Basic 과 같이 밝은 화면이 기본
+      return MODES.indexOf(v) >= 0 ? v : 'light';      // SAM 로봇강좌 디자인: 밝은 화면이 기본
     } catch (e) {
       return 'light';
     }
@@ -117,13 +117,13 @@
     else if (mq.addListener) mq.addListener(onChange);
   }
 
-  // 강의 페이지 오른쪽 실습 패널(iframe) 안에서 열린 도구: 상단 머리글을 숨깁니다 (?dock=1)
-  if (/[?&]dock=1(&|$)/.test(location.search)) root.classList.add('docked');
+  // 레슨 페이지 오른쪽 실습 패널(iframe) 안에서 열린 시뮬레이터: 상단 사이트 머리글을 숨깁니다 (?embed=1, 옛 ?dock=1)
+  if (/[?&](embed|dock)=1(&|$)/.test(location.search)) root.classList.add('docked');
 
   // 다른 탭/부모 페이지에서 테마를 바꾸면 따라갑니다 (실습 패널이 강의 페이지와 같은 테마 유지)
   window.addEventListener('storage', function (e) {
     if (e.key === KEY) apply(read(), false);
   });
 
-  window.DRTheme = { get: function () { return mode; }, resolved: resolved, set: apply };
+  window.STM32Theme = { get: function () { return mode; }, resolved: resolved, set: apply };
 })();
