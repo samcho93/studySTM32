@@ -306,3 +306,22 @@ body.embed .sim-top .sim-logo, body.embed .sim-top .lesson-link { display: none;
 
 /* hidden 속성이 display 규칙에 지지 않게 */
 [hidden] { display: none !important; }
+
+/* ---------------------------------------------------------------- 좁은 폭 · 임베드(레슨 도크) */
+.sim-top { flex-wrap: wrap; height: auto; min-height: 46px; row-gap: 4px; padding: 4px 10px; }
+.sim-title { flex: 1 1 140px; overflow: hidden; }
+.sim-tools { flex: 0 0 auto; margin-left: auto; flex-wrap: wrap; }
+body.embed .sim-top .tb#btn-save, body.embed .sim-top .tb#btn-load, body.embed .sim-top .sep { display: none; }
+@media (max-width: 760px) {
+  .sim-top .proj-board, .sim-top .speed span { display: none; }
+  .sim-top .tb { padding: 0 7px; gap: 4px; }
+  .sim-top #btn-gen, .sim-top #btn-build, .sim-top #btn-examples { font-size: 0; }
+  .sim-top #btn-gen svg, .sim-top #btn-build svg, .sim-top #btn-examples svg { margin: 0; }
+  .sim-top #btn-help, .sim-top [data-theme-toggle] { display: none; }
+}
+@media (max-width: 980px) {
+  .sim-left { display: none; }
+  .sim-right { width: 240px; }
+  .area-tabs { overflow-x: auto; }
+  .atab { padding: 0 9px; white-space: nowrap; }
+}

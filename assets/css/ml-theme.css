@@ -278,7 +278,7 @@ a { color: var(--link); }
 /* ------------------------------------------------------------------ lesson practice dock (site.js) */
 .lab-dock {
   position: fixed; top: 0; right: 0; bottom: 0; z-index: 70;
-  width: var(--dock-w, 46vw); display: flex; flex-direction: column;
+  width: var(--dock-w, 58vw); display: flex; flex-direction: column;
   background: var(--bg); border-left: 1px solid var(--border);
   box-shadow: -10px 0 30px rgba(15, 23, 42, .10);
 }
@@ -299,7 +299,7 @@ a { color: var(--link); }
 .lab-dock-frame { flex: 1; width: 100%; border: 0; min-height: 0; background: var(--bg); }
 .dock-drag .lab-dock-frame { pointer-events: none; }          /* keep the drag while over the iframe */
 .dock-drag { cursor: col-resize; user-select: none; }
-.dock-open .main { margin-right: var(--dock-w, 46vw); }
+.dock-open .main { margin-right: var(--dock-w, 58vw); }
 .dock-open .lesson-grid { grid-template-columns: minmax(0, 1fr); }
 .dock-open .lesson-toc { display: none; }
 .dock-open .lesson { padding-left: 28px; padding-right: 28px; }
@@ -319,5 +319,3 @@ a { color: var(--link); }
   .dock-open .main { margin-right: 0; padding-bottom: 62vh; }
 }
 
-/* simulator opened inside the dock (?embed=1, theme.js adds .docked): no page header */
-.docked .sim-top { display: none; }
