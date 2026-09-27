@@ -49,12 +49,14 @@ REQUIRED_SECTIONS = ["학습 목표", "자주 나는 오류와 해결", "참고�
 
 # 홈 facts 바에 쓰는 값 (docs/SPEC.md 2장·3.1장·5장과 맞춥니다)
 # assets/js/stm32/chips.js 의 CHIPS 와 맞춥니다 (MCU 중심, 보드는 선택 프리셋)
-MCUS = ["STM32F030R8", "STM32F103C8", "STM32F103RB", "STM32F401RE", "STM32F411RE", "STM32F446RE",
-        "STM32F407VG", "STM32G071RB", "STM32L476RG"]
-FAMILIES = ["F0", "F1", "F4", "G0", "L4"]
-ASSET_VER = "20260928b"   # CSS/JS 캐시 무효화 — 자산을 바꾸면 올립니다
+MCUS = ["STM32F030R8", "STM32F103C8", "STM32F103RB", "STM32F303RE", "STM32F401RE", "STM32F411RE", "STM32F446RE",
+        "STM32F407VG", "STM32F746ZG", "STM32H743ZI", "STM32G071RB", "STM32G474RE", "STM32L053R8", "STM32L476RG",
+        "STM32U575ZI", "STM32C031C6", "STM32WB55RG"]
+FAMILIES = ["F0", "F1", "F3", "F4", "F7", "H7", "G0", "G4", "L0", "L4", "U5", "C0", "WB"]
+ASSET_VER = "20260928c"   # CSS/JS 캐시 무효화 — 자산을 바꾸면 올립니다
 DEVICE_TYPES = ["led", "rgb", "button", "pot", "ldr", "buzzer", "fnd", "lcd1602", "motor",
-                "servo", "stepper", "uart", "i2cdev", "spidev", "logic"]
+                "servo", "stepper", "uart", "i2cdev", "spidev", "logic", "oled", "ultrasonic", "keypad",
+                "fnd4", "dht11", "relay", "encoder", "joystick"]
 SUPPORTED_HAL_API = [
     # 코어
     "HAL_Init", "HAL_Delay", "HAL_GetTick", "HAL_NVIC_SetPriority", "HAL_NVIC_EnableIRQ",
@@ -651,12 +653,12 @@ PAGE = """<!DOCTYPE html>
 <title>{title}</title>
 <meta name="description" content="{desc}">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
-<link rel="stylesheet" href="{rel}assets/css/main.css?v=20260928b">
-<link rel="stylesheet" href="{rel}assets/css/stm32.css?v=20260928b">
-<link rel="stylesheet" href="{rel}assets/css/ml-theme.css?v=20260928b">
+<link rel="stylesheet" href="{rel}assets/css/main.css?v={ver}">
+<link rel="stylesheet" href="{rel}assets/css/stm32.css?v={ver}">
+<link rel="stylesheet" href="{rel}assets/css/ml-theme.css?v={ver}">
 <link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
 <link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
-<script src="{rel}assets/js/theme.js?v=20260928b"></script>
+<script src="{rel}assets/js/theme.js?v={ver}"></script>
 </head>
 <body class="{bodyclass}">
 <button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
@@ -668,7 +670,7 @@ PAGE = """<!DOCTYPE html>
 {topbar}
 {content}
 </main>
-<script src="{rel}assets/js/site.js?v=20260928b"></script>
+<script src="{rel}assets/js/site.js?v={ver}"></script>
 </body>
 </html>
 """
@@ -748,7 +750,7 @@ def lesson_page(cur: dict, cid: str, meta: dict, body_md: str, examples: Example
            content=content_html, prev=pager("pager-prev", "이전", prev_id),
            next=pager("pager-next", "다음", next_id), toc=toc)
 
-    page = PAGE.format(
+    page = PAGE.format(ver=ASSET_VER, 
         title="%s. %s · studySTM32" % (cid.upper(), info["title"]),
         desc=html.escape(info.get("summary", "")),
         rel="../", bodyclass="lesson-page track-page-%s" % info["track"],
@@ -785,7 +787,7 @@ def reference_page(cur: dict, body_md: str, examples: Examples):
 """.format(napi=len(SUPPORTED_HAL_API), title=html.escape(ref["title"]),
            summary=html.escape(ref["summary"]), first=first, first_no=first.upper(),
            content=content_html, toc=toc)
-    page = PAGE.format(
+    page = PAGE.format(ver=ASSET_VER, 
         title="%s · studySTM32" % ref["title"], desc=html.escape(ref["summary"]),
         rel="../", bodyclass="lesson-page ref-page", sidebar=sidebar_html(cur, ref["id"], "../"),
         topbar=topbar_html("../", "ref"), content=content)
@@ -859,7 +861,7 @@ def index_page(cur: dict) -> str:
 
 <section class="facts">
   <div class="fact"><div class="fact-n">{total}</div><div class="fact-l">레슨 (PART 0~4)</div></div>
-  <div class="fact"><div class="fact-n">{nboards}</div><div class="fact-l">종 MCU 지원 (F0 · F1 · F4 · G0 · L4)</div></div>
+  <div class="fact"><div class="fact-n">{nboards}</div><div class="fact-l">종 MCU 지원 (13개 제품군 F0~H7 · G · L · U5 · C0 · WB)</div></div>
   <div class="fact"><div class="fact-n">{ndev}</div><div class="fact-l">종 주변기기 노드 (LED · LCD · 모터 …)</div></div>
   <div class="fact"><div class="fact-n">{napi}</div><div class="fact-l">개 HAL API 에뮬레이션</div></div>
 </section>
@@ -898,7 +900,7 @@ def index_page(cur: dict) -> str:
 """.format(total=total, first=first, first_no=first.upper(), nboards=len(MCUS),
            ndev=len(DEVICE_TYPES), napi=len(SUPPORTED_HAL_API), sections="".join(sections))
 
-    return PAGE.format(
+    return PAGE.format(ver=ASSET_VER, 
         title="studySTM32 · STM32 HAL 인터랙티브 강좌",
         desc="CubeMX 핀 설정, HAL 코드, 브라우저 시뮬레이터, 실물 보드까지 — STM32를 한국어로 배우는 인터랙티브 강좌.",
         rel="", bodyclass="home", sidebar=sidebar_html(cur, None, ""),
