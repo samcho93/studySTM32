@@ -658,13 +658,13 @@
       HAL_GPIO_DeInit: function (port, mask) { M.pinByMask(port, mask).forEach(function (p) { p.mode = 'reset'; p.pull = 'none'; M._changed(p); }); },
       HAL_GPIO_WritePin: function (port, mask, st) {
         M.pinByMask(port, mask).forEach(function (p) {
-          if (p.mode !== 'output') M.warnOnce('wmode' + p.name, p.name + ' 은(는) 출력으로 설정되지 않았습니다 (현재: ' + p.mode + '). CubeMX 에서 GPIO_Output 으로 설정하세요.');
+          if (p.mode !== 'output' && p.mode !== 'reset') M.warnOnce('wmode' + p.name, p.name + ' 은(는) 출력으로 설정되지 않았습니다 (현재: ' + p.mode + '). CubeMX 에서 GPIO_Output 으로 설정하세요.');
           M._setOdr(p, st);
         });
       },
       HAL_GPIO_TogglePin: function (port, mask) {
         M.pinByMask(port, mask).forEach(function (p) {
-          if (p.mode !== 'output') M.warnOnce('wmode' + p.name, p.name + ' 은(는) 출력으로 설정되지 않았습니다 (현재: ' + p.mode + ').');
+          if (p.mode !== 'output' && p.mode !== 'reset') M.warnOnce('wmode' + p.name, p.name + ' 은(는) 출력으로 설정되지 않았습니다 (현재: ' + p.mode + ').');
           M._setOdr(p, !p.odr);
         });
       },

@@ -330,8 +330,8 @@
   app.busLog = function (ev) {
     app._bus = app._bus || { n: 0, t: 0 };
     if (ev.kind === 'i2c' && !ev.ack) return;   // 경고는 runtime 이 이미 냄
-    if (app._bus.n++ > 300 && app.machine.now() - app._bus.t < 1000) return;
-    if (app.machine.now() - app._bus.t >= 1000) { app._bus.n = 0; app._bus.t = app.machine.now(); }
+    if (app.machine.now() - app._bus.t >= 1000) { if (app._bus.n > 20) app.result.log('info', '… 버스 로그 ' + (app._bus.n - 20) + '건 생략 (장치 카드에서 확인)'); app._bus.n = 0; app._bus.t = app.machine.now(); }
+    if (app._bus.n++ >= 20) return;
     var hx = function (a) { return a.map(D.hex).join(' '); };
     if (ev.kind === 'i2c') app.result.log('info', ev.bus + ' ' + ev.dir + ' 0x' + ev.addr.toString(16).toUpperCase() + ': ' + hx(ev.bytes.slice(0, 16)) + (ev.bytes.length > 16 ? ' …' : ''));
     else if (ev.kind === 'spi') app.result.log('info', ev.bus + ' TX ' + hx(ev.tx.slice(0, 12)) + ' / RX ' + hx(ev.rx.slice(0, 12)));
