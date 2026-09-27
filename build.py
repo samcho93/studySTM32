@@ -57,30 +57,15 @@ ASSET_VER = "20260928d"   # CSS/JS 캐시 무효화 — 자산을 바꾸면 올�
 DEVICE_TYPES = ["led", "rgb", "button", "pot", "ldr", "buzzer", "fnd", "lcd1602", "motor",
                 "servo", "stepper", "uart", "i2cdev", "spidev", "logic", "oled", "ultrasonic", "keypad",
                 "fnd4", "dht11", "relay", "encoder", "joystick"]
-SUPPORTED_HAL_API = [
-    # 코어
-    "HAL_Init", "HAL_Delay", "HAL_GetTick", "HAL_NVIC_SetPriority", "HAL_NVIC_EnableIRQ",
-    "HAL_NVIC_DisableIRQ",
-    # GPIO / EXTI
-    "HAL_GPIO_WritePin", "HAL_GPIO_ReadPin", "HAL_GPIO_TogglePin", "HAL_GPIO_Init",
-    "HAL_GPIO_EXTI_Callback",
-    # UART
-    "HAL_UART_Transmit", "HAL_UART_Receive", "HAL_UART_Transmit_IT", "HAL_UART_Receive_IT",
-    "HAL_UART_RxCpltCallback", "HAL_UART_TxCpltCallback",
-    # TIM
-    "HAL_TIM_Base_Start", "HAL_TIM_Base_Start_IT", "HAL_TIM_Base_Stop", "HAL_TIM_Base_Stop_IT",
-    "HAL_TIM_PWM_Start", "HAL_TIM_PWM_Stop", "__HAL_TIM_SET_COMPARE", "__HAL_TIM_GET_COMPARE",
-    "__HAL_TIM_SET_AUTORELOAD", "__HAL_TIM_GET_AUTORELOAD", "__HAL_TIM_SET_COUNTER",
-    "__HAL_TIM_GET_COUNTER", "__HAL_TIM_SET_PRESCALER", "HAL_TIM_PeriodElapsedCallback",
-    # ADC
-    "HAL_ADC_Start", "HAL_ADC_PollForConversion", "HAL_ADC_GetValue", "HAL_ADC_Stop",
-    "HAL_ADC_ConfigChannel", "HAL_ADC_Start_IT", "HAL_ADC_ConvCpltCallback", "HAL_ADC_Start_DMA",
-    # I2C
-    "HAL_I2C_Master_Transmit", "HAL_I2C_Master_Receive", "HAL_I2C_Mem_Write", "HAL_I2C_Mem_Read",
-    "HAL_I2C_IsDeviceReady",
-    # SPI
-    "HAL_SPI_Transmit", "HAL_SPI_Receive", "HAL_SPI_TransmitReceive",
-]
+def _hal_api_names():
+    """runtime.js 의 FUNCS 에서 HAL·CMSIS-RTOS API 이름을 센다 (libc 제외)."""
+    src = (ROOT / "assets" / "js" / "stm32" / "runtime.js").read_text(encoding="utf-8")
+    body = src[src.index("var FUNCS = {"):src.index("};", src.index("var FUNCS = {"))]
+    names = re.findall(r"\b((?:HAL_|__HAL_|os)\w+)\s*:", body)
+    return sorted(set(n for n in names if not n.endswith("_")))
+
+
+SUPPORTED_HAL_API = _hal_api_names()
 
 
 # ---------------------------------------------------------------- examples.js
@@ -832,7 +817,7 @@ def index_page(cur: dict) -> str:
       <b>CubeMX로 핀을 설정</b>하고, 생성된 코드의 <code>USER CODE</code> 구역에 <b>HAL 코드</b>를 쓰고,
       브라우저 <b>시뮬레이터</b>에서 LED·버튼·LCD·모터 회로로 바로 실행해 봅니다.
       같은 코드를 STM32CubeIDE에 붙여 넣으면 <b>실물 Nucleo 보드</b>에서도 그대로 동작합니다.
-      STM32 제품군·코어·메모리·클럭을 이해하는 PART 0 부터 GPIO·UART·타이머·PWM·ADC·I2C·SPI, 모터 제어와 미니 프로젝트까지 총 {total}개 레슨.
+      STM32 제품군·코어·메모리·클럭을 이해하는 PART 0 부터 GPIO·UART·타이머·PWM·ADC·I2C·SPI, 모터 제어·미니 프로젝트, DMA·입력 캡처·워치독·RTC·저전력·FreeRTOS 중급 활용까지 총 {total}개 레슨.
     </p>
     <div class="hero-cta">
       <a class="btn primary" href="lessons/{first}.html">{first_no}부터 시작</a>
@@ -860,10 +845,10 @@ def index_page(cur: dict) -> str:
 </header>
 
 <section class="facts">
-  <div class="fact"><div class="fact-n">{total}</div><div class="fact-l">레슨 (PART 0~4)</div></div>
+  <div class="fact"><div class="fact-n">{total}</div><div class="fact-l">레슨 (PART 0~5)</div></div>
   <div class="fact"><div class="fact-n">{nboards}</div><div class="fact-l">종 MCU 지원 (13개 제품군 F0~H7 · G · L · U5 · C0 · WB)</div></div>
   <div class="fact"><div class="fact-n">{ndev}</div><div class="fact-l">종 주변기기 노드 (LED · LCD · 모터 …)</div></div>
-  <div class="fact"><div class="fact-n">{napi}</div><div class="fact-l">개 HAL API 에뮬레이션</div></div>
+  <div class="fact"><div class="fact-n">{napi}</div><div class="fact-l">개 HAL · CMSIS-RTOS API 에뮬레이션</div></div>
 </section>
 
 <section class="entry-grid">
