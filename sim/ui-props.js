@@ -103,7 +103,7 @@
         '<div class="chk"><input type="checkbox" data-k="nvic.' + line + '"' + (app.project.nvic[line] ? ' checked' : '') + '><span>NVIC: ' + line + ' 인터럽트 켜기</span><span class="irq">' + line + '_IRQn</span></div>' +
         '<div class="pdesc">콜백: <code>void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)</code> 에서 <code>GPIO_Pin == GPIO_PIN_' + (+pin.slice(2)) + '</code> 로 구분합니다.</div>';
     }
-    var m = /^(USART\d|I2C\d|SPI\d|TIM\d+|ADC1)_/.exec(s);
+    var m = /^((?:LP)?USART\d|I2C\d|SPI\d|TIM\d+|ADC1)_/.exec(s);
     if (m) {
       var on = global.STM32Codegen.activePeriph(app.project).indexOf(m[1]) >= 0;
       html += (on ? '<div class="pok">' + m[1] + ' 이(가) 켜져 있습니다.</div>' : '<div class="pwarn">' + m[1] + ' 이(가) 아직 꺼져 있습니다. 아래 버튼으로 켜세요.</div>') +
@@ -117,7 +117,7 @@
   Props.prototype.r_periph = function (c) {
     var app = this.app, P = app.project, k = c.p, cfg = P.periph[k] || {}, info = app.chip.periph[k] || {}, html = '<h4>' + k + ' <span class="type">' + (info.kind || '') + '</span></h4>';
     var on = global.STM32Codegen.activePeriph(P).indexOf(k) >= 0;
-    if (/^USART/.test(k)) {
+    if (/^(LPUART|USART)/.test(k)) {
       html += '<div class="prow"><label>모드</label><select data-k="pp.mode">' + opt([['off', 'Disable'], ['async', 'Asynchronous']], cfg.mode || 'off') + '</select></div>';
       if (on) html += '<div class="prow"><label>보레이트</label><select data-k="pp.baud">' + opt(['9600', '19200', '38400', '57600', '115200', '230400'], cfg.baud || 115200) + '</select></div>' +
         '<div class="pdesc">8 data bits, no parity, 1 stop. 핀: TX ' + esc(app.pinsFor(k, 'TX').join('/') || info.pins.TX) + ', RX ' + esc(app.pinsFor(k, 'RX').join('/') || info.pins.RX) + '</div>' +

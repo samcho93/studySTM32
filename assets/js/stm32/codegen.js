@@ -47,7 +47,7 @@
     var P = project.periph || {}, list = [];
     Object.keys(P).forEach(function (k) {
       var c = P[k] || {};
-      if (/^USART/.test(k) && c.mode === 'async') list.push(k);
+      if (/^(LPUART|USART)/.test(k) && c.mode === 'async') list.push(k);
       else if (/^I2C/.test(k) && c.mode === 'i2c') list.push(k);
       else if (/^SPI/.test(k) && c.mode === 'master') list.push(k);
       else if (/^TIM/.test(k) && c.enabled !== false && (c.psc != null || c.arr != null || c.ch)) list.push(k);
@@ -60,19 +60,20 @@
 
   function handleName(p) {
     if (/^USART(\d)/.test(p)) return 'huart' + p.slice(5);
+    if (/^LPUART(\d)/.test(p)) return 'hlpuart' + p.slice(6);
     if (/^I2C/.test(p)) return 'hi2c' + p.slice(3);
     if (/^SPI/.test(p)) return 'hspi' + p.slice(3);
     if (/^TIM/.test(p)) return 'htim' + p.slice(3);
     if (/^ADC/.test(p)) return 'hadc' + p.slice(3);
   }
   function handleType(p) {
-    if (/^USART/.test(p)) return 'UART_HandleTypeDef';
+    if (/^(LPUART|USART)/.test(p)) return 'UART_HandleTypeDef';
     if (/^I2C/.test(p)) return 'I2C_HandleTypeDef';
     if (/^SPI/.test(p)) return 'SPI_HandleTypeDef';
     if (/^TIM/.test(p)) return 'TIM_HandleTypeDef';
     if (/^ADC/.test(p)) return 'ADC_HandleTypeDef';
   }
-  function initName(p) { return /^USART/.test(p) ? 'MX_' + p + '_UART_Init' : 'MX_' + p + '_Init'; }
+  function initName(p) { return /^(LPUART|USART)/.test(p) ? 'MX_' + p + '_UART_Init' : 'MX_' + p + '_Init'; }
 
   function sec(user, name, def) {
     var body = user[name] != null ? user[name] : (def || '');
@@ -174,53 +175,85 @@
     var mhz = (project.clock && project.clock.sysclk) || chip.defClk, fam = chip.series, ck = C.clocks(chip, mhz), hsi = chip.hsi, pll = mhz !== hsi;
     var s = '/**\n  * @brief System Clock Configuration (SYSCLK = ' + mhz + ' MHz, ' + chip.family + ')\n  * @retval None\n  */\nvoid SystemClock_Config(void)\n{\n' +
       '  RCC_OscInitTypeDef RCC_OscInitStruct = {0};\n  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};\n\n';
-    var lat, useHse = false;
-    if (fam === 'F4') {
-      s += '  /** Configure the main internal regulator output voltage\n  */\n  __HAL_RCC_PWR_CLK_ENABLE();\n  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE' + (mhz > 84 ? 1 : mhz > 64 ? 2 : 3) + ');\n\n';
-      lat = mhz > 150 ? 5 : mhz > 120 ? 4 : mhz > 90 ? 3 : mhz > 60 ? 2 : mhz > 30 ? 1 : 0;
-    } else if (fam === 'F1') { useHse = mhz > 64; lat = mhz > 48 ? 2 : mhz > 24 ? 1 : 0; }
-    else if (fam === 'F0') lat = mhz > 24 ? 1 : 0;
+    var lat = 0, useHse = false, bypass = !!(project.board && /NUCLEO/.test(project.board)), osc = '', clk = '';
+    var ERR = '  {\n    Error_Handler();\n  }\n';
+    function lineOsc(k, v) { osc += '  RCC_OscInitStruct.' + k + ' = ' + v + ';\n'; }
+    function lineClk(k, v) { clk += '  RCC_ClkInitStruct.' + k + ' = ' + v + ';\n'; }
+    var pre = '';
+    if (fam === 'F4' || fam === 'F7') {
+      pre = '  /** Configure the main internal regulator output voltage\n  */\n  __HAL_RCC_PWR_CLK_ENABLE();\n  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE' + (mhz > 144 ? 1 : mhz > 84 ? 2 : 3) + ');\n\n';
+      lat = fam === 'F7' ? Math.max(0, Math.ceil(mhz / 30) - 1) : (mhz > 150 ? 5 : mhz > 120 ? 4 : mhz > 90 ? 3 : mhz > 60 ? 2 : mhz > 30 ? 1 : 0);
+    } else if (fam === 'F1' || fam === 'F3') { useHse = mhz > 64; lat = mhz > 48 ? 2 : mhz > 24 ? 1 : 0; }
+    else if (fam === 'F0' || fam === 'C0') lat = mhz > 24 ? 1 : 0;
     else if (fam === 'G0') lat = mhz > 48 ? 2 : mhz > 24 ? 1 : 0;
-    else if (fam === 'L4') {
-      s += '  /** Configure the main internal regulator output voltage\n  */\n  if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1) != HAL_OK)\n  {\n    Error_Handler();\n  }\n\n';
-      lat = mhz > 64 ? 4 : mhz > 48 ? 3 : mhz > 32 ? 2 : mhz > 16 ? 1 : 0;
+    else if (fam === 'L0') { pre = '  /** Configure the main internal regulator output voltage\n  */\n  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);\n\n'; lat = mhz > 16 ? 1 : 0; }
+    else if (fam === 'L4' || fam === 'U5' || fam === 'G4' || fam === 'WB') {
+      pre = '  /** Configure the main internal regulator output voltage\n  */\n  if (HAL_PWREx_ControlVoltageScaling(' + (fam === 'G4' && mhz > 150 ? 'PWR_REGULATOR_VOLTAGE_SCALE1_BOOST' : 'PWR_REGULATOR_VOLTAGE_SCALE1') + ') != HAL_OK)\n' + ERR + '\n';
+      lat = fam === 'G4' ? Math.min(8, Math.floor(mhz / 34)) : fam === 'U5' ? (mhz > 128 ? 4 : mhz > 96 ? 3 : mhz > 64 ? 2 : mhz > 32 ? 1 : 0) : fam === 'WB' ? (mhz > 54 ? 3 : mhz > 36 ? 2 : mhz > 18 ? 1 : 0) : (mhz > 64 ? 4 : mhz > 48 ? 3 : mhz > 32 ? 2 : mhz > 16 ? 1 : 0);
+    } else if (fam === 'H7') {
+      pre = '  /** Supply configuration update enable\n  */\n  HAL_PWREx_ConfigSupply(PWR_LDO_SUPPLY);\n\n  /** Configure the main internal regulator output voltage\n  */\n' +
+        '  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE' + (mhz > 400 ? 0 : 1) + ');\n\n  while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}\n\n';
+      lat = mhz > 400 ? 4 : mhz > 200 ? 2 : 1;
     }
-    s += '  /** Initializes the RCC Oscillators according to the specified parameters\n  * in the RCC_OscInitTypeDef structure.\n  */\n';
+    // ---- 오실레이터 + PLL
     if (useHse) {
-      var bypass = !!(project.board && /NUCLEO/.test(project.board));
-      s += '  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;\n  RCC_OscInitStruct.HSEState = ' + (bypass ? 'RCC_HSE_BYPASS' : 'RCC_HSE_ON') + ';   /* 8 MHz ' + (bypass ? 'ST-Link MCO' : '크리스털') + ' */\n' +
-        '  RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;\n  RCC_OscInitStruct.HSIState = RCC_HSI_ON;\n  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;\n' +
-        '  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;\n  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL' + Math.round(mhz / 8) + ';\n';
+      lineOsc('OscillatorType', 'RCC_OSCILLATORTYPE_HSE');
+      osc += '  RCC_OscInitStruct.HSEState = ' + (bypass ? 'RCC_HSE_BYPASS' : 'RCC_HSE_ON') + ';   /* 8 MHz ' + (bypass ? 'ST-Link MCO' : '크리스털') + ' */\n';
+      lineOsc('HSEPredivValue', 'RCC_HSE_PREDIV_DIV1'); lineOsc('HSIState', 'RCC_HSI_ON'); lineOsc('PLL.PLLState', 'RCC_PLL_ON');
+      lineOsc('PLL.PLLSource', 'RCC_PLLSOURCE_HSE'); lineOsc('PLL.PLLMUL', 'RCC_PLL_MUL' + Math.round(mhz / 8));
+    } else if (fam === 'C0') {
+      lineOsc('OscillatorType', 'RCC_OSCILLATORTYPE_HSI'); lineOsc('HSIState', 'RCC_HSI_ON');
+      lineOsc('HSIDiv', 'RCC_HSI_DIV' + Math.round(48 / mhz)); lineOsc('HSICalibrationValue', 'RCC_HSICALIBRATION_DEFAULT');
+      pll = false;
     } else {
-      s += '  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;\n  RCC_OscInitStruct.HSIState = RCC_HSI_ON;\n' +
-        (fam === 'G0' ? '  RCC_OscInitStruct.HSIDiv = RCC_HSI_DIV1;\n' : '') +
-        '  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;\n';
-      if (!pll) s += '  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;\n';
+      lineOsc('OscillatorType', 'RCC_OSCILLATORTYPE_HSI');
+      lineOsc('HSIState', fam === 'H7' ? 'RCC_HSI_DIV1' : 'RCC_HSI_ON');
+      if (fam === 'G0') lineOsc('HSIDiv', 'RCC_HSI_DIV1');
+      lineOsc('HSICalibrationValue', 'RCC_HSICALIBRATION_DEFAULT');
+      if (!pll) lineOsc('PLL.PLLState', 'RCC_PLL_NONE');
       else {
-        s += '  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;\n';
-        if (fam === 'F4') {
-          var plln = mhz * 2, pllq = Math.max(2, Math.min(15, Math.round(plln / 48)));
-          s += '  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;\n  RCC_OscInitStruct.PLL.PLLM = 16;\n  RCC_OscInitStruct.PLL.PLLN = ' + plln + ';\n  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;\n  RCC_OscInitStruct.PLL.PLLQ = ' + pllq + ';\n';
-        } else if (fam === 'F1') {
-          s += '  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI_DIV2;\n  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL' + Math.round(mhz / 4) + ';\n';
-        } else if (fam === 'F0') {
-          s += '  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;\n  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL' + Math.round(mhz / 4) + ';\n  RCC_OscInitStruct.PLL.PREDIV = RCC_PREDIV_DIV2;\n';
-        } else if (fam === 'G0') {
-          s += '  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;\n  RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV1;\n  RCC_OscInitStruct.PLL.PLLN = 8;\n  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;\n  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;\n  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV' + (mhz >= 64 ? 2 : 4) + ';\n';
-        } else if (fam === 'L4') {
-          s += '  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;\n  RCC_OscInitStruct.PLL.PLLM = 1;\n  RCC_OscInitStruct.PLL.PLLN = 10;\n  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV7;\n  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;\n  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV' + (mhz >= 80 ? 2 : 4) + ';\n';
-        }
+        lineOsc('PLL.PLLState', 'RCC_PLL_ON');
+        if (fam === 'F4' || fam === 'F7') {
+          var plln = mhz * 2;
+          lineOsc('PLL.PLLSource', 'RCC_PLLSOURCE_HSI'); lineOsc('PLL.PLLM', 16); lineOsc('PLL.PLLN', plln); lineOsc('PLL.PLLP', 'RCC_PLLP_DIV2');
+          lineOsc('PLL.PLLQ', Math.max(2, Math.min(15, Math.round(plln / 48))));
+          if (fam === 'F7') lineOsc('PLL.PLLR', 2);
+        } else if (fam === 'F1') { lineOsc('PLL.PLLSource', 'RCC_PLLSOURCE_HSI_DIV2'); lineOsc('PLL.PLLMUL', 'RCC_PLL_MUL' + Math.round(mhz / 4)); }
+        else if (fam === 'F3') { lineOsc('PLL.PLLSource', 'RCC_PLLSOURCE_HSI'); lineOsc('PLL.PLLMUL', 'RCC_PLL_MUL' + Math.round(mhz / 4)); }
+        else if (fam === 'F0') { lineOsc('PLL.PLLSource', 'RCC_PLLSOURCE_HSI'); lineOsc('PLL.PLLMUL', 'RCC_PLL_MUL' + Math.round(mhz / 4)); lineOsc('PLL.PREDIV', 'RCC_PREDIV_DIV2'); }
+        else if (fam === 'G0') { lineOsc('PLL.PLLSource', 'RCC_PLLSOURCE_HSI'); lineOsc('PLL.PLLM', 'RCC_PLLM_DIV1'); lineOsc('PLL.PLLN', 8); lineOsc('PLL.PLLP', 'RCC_PLLP_DIV2'); lineOsc('PLL.PLLQ', 'RCC_PLLQ_DIV2'); lineOsc('PLL.PLLR', 'RCC_PLLR_DIV' + (mhz >= 64 ? 2 : 4)); }
+        else if (fam === 'L0') { lineOsc('PLL.PLLSource', 'RCC_PLLSOURCE_HSI'); lineOsc('PLL.PLLMUL', 'RCC_PLLMUL_4'); lineOsc('PLL.PLLDIV', 'RCC_PLLDIV_' + Math.round(64 / mhz)); }
+        else if (fam === 'L4') { lineOsc('PLL.PLLSource', 'RCC_PLLSOURCE_HSI'); lineOsc('PLL.PLLM', 1); lineOsc('PLL.PLLN', 10); lineOsc('PLL.PLLP', 'RCC_PLLP_DIV7'); lineOsc('PLL.PLLQ', 'RCC_PLLQ_DIV2'); lineOsc('PLL.PLLR', 'RCC_PLLR_DIV' + (mhz >= 80 ? 2 : 4)); }
+        else if (fam === 'G4') { lineOsc('PLL.PLLSource', 'RCC_PLLSOURCE_HSI'); lineOsc('PLL.PLLM', 'RCC_PLLM_DIV4'); lineOsc('PLL.PLLN', Math.round(mhz / 2)); lineOsc('PLL.PLLP', 'RCC_PLLP_DIV2'); lineOsc('PLL.PLLQ', 'RCC_PLLQ_DIV2'); lineOsc('PLL.PLLR', 'RCC_PLLR_DIV2'); }
+        else if (fam === 'WB') { lineOsc('PLL.PLLSource', 'RCC_PLLSOURCE_HSI'); lineOsc('PLL.PLLM', 'RCC_PLLM_DIV1'); lineOsc('PLL.PLLN', Math.round(mhz / 8)); lineOsc('PLL.PLLP', 'RCC_PLLP_DIV2'); lineOsc('PLL.PLLQ', 'RCC_PLLQ_DIV2'); lineOsc('PLL.PLLR', 'RCC_PLLR_DIV2'); }
+        else if (fam === 'U5') { lineOsc('PLL.PLLSource', 'RCC_PLLSOURCE_HSI'); lineOsc('PLL.PLLMBOOST', 'RCC_PLLMBOOST_DIV1'); lineOsc('PLL.PLLM', 1); lineOsc('PLL.PLLN', Math.round(mhz / 16)); lineOsc('PLL.PLLP', 2); lineOsc('PLL.PLLQ', 2); lineOsc('PLL.PLLR', 1); lineOsc('PLL.PLLRGE', 'RCC_PLLVCIRANGE_1'); lineOsc('PLL.PLLFRACN', 0); }
+        else if (fam === 'H7') { lineOsc('PLL.PLLSource', 'RCC_PLLSOURCE_HSI'); lineOsc('PLL.PLLM', 4); lineOsc('PLL.PLLN', Math.round(mhz / 8)); lineOsc('PLL.PLLP', 2); lineOsc('PLL.PLLQ', 4); lineOsc('PLL.PLLR', 2); lineOsc('PLL.PLLRGE', 'RCC_PLL1VCIRANGE_3'); lineOsc('PLL.PLLVCOSEL', 'RCC_PLL1VCOWIDE'); lineOsc('PLL.PLLFRACN', 0); }
       }
     }
-    s += '  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)\n  {\n    Error_Handler();\n  }\n';
-    if (fam === 'F4' && mhz > 168) s += '\n  /** Activate the Over-Drive mode\n  */\n  if (HAL_PWREx_EnableOverDrive() != HAL_OK)\n  {\n    Error_Handler();\n  }\n';
-    var noApb2 = fam === 'F0' || fam === 'G0';
-    s += '\n  /** Initializes the CPU, AHB and APB buses clocks\n  */\n' +
-      '  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK\n                              |RCC_CLOCKTYPE_PCLK1' + (noApb2 ? '' : '|RCC_CLOCKTYPE_PCLK2') + ';\n' +
-      '  RCC_ClkInitStruct.SYSCLKSource = ' + (pll ? 'RCC_SYSCLKSOURCE_PLLCLK' : 'RCC_SYSCLKSOURCE_HSI') + ';\n' +
-      '  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;\n  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV' + ck.div1 + ';\n' +
-      (noApb2 ? '' : '  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV' + ck.div2 + ';\n') +
-      '\n  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_' + lat + ') != HAL_OK)\n  {\n    Error_Handler();\n  }\n}\n';
+    s += pre + '  /** Initializes the RCC Oscillators according to the specified parameters\n  * in the RCC_OscInitTypeDef structure.\n  */\n' + osc +
+      '  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)\n' + ERR;
+    if ((fam === 'F4' || fam === 'F7') && mhz > 180 - (fam === 'F7' ? 0 : 12)) s += '\n  /** Activate the Over-Drive mode\n  */\n  if (HAL_PWREx_EnableOverDrive() != HAL_OK)\n' + ERR;
+    // ---- 버스 분주
+    var src = pll ? 'RCC_SYSCLKSOURCE_PLLCLK' : 'RCC_SYSCLKSOURCE_HSI';
+    if (fam === 'H7') {
+      lineClk('ClockType', 'RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK\n                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2\n                              |RCC_CLOCKTYPE_D3PCLK1|RCC_CLOCKTYPE_D1PCLK1');
+      lineClk('SYSCLKSource', src); lineClk('SYSCLKDivider', 'RCC_SYSCLK_DIV1'); lineClk('AHBCLKDivider', 'RCC_HCLK_DIV' + ck.ahbDiv);
+      lineClk('APB3CLKDivider', 'RCC_APB3_DIV' + ck.div1); lineClk('APB1CLKDivider', 'RCC_APB1_DIV' + ck.div1);
+      lineClk('APB2CLKDivider', 'RCC_APB2_DIV' + ck.div2); lineClk('APB4CLKDivider', 'RCC_APB4_DIV' + ck.div1);
+    } else if (fam === 'F0' || fam === 'G0' || fam === 'C0' ) {
+      lineClk('ClockType', 'RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK\n                              |RCC_CLOCKTYPE_PCLK1'); lineClk('SYSCLKSource', src);
+      if (fam === 'C0') lineClk('SYSCLKDivider', 'RCC_SYSCLK_DIV1');
+      lineClk('AHBCLKDivider', 'RCC_SYSCLK_DIV1'); lineClk('APB1CLKDivider', (fam === 'F0' ? 'RCC_HCLK_DIV' : 'RCC_APB1_DIV') + ck.div1);
+    } else {
+      var extra = fam === 'U5' ? '|RCC_CLOCKTYPE_PCLK3' : fam === 'WB' ? '\n                              |RCC_CLOCKTYPE_HCLK2|RCC_CLOCKTYPE_HCLK4' : '';
+      lineClk('ClockType', 'RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK\n                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2' + extra);
+      lineClk('SYSCLKSource', src); lineClk('AHBCLKDivider', 'RCC_SYSCLK_DIV1');
+      lineClk('APB1CLKDivider', 'RCC_HCLK_DIV' + ck.div1); lineClk('APB2CLKDivider', 'RCC_HCLK_DIV' + ck.div2);
+      if (fam === 'U5') lineClk('APB3CLKDivider', 'RCC_HCLK_DIV1');
+      if (fam === 'WB') { lineClk('AHBCLK2Divider', 'RCC_SYSCLK_DIV2'); lineClk('AHBCLK4Divider', 'RCC_SYSCLK_DIV1'); }
+    }
+    s += '\n  /** Initializes the CPU, AHB and APB buses clocks\n  */\n' + clk +
+      '\n  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_' + lat + ') != HAL_OK)\n' + ERR + '}\n';
     return s;
   }
 
@@ -238,10 +271,10 @@
   function errChk(call) { return '  if (' + call + ' != HAL_OK)\n  {\n    Error_Handler();\n  }\n'; }
 
   function genInit(p, project, chip) {
-    var c = project.periph[p] || {}, h = handleName(p), f4 = chip.series === 'F4';
+    var c = project.periph[p] || {}, h = handleName(p), f4 = /^(F4|F7)$/.test(chip.series);
     var info = chip.periph[p] || {}, N = project.nvic || {};
     var s;
-    if (/^USART/.test(p)) {
+    if (/^(LPUART|USART)/.test(p)) {
       s = head(p) + '  ' + h + '.Instance = ' + p + ';\n' +
         '  ' + h + '.Init.BaudRate = ' + (c.baud || 115200) + ';\n' +
         '  ' + h + '.Init.WordLength = UART_WORDLENGTH_8B;\n  ' + h + '.Init.StopBits = UART_STOPBITS_1;\n' +
@@ -295,12 +328,13 @@
       return s + tail(p);
     }
     if (p === 'ADC1') {
-      var chans = c.channels || [0], m0 = chip.series === 'F0' || chip.series === 'G0', l4 = chip.series === 'L4', f1 = chip.series === 'F1', g0 = chip.series === 'G0';
+      var chans = c.channels || [0], fam = chip.series, m0 = /^(F0|G0|L0|C0)$/.test(fam), l4 = /^(L4|F3|G4|WB|U5|H7)$/.test(fam), f1 = fam === 'F1', g0 = /^(G0|C0)$/.test(fam), f4 = /^(F4|F7)$/.test(fam);
+      var res = 'ADC_RESOLUTION_' + (chip.adcBits || 12) + 'B';
       s = head(p, '  ADC_ChannelConfTypeDef sConfig = {0};\n\n') +
         '  /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)\n  */\n' +
         '  hadc1.Instance = ADC1;\n';
       if (f4) s += '  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;\n  hadc1.Init.Resolution = ADC_RESOLUTION_12B;\n';
-      else if (l4) s += '  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;\n  hadc1.Init.Resolution = ADC_RESOLUTION_12B;\n  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;\n';
+      else if (l4) s += '  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV' + (fam === 'H7' ? 2 : 1) + ';\n  hadc1.Init.Resolution = ' + res + ';\n' + (fam === 'H7' ? '' : '  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;\n');
       else if (m0) s += '  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;\n  hadc1.Init.Resolution = ADC_RESOLUTION_12B;\n  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;\n';
       s += '  hadc1.Init.ScanConvMode = ' + (m0 ? 'ADC_SCAN_DIRECTION_FORWARD' : l4 ? (chans.length > 1 ? 'ADC_SCAN_ENABLE' : 'ADC_SCAN_DISABLE') : (chans.length > 1 ? 'ENABLE' : 'DISABLE')) + ';\n' +
         ((f4 || l4 || m0) ? '  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;\n' : '') +
@@ -310,14 +344,15 @@
         '  hadc1.Init.DiscontinuousConvMode = DISABLE;\n' +
         (f1 ? '' : '  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;\n') +
         '  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;\n' + ((f4 || f1) ? '  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;\n' : '') +
-        ((f4 || l4 || m0) ? '  hadc1.Init.DMAContinuousRequests = ' + (c.dma ? 'ENABLE' : 'DISABLE') + ';\n' : '') +
+        ((f4 || l4 || m0) && fam !== 'H7' ? '  hadc1.Init.DMAContinuousRequests = ' + (c.dma ? 'ENABLE' : 'DISABLE') + ';\n' : '') +
+        (fam === 'H7' ? '  hadc1.Init.ConversionDataManagement = ' + (c.dma ? 'ADC_CONVERSIONDATA_DMA_CIRCULAR' : 'ADC_CONVERSIONDATA_DR') + ';\n  hadc1.Init.LeftBitShift = ADC_LEFTBITSHIFT_NONE;\n' : '') +
         ((l4 || m0) ? '  hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;\n' : '') + (l4 ? '  hadc1.Init.OversamplingMode = DISABLE;\n' : '') +
         (g0 ? '  hadc1.Init.SamplingTimeCommon1 = ADC_SAMPLINGTIME_COMMON_1;\n  hadc1.Init.TriggerFrequencyMode = ADC_TRIGGER_FREQ_HIGH;\n' : '') +
         errChk('HAL_ADC_Init(&hadc1)') + '\n';
       chans.forEach(function (ch, i) {
         s += '  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.\n  */\n' +
           '  sConfig.Channel = ADC_CHANNEL_' + ch + ';\n  sConfig.Rank = ' + (f4 ? (i + 1) : m0 ? 'ADC_RANK_CHANNEL_NUMBER' : 'ADC_REGULAR_RANK_' + (i + 1)) + ';\n' +
-          (i === 0 || m0 ? '  sConfig.SamplingTime = ' + (f4 ? 'ADC_SAMPLETIME_84CYCLES' : f1 ? 'ADC_SAMPLETIME_55CYCLES_5' : l4 ? 'ADC_SAMPLETIME_47CYCLES_5' : g0 ? 'ADC_SAMPLINGTIME_COMMON_1' : 'ADC_SAMPLETIME_239CYCLES_5') + ';\n' : '') +
+          (i === 0 || m0 ? '  sConfig.SamplingTime = ' + (f4 ? 'ADC_SAMPLETIME_84CYCLES' : f1 ? 'ADC_SAMPLETIME_55CYCLES_5' : fam === 'H7' ? 'ADC_SAMPLETIME_64CYCLES_5' : fam === 'U5' ? 'ADC_SAMPLETIME_68CYCLES' : l4 ? 'ADC_SAMPLETIME_47CYCLES_5' : g0 ? 'ADC_SAMPLINGTIME_COMMON_1' : fam === 'L0' ? 'ADC_SAMPLETIME_79CYCLES_5' : 'ADC_SAMPLETIME_239CYCLES_5') + ';\n' : '') +
           (l4 && i === 0 ? '  sConfig.SingleDiff = ADC_SINGLE_ENDED;\n  sConfig.OffsetNumber = ADC_OFFSET_NONE;\n  sConfig.Offset = 0;\n' : '') +
           errChk('HAL_ADC_ConfigChannel(&hadc1, &sConfig)');
       });
@@ -337,10 +372,11 @@
     var s = '/**\n  * @brief GPIO Initialization Function\n  * @param None\n  * @retval None\n  */\nstatic void MX_GPIO_Init(void)\n{\n' +
       (gp.length ? '  GPIO_InitTypeDef GPIO_InitStruct = {0};\n' : '') +
       '/* USER CODE BEGIN MX_GPIO_Init_1 */\n\n/* USER CODE END MX_GPIO_Init_1 */\n\n  /* GPIO Ports Clock Enable */\n';
-    var allPorts = ['E', 'C', 'H', 'F', 'D', 'A', 'B'].filter(function (x) {
+    var allPorts = ['E', 'C', 'H', 'F', 'G', 'D', 'A', 'B'].filter(function (x) {
       return ports[x] || (x === 'A') || ((x === 'H' || x === 'D' || x === 'F') && chip.pins.indexOf('P' + x + '0') >= 0 && C.reserved(chip, 'P' + x + '0'));
     });
     allPorts.forEach(function (x) { s += '  __HAL_RCC_GPIO' + x + '_CLK_ENABLE();\n'; });
+    if (chip.series === 'U5' && ports.G) s += '  HAL_PWREx_EnableVddIO2();   /* U5: 포트 G 는 VDDIO2 전원 */\n';
     s += '\n';
     function ref(p) {
       var c = pins[p], n = c.label ? pinDefName(p, c) : null;

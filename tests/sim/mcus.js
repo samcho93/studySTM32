@@ -22,26 +22,36 @@ function run(label, P, user) {
   console.log((bad ? 'FAIL ' : 'ok   ') + label.padEnd(34) + ' isr=' + m.stats.isr + ' toggles=' + JSON.stringify(out.toggles).slice(0, 70) + ' term=' + JSON.stringify(out.term.slice(0, 30)));
   if (bad) out.logs.forEach(l => console.log('     ' + l));
 }
-const user = { includes: '#include <stdio.h>\n', pv: 'volatile uint32_t ticks = 0;\n', u2: 'HAL_TIM_Base_Start_IT(&htim3);\nHAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);\n__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 300);\n',
-  loop: '    HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);\n    printf("t=%lu ticks=%lu", HAL_GetTick(), ticks); puts("");\n    HAL_Delay(200);\n',
-  u4: 'int __io_putchar(int ch) { HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, HAL_MAX_DELAY); return ch; }\nvoid HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) { if (htim->Instance == TIM3) ticks++; }\nvoid HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) { ticks += 1000; }\n' };
+function userFor(tim, uart, led) {
+  const ht = G.handleName(tim), hu = G.handleName(uart);
+  return { includes: '#include <stdio.h>\n', pv: 'volatile uint32_t ticks = 0;\n',
+    u2: 'HAL_TIM_Base_Start_IT(&' + ht + ');\nHAL_TIM_PWM_Start(&' + ht + ', TIM_CHANNEL_1);\n__HAL_TIM_SET_COMPARE(&' + ht + ', TIM_CHANNEL_1, 300);\n',
+    loop: '    HAL_GPIO_TogglePin(' + led + '_GPIO_Port, ' + led + '_Pin);\n    printf("t=%lu ticks=%lu", HAL_GetTick(), ticks); puts("");\n    HAL_Delay(200);\n',
+    u4: 'int __io_putchar(int ch) { HAL_UART_Transmit(&' + hu + ', (uint8_t *)&ch, 1, HAL_MAX_DELAY); return ch; }\n' +
+      'void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) { if (htim->Instance == ' + tim + ') ticks++; }\n' +
+      'void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) { ticks += 1000; }\nvoid HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin) { ticks += 1000; }\nvoid HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin) { ticks += 1000; }\n' };
+}
 Object.keys(C.CHIPS).forEach(id => {
   const chip = C.CHIPS[id], ck = C.clocks(chip, chip.defClk);
-  // 맨 칩: LED PB0, 버튼 PB1(EXTI), TIM3 1kHz + PWM CH1(PA6), USART2, 터미널 노드
+  const tim = ['TIM3', 'TIM2', 'TIM22', 'TIM1'].find(t => chip.periph[t] && chip.periph[t].chPins && chip.periph[t].chPins[1] && chip.pins.indexOf(chip.periph[t].chPins[1]) >= 0);
+  const tinfo = chip.periph[tim], tclk = tinfo.bus === 'APB2' ? ck.tim2 : ck.tim1, pwmPin = tinfo.chPins[1];
+  const uart = ['USART2', 'USART1', 'LPUART1'].find(u => chip.periph[u]), up = chip.periph[uart].pins;
+  // 맨 칩: LED PB0, 버튼 PB1(EXTI), 타이머 PWM CH1, UART, 터미널 노드
   const P = PJ.create(id, null);
-  P.pins = { PB0: { signal: 'GPIO_Output', label: 'LED1' }, PB1: { signal: 'GPIO_EXTI', label: 'SW1', pull: 'up', trigger: 'falling' }, PA6: { signal: 'TIM3_CH1' } };
-  P.periph = { USART2: { mode: 'async', baud: 115200 }, TIM3: { psc: Math.round(ck.tim1) - 1, arr: 999, ch: { 1: 'pwm' } } };
-  P.nvic = {}; P.nvic[C.extiLine(chip, 1)] = true; P.nvic[chip.periph.TIM3.irq] = true;
+  P.pins = { PB0: { signal: 'GPIO_Output', label: 'LED1' }, PB1: { signal: 'GPIO_EXTI', label: 'SW1', pull: 'up', trigger: 'falling' } };
+  P.pins[pwmPin] = { signal: tim + '_CH1' };
+  P.periph = {}; P.periph[uart] = { mode: 'async', baud: 115200 }; P.periph[tim] = { psc: Math.round(tclk) - 1, arr: 999, ch: { 1: 'pwm' } };
+  P.nvic = {}; P.nvic[C.extiLine(chip, 1)] = true; P.nvic[tinfo.irq] = true;
   P.nodes = [{ id: 'led1', type: 'led', x: 0, y: 0, props: {} }, { id: 'sw1', type: 'button', x: 0, y: 0, props: { wiring: 'gnd' } }, { id: 'ser1', type: 'uart', x: 0, y: 0, props: {} }];
-  P.wires = [['PB0', 'led1.in'], ['PB1', 'sw1.out'], ['PA2', 'ser1.rx'], ['PA3', 'ser1.tx']];
-  run(id + ' (bare)', P, user);
+  P.wires = [['PB0', 'led1.in'], ['PB1', 'sw1.out'], [up.TX, 'ser1.rx'], [up.RX, 'ser1.tx']];
+  run(id + ' (bare)', P, userFor(tim, uart, 'LED1'));
   C.boardsFor(id).forEach(b => {
-    const Q = PJ.create(id, b); const led = C.BOARDS[b].builtin.find(x => x.type === 'board-led');
-    Q.pins.PA6 = { signal: 'TIM3_CH1' }; Q.periph.TIM3 = { psc: Math.round(ck.tim1) - 1, arr: 999, ch: { 1: 'pwm' } }; Q.nvic[chip.periph.TIM3.irq] = true;
-    const btnPin = C.BOARDS[b].builtin.find(x => x.type === 'board-button'); if (btnPin) Q.nvic[C.extiLine(chip, +btnPin.pin.slice(2))] = true;
-    if (!Q.periph.USART2) { Q.periph.USART2 = { mode: 'async', baud: 115200 }; Q.nodes.push({ id: 'ser1', type: 'uart', x: 0, y: 0, props: {} }); Q.wires.push(['PA2', 'ser1.rx'], ['PA3', 'ser1.tx']); }
-    const u2 = Object.assign({}, user, { loop: user.loop.replace(/LED1_GPIO_Port, LED1_Pin/, led.id + '_GPIO_Port, ' + led.id + '_Pin') });
-    run(id + ' + ' + b, Q, u2);
+    const B = C.BOARDS[b], Q = PJ.create(id, b), led = B.builtin.find(x => x.type === 'board-led');
+    Q.pins[pwmPin] = Q.pins[pwmPin] || { signal: tim + '_CH1' }; Q.periph[tim] = { psc: Math.round(tclk) - 1, arr: 999, ch: { 1: 'pwm' } }; Q.nvic[tinfo.irq] = true;
+    const btn = B.builtin.find(x => x.type === 'board-button'); if (btn) Q.nvic[C.extiLine(chip, +btn.pin.slice(2))] = true;
+    let qu = Object.keys(Q.periph).find(k => /UART/.test(k));
+    if (!qu) { qu = uart; Q.periph[uart] = { mode: 'async', baud: 115200 }; Q.nodes.push({ id: 'ser1', type: 'uart', x: 0, y: 0, props: {} }); Q.wires.push([up.TX, 'ser1.rx'], [up.RX, 'ser1.tx']); }
+    run(id + ' + ' + b, Q, userFor(tim, qu, led.id));
   });
 });
 console.log(fail ? fail + ' 개 실패' : '모두 통과');

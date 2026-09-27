@@ -61,7 +61,7 @@
   };
   Pinout.prototype.renderList = function () {
     var app = this.app, P = app.project, chip = app.chip, self = this, html = '';
-    var groups = [['통신', /^(USART|I2C|SPI)/], ['타이머', /^TIM/], ['아날로그', /^ADC/]];
+    var groups = [['통신', /^(LPUART|USART|I2C|SPI)/], ['타이머', /^TIM/], ['아날로그', /^ADC/]];
     groups.forEach(function (gr) {
       html += '<div class="periph-h">' + gr[0] + '</div>';
       Object.keys(chip.periph).filter(function (k) { return gr[1].test(k); }).forEach(function (k) {
@@ -76,7 +76,7 @@
   };
   Pinout.prototype.stateOf = function (k) {
     var c = this.app.project.periph[k] || {};
-    if (/^USART/.test(k)) return c.baud + ' bps';
+    if (/^(LPUART|USART)/.test(k)) return c.baud + ' bps';
     if (/^I2C/.test(k)) return (c.speed || 100000) / 1000 + ' kHz';
     if (/^SPI/.test(k)) return '/' + (c.prescaler || 16);
     if (/^TIM/.test(k)) { var pw = Object.keys(c.ch || {}).filter(function (x) { return c.ch[x] === 'pwm'; }); return (pw.length ? 'PWM ch' + pw.join(',') : '기본') ; }

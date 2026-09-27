@@ -88,7 +88,7 @@
   var IRQ_LIST = ['EXTI0', 'EXTI1', 'EXTI2', 'EXTI3', 'EXTI4', 'EXTI9_5', 'EXTI15_10', 'EXTI0_1', 'EXTI2_3', 'EXTI4_15',
     'ADC', 'ADC1', 'ADC1_2', 'ADC1_COMP', 'TIM1_UP_TIM10', 'TIM1_UP', 'TIM1_UP_TIM16', 'TIM1_BRK_UP_TRG_COM', 'TIM1_CC', 'TIM2', 'TIM3', 'TIM4', 'TIM5',
     'TIM6', 'TIM6_DAC', 'TIM7', 'TIM14', 'TIM15', 'TIM16', 'TIM17', 'I2C1_EV', 'I2C1_ER', 'I2C2_EV', 'I2C2_ER', 'I2C1', 'I2C2', 'SPI1', 'SPI2',
-    'USART1', 'USART2', 'USART3', 'USART3_4', 'USART6', 'DMA2_Stream0', 'DMA1_Channel1', 'DMA1_Channel2_3', 'RTC_WKUP', 'PendSV', 'SVCall', 'NonMaskableInt', 'HardFault'];
+    'USART1', 'USART2', 'USART3', 'USART3_4', 'USART6', 'LPUART1', 'TIM21', 'TIM22', 'EXTI2_TSC', 'EXTI5', 'EXTI6', 'EXTI7', 'EXTI8', 'EXTI9', 'EXTI10', 'EXTI11', 'EXTI12', 'EXTI13', 'EXTI14', 'EXTI15', 'TIM1_UP_TIM16_', 'DMA1_Stream5', 'DMA1_Stream6', 'DMA2_Stream0', 'DMA1_Channel1', 'DMA1_Channel2_3', 'RTC_WKUP', 'PendSV', 'SVCall', 'NonMaskableInt', 'HardFault'];
   IRQ_LIST.forEach(function (n, i) { K[n + '_IRQn'] = 100 + i; });
   var IRQ_NAME = {};
   Object.keys(K).forEach(function (k) { if (/_IRQn$/.test(k) && !(K[k] in IRQ_NAME)) IRQ_NAME[K[k]] = k.replace(/_IRQn$/, ''); });
@@ -99,7 +99,7 @@
     HAL_NVIC_SetPriority: 'void', HAL_NVIC_EnableIRQ: 'void', HAL_NVIC_DisableIRQ: 'void', HAL_NVIC_SetPriorityGrouping: 'void',
     HAL_RCC_OscConfig: 'int', HAL_RCC_ClockConfig: 'int', HAL_RCC_GetSysClockFreq: 'uint32_t', HAL_RCC_GetHCLKFreq: 'uint32_t',
     HAL_RCC_GetPCLK1Freq: 'uint32_t', HAL_RCC_GetPCLK2Freq: 'uint32_t', HAL_PWREx_EnableOverDrive: 'int', HAL_PWREx_ControlVoltageScaling: 'int', HAL_RCCEx_PeriphCLKConfig: 'int',
-    __HAL_RCC_GPIOE_CLK_ENABLE: 'void', __HAL_RCC_GPIOF_CLK_ENABLE: 'void', __HAL_RCC_SYSCFG_CLK_ENABLE: 'void', __HAL_RCC_PWR_CLK_ENABLE_: 'void',
+    __HAL_RCC_GPIOE_CLK_ENABLE: 'void', __HAL_RCC_GPIOF_CLK_ENABLE: 'void', __HAL_RCC_GPIOG_CLK_ENABLE: 'void', HAL_PWREx_ConfigSupply: 'int', HAL_PWREx_EnableVddIO2: 'void', __HAL_PWR_GET_FLAG: 'int', HAL_PWREx_DisableUCPDDeadBattery: 'void', __HAL_RCC_SYSCFG_CLK_ENABLE: 'void', __HAL_RCC_PWR_CLK_ENABLE_: 'void',
     __HAL_RCC_PWR_CLK_ENABLE: 'void', __HAL_PWR_VOLTAGESCALING_CONFIG: 'void', __HAL_RCC_AFIO_CLK_ENABLE: 'void',
     __HAL_RCC_GPIOA_CLK_ENABLE: 'void', __HAL_RCC_GPIOB_CLK_ENABLE: 'void', __HAL_RCC_GPIOC_CLK_ENABLE: 'void',
     __HAL_RCC_GPIOD_CLK_ENABLE: 'void', __HAL_RCC_GPIOH_CLK_ENABLE: 'void', __HAL_RCC_DMA1_CLK_ENABLE: 'void', __HAL_RCC_DMA2_CLK_ENABLE: 'void', __HAL_AFIO_REMAP_SWJ_NOJTAG: 'void',
@@ -141,7 +141,7 @@
     'TIM_OC_InitTypeDef', 'ADC_ChannelConfTypeDef', 'GPIO_TypeDef', 'TIM_TypeDef', 'USART_TypeDef', 'ADC_TypeDef',
     'I2C_TypeDef', 'SPI_TypeDef', 'RCC_TypeDef', 'DMA_HandleTypeDef', 'FILE'];
   var HANDLE_TYPES = ['UART_HandleTypeDef', 'TIM_HandleTypeDef', 'ADC_HandleTypeDef', 'I2C_HandleTypeDef', 'SPI_HandleTypeDef'];
-  var OBJECTS = ['GPIOA', 'GPIOB', 'GPIOC', 'GPIOD', 'GPIOE', 'GPIOF', 'GPIOH', 'TIM1', 'TIM2', 'TIM3', 'TIM4', 'TIM5', 'USART1', 'USART2', 'USART3',
+  var OBJECTS = ['GPIOA', 'GPIOB', 'GPIOC', 'GPIOD', 'GPIOE', 'GPIOF', 'GPIOG', 'GPIOH', 'LPUART1', 'TIM21', 'TIM22', 'TIM1', 'TIM2', 'TIM3', 'TIM4', 'TIM5', 'USART1', 'USART2', 'USART3',
     'USART6', 'I2C1', 'I2C2', 'SPI1', 'SPI2', 'ADC1', 'RCC', 'stdout', 'stdin', 'stderr'];
 
   function compilerEnv(extraConst) {
@@ -243,14 +243,14 @@
     this.watchers = {};
     // 레지스터 객체
     var o = {};
-    ['A', 'B', 'C', 'D', 'E', 'F', 'H'].forEach(function (x) { o['GPIO' + x] = self._gpioPort(x); });
+    ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].forEach(function (x) { o['GPIO' + x] = self._gpioPort(x); });
     this.tims = {};
     Object.keys(chip.periph).forEach(function (n) {
       var info = chip.periph[n];
       if (info.kind === 'tim') { self.tims[n] = self._timer(n, info); o[n] = self.tims[n].regs; }
       else o[n] = self._regs(n);
     });
-    ['TIM1', 'TIM2', 'TIM3', 'TIM4', 'TIM5', 'USART1', 'USART2', 'USART3', 'USART6', 'I2C1', 'I2C2', 'SPI1', 'SPI2', 'ADC1'].forEach(function (n) {
+    ['TIM1', 'TIM2', 'TIM3', 'TIM4', 'TIM5', 'TIM21', 'TIM22', 'USART1', 'USART2', 'USART3', 'USART6', 'LPUART1', 'I2C1', 'I2C2', 'SPI1', 'SPI2', 'ADC1'].forEach(function (n) {
       if (!o[n]) o[n] = self._regs(n);
     });
     o.RCC = this._regs('RCC'); o.stdout = { name: 'stdout' }; o.stdin = { name: 'stdin' }; o.stderr = { name: 'stderr' };
@@ -385,7 +385,7 @@
       var line = global.STM32Chips.extiLine(this.chip, p.num);
       if (!this.nvic[line]) { this.warnOnce('nvic' + line, p.name + ' 에지를 감지했지만 NVIC 에서 ' + line + ' 인터럽트가 꺼져 있어 콜백이 불리지 않습니다.'); return; }
       // G0 계열 HAL 은 에지별 콜백(Rising/Falling)을 부른다
-      var cb = this.chip.series === 'G0' ? (rising ? 'HAL_GPIO_EXTI_Rising_Callback' : 'HAL_GPIO_EXTI_Falling_Callback') : 'HAL_GPIO_EXTI_Callback';
+      var cb = this.chip.extiSplit ? (rising ? 'HAL_GPIO_EXTI_Rising_Callback' : 'HAL_GPIO_EXTI_Falling_Callback') : 'HAL_GPIO_EXTI_Callback';
       this.raise(cb, [1 << p.num], line);
     }
   };
@@ -476,7 +476,7 @@
     var h = this.handles[inst];
     if (h) return h;
     // 인스턴스 이름으로 등록된 핸들이 없으면 이름 규칙으로 찾는다
-    var guess = /^USART(\d)/.test(inst) ? 'huart' + inst.slice(5) : /^TIM/.test(inst) ? 'htim' + inst.slice(3) : /^ADC/.test(inst) ? 'hadc' + inst.slice(3) : null;
+    var guess = /^USART(\d)/.test(inst) ? 'huart' + inst.slice(5) : /^LPUART/.test(inst) ? 'hlpuart' + inst.slice(6) : /^TIM/.test(inst) ? 'htim' + inst.slice(3) : /^ADC/.test(inst) ? 'hadc' + inst.slice(3) : null;
     return (guess && this.handleByName[guess]) || autoStruct();
   };
   Machine.prototype.instOf = function (h) {
@@ -644,7 +644,7 @@
       HAL_NVIC_EnableIRQ: function (n) { var nm = IRQ_NAME[n]; if (nm) M.nvic[nm] = true; },
       HAL_NVIC_DisableIRQ: function (n) { var nm = IRQ_NAME[n]; if (nm) M.nvic[nm] = false; },
       HAL_RCC_OscConfig: function () { return 0; }, HAL_RCC_ClockConfig: function () { return 0; },
-      HAL_RCC_GetSysClockFreq: function () { return M.sysclk; }, HAL_RCC_GetHCLKFreq: function () { return M.sysclk; },
+      HAL_RCC_GetSysClockFreq: function () { return M.sysclk; }, HAL_RCC_GetHCLKFreq: function () { return M.clk.hclk * 1e6; },
       HAL_RCC_GetPCLK1Freq: function () { return M.clk.apb1 * 1e6; },
       HAL_RCC_GetPCLK2Freq: function () { return M.clk.apb2 * 1e6; },
       __disable_irq: function () { M.irqOff = true; }, __enable_irq: function () { M.irqOff = false; M.pendingIsr.forEach(function (r) { r.masked = false; }); },
@@ -939,6 +939,7 @@
       toupper: function (c) { return c >= 97 && c <= 122 ? c - 32 : c; }, tolower: function (c) { return c >= 65 && c <= 90 ? c + 32 : c; }
     };
     // 클럭 매크로들은 아무것도 하지 않는다
+    F.__HAL_PWR_GET_FLAG = function () { return 1; };   // 전압 준비(VOSRDY) 등 상태 플래그는 항상 준비됨
     Object.keys(FUNCS).forEach(function (k) { if (!F[k]) F[k] = function () { return 0; }; });
     return F;
   };
@@ -1018,6 +1019,10 @@
     }
   };
   Machine.prototype.adcSample = function (ch) {
+    var v = this.adcSample12(ch), bits = this.chip.adcBits || 12;
+    return bits === 12 ? v : Math.round(v * ((1 << bits) - 1) / 4095);
+  };
+  Machine.prototype.adcSample12 = function (ch) {
     if (ch === 16) return 940 + (Math.random() * 6 | 0);
     if (ch === 17) return 1500 + (Math.random() * 4 | 0);
     var pin = global.STM32Chips.adcPin(this.chip, ch), p = pin && this.pins[pin];
