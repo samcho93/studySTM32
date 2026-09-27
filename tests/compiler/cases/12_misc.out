@@ -1,0 +1,8 @@
+new hello 7 0
+odr=20 max=4
+odd=422
+run stop ?
+m=6 3 30 n=3
+items=A1 B300 D4 n=4 sp=00509
+ABC' 0 99
+f=1.5 shared=10 isr=3

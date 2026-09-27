@@ -8,7 +8,8 @@
 const path = require('path');
 const ROOT = path.resolve(__dirname, '..', '..');
 global.window = global;
-for (const f of ['chips', 'ccompiler', 'runtime', 'devices', 'codegen', 'examples']) require(path.join(ROOT, 'assets/js/stm32', f + '.js'));
+for (const f of ['chips', 'runtime', 'devices', 'codegen', 'examples']) require(path.join(ROOT, 'assets/js/stm32', f + '.js'));
+global.STM32C = require(path.join(ROOT, 'assets/js/stm32/ccompiler.js'));
 const C = global.STM32Chips, G = global.STM32Codegen, R = global.STM32Runtime, D = global.STM32Devices, EX = global.STM32_EXAMPLES || {};
 
 function project(id, ex) {

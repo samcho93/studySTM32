@@ -18,7 +18,8 @@
  *    구조체 배열이 포인터로 쓰이면 첫 원소 객체(arr[0])가 되고, &arr[i] 는 arr[i] 객체다.
  *  - 포인터 캐스트((uint8_t*)&x 등)는 값 변환 없이 같은 Ptr 을 쓴다(바이트 재해석 없음).
  *  - 스칼라 구조체 필드의 주소(&s.x)는 지원하지 않는다(컴파일 오류).
- *  - 사용자 함수의 인자/반환 구조체는 값 복사(__clone). HAL 구조체·핸들은 참조 그대로.
+ *  - 사용자 struct 대입/인자/반환은 값 복사(구조체별 __cp_<tag>: 배열·중첩 struct 는 깊은 복사, 포인터·HAL 객체 필드는 참조).
+ *    HAL 구조체·핸들 변수끼리의 대입은 참조 복사(같은 객체)다.
  *  - 비교 결과(==, <, && …)는 조건 안에서는 JS boolean 그대로, 값으로 쓰일 때 (x?1:0).
  *  - 정수 산술 중간값도 C 처럼 32비트로 자른다(i32: |0, Math.imul / u32: >>>0).
  *    64비트 정수는 double 로 계산한다(정확한 랩어라운드 없음).
@@ -29,7 +30,17 @@
  *  - 전역 변수 globals() 에는 사용자 전역 + static 지역('함수명.변수명' 키)을 넣는다. 핸들·HAL 구조체는 제외.
  *  - #include "x.h" 에서 프로젝트에 없는 파일(stm32f4xx_hal.h 등)은 조용히 무시한다.
  *  - 원형만 있고 정의가 없는 함수를 호출하면(런타임 함수도 아니면) 링크 오류(undefined reference)로 처리.
- *  - 생성 코드는 모듈 상단에 작은 도우미(__ta, __fa, __clone, __mk_<tag>)를 둔다.
+ *  - 생성 코드는 모듈 상단에 작은 도우미(__ta, __fa, __mk_<tag>, __cp_<tag>)를 둔다.
+ *  - 원형 없이 뒤에 정의된 사용자 함수를 호출해도 된다(2패스). 전역 변수는 C 처럼 선언 뒤에만 쓸 수 있다.
+ *  - 함수 안에서 바깥 이름을 가리는 지역 변수는 v_x$1 처럼 이름을 바꾼다(JS TDZ 방지).
+ *  - 비-void 함수 끝에는 안전용 'return 0;' 을 붙인다(끝까지 떨어지면 0 반환).
+ *
+ * 알려진 제한:
+ *  - 구조체 포인터의 산술/첨자(p++, p[i], i≠0), 스칼라 구조체 멤버의 주소, 함수 포인터, 포인터의 포인터,
+ *    union, 비트필드, goto/레이블, 가변 길이 배열, 복합 리터럴, 중첩 블록 안의 case 레이블은 지원하지 않는다.
+ *  - switch 의 case 사이에서 초기화를 건너뛴 지역 변수를 다른 case 에서 쓰면 JS TDZ 오류가 난다.
+ *  - 64비트 정수는 double 로 계산(비트 연산은 32비트). 포인터 캐스트는 바이트 재해석을 하지 않는다.
+ *  - 전처리기: #if 식은 정수만, 매크로 인자 안의 # / ## 는 단순 처리.
  */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
@@ -1095,6 +1106,7 @@
     this.errors = [];
     this.stmtCount = 0; this.dataBytes = 0; this.bssBytes = 0;
     this.usedStructs = new Set();
+    this.usedClones = new Set();
     this.called = new Map();
     this.expose = [];
     this.jsNames = new Set();
@@ -1167,7 +1179,7 @@
       if (R.k !== undefined) return lit(t.k === 'int' ? truncConst(R.k, t) : t.k === 'float' ? Math.fround(R.k) : R.k);
       if (R.b) return '(' + R.c + ' ? 1 : 0)';
       if (t.k === 'double') return R.c;
-      if (t.k === 'float') return R.t.k === 'float' ? R.c : 'Math.fround(' + R.c + ')';
+      if (t.k === 'float') return R.t.k === 'float' && !R.unr ? R.c : 'Math.fround(' + R.c + ')';
       if (R.t.k === 'int' && fitsInt(R.t, t)) return R.c;
       if (R.t.k === 'ptr' || R.t.k === 'obj' || R.t.k === 'hal') return R.c;
       return wrapCode(R.c, t);
@@ -1181,7 +1193,7 @@
     if (t.k === 'struct') {
       if (R.t.k !== 'struct') incompatible();
       if (R.t !== t && R.t.tag !== t.tag) incompatible();
-      return R.fresh ? R.c : '__clone(' + R.c + ')';
+      return R.fresh ? R.c : this.copyExpr(t, R.c, 0);
     }
     if (t.k === 'arr') fail(tok, '배열에는 대입할 수 없습니다 (assignment to expression with array type)');
     return this.argRt(R, tok);
@@ -1340,15 +1352,17 @@
           t = isPtrLike(A.t) ? (A.t.k === 'arr' ? ptrT(A.t.of) : A.t) : (B.t.k === 'arr' ? ptrT(B.t.of) : B.t);
           a = this.argRt(A, e.tok); b = this.argRt(B, e.tok);
         } else { t = A.t; a = A.c; b = B.c; }
-        return { c: '(' + this.cond(C, e.tok) + ' ? ' + a + ' : ' + b + ')', t };
+        return { c: '(' + this.cond(C, e.tok) + ' ? ' + a + ' : ' + b + ')', t, unr: t.k === 'float' && !!(A.unr || B.unr) };
       }
       case 'comma': {
         const A = this.genExpr(e.l, ctx, true), B = this.genExpr(e.r, ctx, discard);
-        return { c: '(' + A.c + ', ' + B.c + ')', t: B.t, b: B.b };
+        return { c: '(' + A.c + ', ' + B.c + ')', t: B.t, b: B.b, unr: B.unr };
       }
       case 'call': return this.genCall(e, ctx);
       case 'cast': return this.genCast(e, ctx);
-      case 'sizeofT': { const n = sizeOf(e.type); return { c: String(n), t: BUILTIN_TYPEDEFS.size_t, k: n }; }
+      case 'sizeofT': {
+        if (e.type.k === 'struct' && !e.type.complete) fail(e.tok, "불완전한 타입 '" + typeStr(e.type) + "' 에 sizeof 를 쓸 수 없습니다 (invalid application of 'sizeof' to incomplete type)");
+        const n = sizeOf(e.type); return { c: String(n), t: BUILTIN_TYPEDEFS.size_t, k: n }; }
       case 'sizeofE': {
         const R = this.genExpr(e.e, { global: true, scopes: ctx.scopes, temps: 0, tempPrefix: '__z', loopDepth: 0, switchDepth: 0, dry: true });
         const n = R.strBytes !== undefined ? R.strBytes : sizeOf(R.t);
@@ -1531,7 +1545,8 @@
       if (isFlt(A.t) || isFlt(B.t)) bad();
       const rt = promote(A.t);
       if (A.k !== undefined && B.k !== undefined) {
-        const k = op === '<<' ? truncConst(A.k << B.k, rt) : rt.n === 'u32' ? (A.k >>> B.k) : truncConst(A.k >> B.k, rt);
+        const k = rt.n === 'i64' ? (op === '<<' ? A.k * Math.pow(2, B.k) : Math.floor(A.k / Math.pow(2, B.k)))
+          : op === '<<' ? truncConst(A.k << B.k, rt) : rt.n === 'u32' ? (A.k >>> B.k) : truncConst(A.k >> B.k, rt);
         return { c: lit(k), t: rt, k };
       }
       const a = this.val(A, tok), b = this.val(B, tok);
@@ -1565,7 +1580,7 @@
     }
     if (fl) {
       const a = this.val(A, tok), b = this.val(B, tok);
-      return { c: '(' + a + ' ' + op + ' ' + b + ')', t: rt };
+      return { c: '(' + a + ' ' + op + ' ' + b + ')', t: rt, unr: rt.k === 'float' };
     }
     if (op === '/' || op === '%') {
       const a = this.opnd(A, rt, tok), b = this.opnd(B, rt, tok);
@@ -1647,6 +1662,16 @@
       case 'hal': return "H.struct('" + t.name + "')";
       default: return '0';
     }
+  };
+  // 구조체 값 복사 식
+  G.copyExpr = function (t, x, d) {
+    if (t.k === 'struct') { this.usedClones.add(t); this.usedStructs.add(t); return '__cp_' + t.tag + '(' + x + ')'; }
+    if (t.k === 'arr') {
+      if (ctorOf(t.of) || t.of.k === 'ptr' || t.of.k === 'any' || t.of.k === 'hal' || t.of.k === 'obj') return x + '.slice()';
+      const v = 'x' + d;
+      return x + '.map(' + v + ' => ' + this.copyExpr(t.of, v, d + 1) + ')';
+    }
+    return x;
   };
   G.isZeroInit = function (init) {
     if (!init) return true;
@@ -2094,12 +2119,18 @@
         done.add(st); again = true;
         factories.push('function __mk_' + st.tag + '() { return { ' + st.fields.map(f => (IDENT.test(f.name) ? f.name : JSON.stringify(f.name)) + ': ' + this.defaultVal(f.type)).join(', ') + ' }; }');
       }
+      for (const st of Array.from(this.usedClones)) {
+        if (done.has('cp:' + st.tag)) continue;
+        done.add('cp:' + st.tag); again = true;
+        const key = f => IDENT.test(f.name) ? f.name : JSON.stringify(f.name);
+        const acc = f => IDENT.test(f.name) ? 'o.' + f.name : 'o[' + JSON.stringify(f.name) + ']';
+        factories.push('function __cp_' + st.tag + '(o) { return { ' + st.fields.map(f => key(f) + ': ' + this.copyExpr(f.type, acc(f), 0)).join(', ') + ' }; }');
+      }
     }
     const head = [
       "'use strict';",
       'const __ta = (C, n, v) => { const a = new C(n); a.set(v.length > n ? v.slice(0, n) : v); return a; };',
       'const __fa = (n, a, mk) => { while (a.length < n) a.push(mk()); return a; };',
-      'const __clone = (o) => { if (o === null || typeof o !== "object") return o; if (ArrayBuffer.isView(o)) return o.slice(); if (o instanceof H.Ptr) return o; if (Array.isArray(o)) return o.map(__clone); const r = {}; for (const k of Object.keys(o)) r[k] = __clone(o[k]); return r; };'
     ];
     for (const [s, id] of this.strings) head.push('const ' + id + ' = H.str(' + JSON.stringify(s) + ');');
     if (this.gctx.temps) { const ts = []; for (let i = 0; i < this.gctx.temps; i++) ts.push('__g' + i); head.push('let ' + ts.join(', ') + ';'); }

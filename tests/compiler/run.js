@@ -4,6 +4,7 @@
  *  - cases/*.c  : 테스트 프로그램 (Core/Src/main.c 로 컴파일). cases/*.h 는 모두 Core/Inc/ 에 들어간다.
  *  - cases/*.out: 기대 출력 (printf / UART / I2C 로그). \r\n 은 \n 으로 비교.
  *  - cases/*.err: 기대 오류. 첫 줄 = 줄 번호, 둘째 줄 = 메시지에 포함돼야 할 문자열.
+ *  - cases/*.globals: (선택) 실행 후 globals() 값 비교용 JSON (부분 비교).
  *  - 첫 줄이 "// maxTime: N" 이면 가상 시간 N ms 까지만 실행 (무한 루프용, 기본 5000).
  */
 'use strict';
@@ -239,6 +240,13 @@ function main() {
           const want = fs.existsSync(outFile) ? fs.readFileSync(outFile, 'utf8') : '';
           ok = norm(r.text) === norm(want);
           if (!ok) detail = '--- 기대\n' + norm(want) + '\n--- 실제\n' + norm(r.text);
+          const gFile = path.join(dir, base + '.globals');
+          if (ok && fs.existsSync(gFile)) {
+            const wantG = JSON.parse(fs.readFileSync(gFile, 'utf8'));
+            for (const k of Object.keys(wantG)) {
+              if (r.globals[k] !== wantG[k]) { ok = false; detail = 'globals.' + k + ' 기대 ' + wantG[k] + ', 실제 ' + r.globals[k]; }
+            }
+          }
           if (process.env.SHOWJS) console.log(res.js);
         }
       }
