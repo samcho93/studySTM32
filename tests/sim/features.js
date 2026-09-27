@@ -98,7 +98,7 @@ run('rtos-codegen', P => {
     StartBlink: '  for(;;)\n  {\n    HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);\n    osDelay(100);\n  }\n'
   },
   u4: PUT
-}, 1100, (t, m) => (/tick 10dd/.test(t) && m.pins.PA5.hist.length >= 9) || 'tasks did not run');
+}, 1100, (t, m) => (/tick 10\d\d/.test(t) && m.pins.PA5.hist.length >= 9) || 'tasks did not run');
 
 // 8) CubeMX 생성 경로: RTC 웨이크업 1초 + STOP 모드 반복
 run('rtc-wakeup-stop', P => { P.periph.RTC = { hours: 8, minutes: 30, seconds: 0, wakeup: 1 }; P.nvic.RTC_WKUP = true; }, {
