@@ -5,7 +5,7 @@
  *   CHIPS[part]  : 제품군, 코어, 패키지 핀 배열, 핀별 대체기능(AF), 주변장치·IRQ 이름, 클럭 정보, HAL 접두어
  *   BOARDS[id]   : chip 과 내장 장치(LED·버튼·VCP), 기본 핀 설정
  * 값은 각 데이터시트 "Pin definitions" 표와 레퍼런스 매뉴얼 벡터 표를 기준으로 추렸다.
- * LQFP 핀 순서는 F1/F4/L4 64핀은 정확하고, F0/G0 64핀과 F4 100핀은 주요 핀만 맞춘 개략 배치다(pinsApprox).
+ * LQFP 핀 순서는 F1/F4/L4 64핀과 F407 100핀은 데이터시트 순서이고, F0/G0 64핀은 주요 핀만 맞춘 개략 배치다(pinsApprox).
  */
 (function (global) {
   'use strict';
@@ -26,11 +26,11 @@
     'PA14', 'PA15', 'PB3', 'PB4', 'PB5', 'PB6', 'PB7', 'BOOT0', 'PB8', 'PB9', 'VSS', 'VDD'
   ];
   var LQFP100_F4 = [
-    'PE2', 'PE3', 'PE4', 'PE5', 'PE6', 'VBAT', 'PC13', 'PC14', 'PC15', 'PH0', 'PH1', 'NRST', 'PC0', 'PC1', 'PC2', 'PC3', 'VDD', 'VSSA', 'VREF+', 'VDDA',
+    'PE2', 'PE3', 'PE4', 'PE5', 'PE6', 'VBAT', 'PC13', 'PC14', 'PC15', 'VSS', 'VDD', 'PH0', 'PH1', 'NRST', 'PC0', 'PC1', 'PC2', 'PC3', 'VDD', 'VSSA', 'VREF+', 'VDDA',
     'PA0', 'PA1', 'PA2', 'PA3', 'VSS', 'VDD', 'PA4', 'PA5', 'PA6', 'PA7', 'PC4', 'PC5', 'PB0', 'PB1', 'PB2', 'PE7', 'PE8', 'PE9', 'PE10', 'PE11',
     'PE12', 'PE13', 'PE14', 'PE15', 'PB10', 'PB11', 'VCAP1', 'VDD', 'PB12', 'PB13', 'PB14', 'PB15', 'PD8', 'PD9', 'PD10', 'PD11', 'PD12', 'PD13', 'PD14', 'PD15',
     'PC6', 'PC7', 'PC8', 'PC9', 'PA8', 'PA9', 'PA10', 'PA11', 'PA12', 'PA13', 'VCAP2', 'VSS', 'VDD', 'PA14', 'PA15', 'PC10', 'PC11', 'PC12', 'PD0', 'PD1',
-    'PD2', 'PD3', 'PD4', 'PD5', 'PD6', 'PD7', 'PB3', 'PB4', 'PB5', 'PB6', 'PB7', 'BOOT0', 'PB8', 'PB9', 'PE0', 'PE1', 'VSS', 'VDD', 'VSS', 'VDD'
+    'PD2', 'PD3', 'PD4', 'PD5', 'PD6', 'PD7', 'PB3', 'PB4', 'PB5', 'PB6', 'PB7', 'BOOT0', 'PB8', 'PB9', 'PE0', 'PE1', 'VSS', 'VDD'
   ];
 
   // ---------------------------------------------------------------- 대체기능(AF) 표
@@ -140,7 +140,7 @@
       desc: 'Cortex-M4F 100 MHz · 512 KB Flash · 128 KB RAM' }),
     STM32F446RE: chip('STM32F446RE', { family: 'F4', pkg: 'LQFP64', pins: LQFP64_F4, af: AF_F4, flash: 512, ram: 128, maxClk: 180, sysclks: [16, 48, 84, 168, 180], defClk: 180, apb1Max: 45, apb2Max: 90, periph: { usart6: true, usart3: true },
       desc: 'Cortex-M4F 180 MHz · 512 KB Flash · 128 KB RAM' }),
-    STM32F407VG: chip('STM32F407VG', { family: 'F4', pkg: 'LQFP100', pins: LQFP100_F4, pinsApprox: true, af: AF_F4_100, flash: 1024, ram: 192, maxClk: 168, sysclks: [16, 48, 84, 168], defClk: 168, apb1Max: 42, apb2Max: 84, periph: { usart6: true, usart3: true, tim4d: true },
+    STM32F407VG: chip('STM32F407VG', { family: 'F4', pkg: 'LQFP100', pins: LQFP100_F4, af: AF_F4_100, flash: 1024, ram: 192, maxClk: 168, sysclks: [16, 48, 84, 168], defClk: 168, apb1Max: 42, apb2Max: 84, periph: { usart6: true, usart3: true, tim4d: true },
       desc: 'Cortex-M4F 168 MHz · 1 MB Flash · 192 KB RAM · 100핀' }),
     STM32G071RB: chip('STM32G071RB', { family: 'G0', pkg: 'LQFP64', pins: LQFP64_F0, pinsApprox: true, af: AF_G0, flash: 128, ram: 36, maxClk: 64, sysclks: [16, 32, 64], defClk: 64,
       desc: 'Cortex-M0+ 64 MHz · 128 KB Flash · 36 KB RAM' }),
