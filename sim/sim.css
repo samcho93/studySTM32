@@ -303,3 +303,6 @@ body.embed .sim-top .sim-logo, body.embed .sim-top .lesson-link { display: none;
 @media (max-width: 980px) {
   .sim-left { display: none; } .sim-right { width: 250px; }
 }
+
+/* hidden 속성이 display 규칙에 지지 않게 */
+[hidden] { display: none !important; }
