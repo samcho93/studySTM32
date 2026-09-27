@@ -10,7 +10,8 @@
   var C = global.STM32Chips;
 
   var SECTIONS = ['Header', 'Includes', 'PTD', 'PD', 'PM', 'PV', 'PFP', '0', '1', 'Init', 'SysInit', '2', 'WHILE', '3', '4', 'Error_Handler_Debug'];
-  var EX_KEY = { includes: 'Includes', pv: 'PV', pfp: 'PFP', u0: '0', u1: '1', u2: '2', loop: '3', u4: '4', ptd: 'PTD', pd: 'PD', pm: 'PM' };
+  var EX_KEY = { includes: 'Includes', pv: 'PV', pfp: 'PFP', u0: '0', u1: '1', u2: '2', loop: '3', u4: '4', ptd: 'PTD', pd: 'PD', pm: 'PM',
+    rtos_mutex: 'RTOS_MUTEX', rtos_sem: 'RTOS_SEMAPHORES', rtos_timers: 'RTOS_TIMERS', rtos_queues: 'RTOS_QUEUES', rtos_threads: 'RTOS_THREADS', rtos_events: 'RTOS_EVENTS' };
 
   /** main.c 에서 USER CODE 구역 뽑기 → { name: text } */
   function extractUser(src) {
@@ -31,6 +32,8 @@
       out[EX_KEY[k]] = k === 'loop' ? v + '  }\n' : v;
     });
     if (out['3'] == null) out['3'] = '  }\n';
+    // tasks: { 함수이름: 본문 } → 첫 태스크(기본)는 USER CODE 5, 나머지는 함수 이름 구역 (CubeMX 규칙)
+    if (u && u.tasks) Object.keys(u.tasks).forEach(function (fn, i) { var v = u.tasks[fn] || ''; if (v && !/\n$/.test(v)) v += '\n'; out[i === 0 ? '5' : fn] = v; });
     return out;
   }
 
@@ -52,13 +55,17 @@
       else if (/^SPI/.test(k) && c.mode === 'master') list.push(k);
       else if (/^TIM/.test(k) && c.enabled !== false && (c.psc != null || c.arr != null || c.ch)) list.push(k);
       else if (k === 'ADC1' && c.channels && c.channels.length) list.push(k);
+      else if (k === 'IWDG' && c.enabled !== false) list.push(k);
+      else if (k === 'RTC' && c.enabled !== false) list.push(k);
     });
-    var order = ['ADC1', 'I2C1', 'I2C2', 'SPI1', 'SPI2', 'TIM1', 'TIM2', 'TIM3', 'TIM4', 'TIM5', 'USART1', 'USART2', 'USART3', 'USART6'];
+    var order = ['ADC1', 'I2C1', 'I2C2', 'IWDG', 'RTC', 'SPI1', 'SPI2', 'TIM1', 'TIM2', 'TIM3', 'TIM4', 'TIM5', 'TIM21', 'TIM22', 'LPUART1', 'USART1', 'USART2', 'USART3', 'USART6'];
     list.sort(function (a, b) { return order.indexOf(a) - order.indexOf(b); });
     return list;
   }
 
   function handleName(p) {
+    if (p === 'IWDG') return 'hiwdg';
+    if (p === 'RTC') return 'hrtc';
     if (/^USART(\d)/.test(p)) return 'huart' + p.slice(5);
     if (/^LPUART(\d)/.test(p)) return 'hlpuart' + p.slice(6);
     if (/^I2C/.test(p)) return 'hi2c' + p.slice(3);
@@ -67,6 +74,8 @@
     if (/^ADC/.test(p)) return 'hadc' + p.slice(3);
   }
   function handleType(p) {
+    if (p === 'IWDG') return 'IWDG_HandleTypeDef';
+    if (p === 'RTC') return 'RTC_HandleTypeDef';
     if (/^(LPUART|USART)/.test(p)) return 'UART_HandleTypeDef';
     if (/^I2C/.test(p)) return 'I2C_HandleTypeDef';
     if (/^SPI/.test(p)) return 'SPI_HandleTypeDef';
@@ -126,7 +135,8 @@
       '  * 그 밖의 부분은 [코드 생성]을 누르면 다시 만들어집니다.\n' +
       '  ******************************************************************************\n  */\n') +
       '/* USER CODE END Header */\n');
-    out.push('/* Includes ------------------------------------------------------------------*/\n#include "main.h"\n\n' +
+    var rt = rtosTasks(project);
+    out.push('/* Includes ------------------------------------------------------------------*/\n#include "main.h"\n' + (rt ? '#include "cmsis_os.h"\n' : '') + '\n' +
       '/* Private includes ----------------------------------------------------------*/\n' + sec(user, 'Includes') + '/* USER CODE END Includes */\n');
     out.push('/* Private typedef -----------------------------------------------------------*/\n' + sec(user, 'PTD') + '/* USER CODE END PTD */\n');
     out.push('/* Private define ------------------------------------------------------------*/\n' + sec(user, 'PD') + '/* USER CODE END PD */\n');
@@ -134,10 +144,16 @@
     var pv = '/* Private variables ---------------------------------------------------------*/\n';
     act.forEach(function (p) { pv += handleType(p) + ' ' + handleName(p) + ';\n'; });
     if (act.length) pv += '\n';
+    if (rt) rt.forEach(function (t) {
+      pv += '/* Definitions for ' + t.name + ' */\nosThreadId_t ' + t.name + 'Handle;\nconst osThreadAttr_t ' + t.name + '_attributes = {\n' +
+        '  .name = "' + t.name + '",\n  .stack_size = ' + (t.stack || 128) + ' * 4,\n  .priority = (osPriority_t) ' + (t.prio || 'osPriorityNormal') + ',\n};\n';
+    });
+    if (rt) pv += '\n';
     out.push(pv + sec(user, 'PV') + '/* USER CODE END PV */\n');
     var dma = !!(P.ADC1 && P.ADC1.dma);
     var pfp = '/* Private function prototypes -----------------------------------------------*/\nvoid SystemClock_Config(void);\nstatic void MX_GPIO_Init(void);\n' + (dma ? 'static void MX_DMA_Init(void);\n' : '');
     act.forEach(function (p) { pfp += 'static void ' + initName(p) + '(void);\n'; });
+    if (rt) rt.forEach(function (t) { pfp += 'void ' + t.fn + '(void *argument);\n'; });
     out.push(pfp + sec(user, 'PFP') + '/* USER CODE END PFP */\n');
     out.push('/* Private user code ---------------------------------------------------------*/\n' + sec(user, '0') + '/* USER CODE END 0 */\n');
 
@@ -150,7 +166,7 @@
       secIndented(user, 'SysInit', '  ') + '\n' +
       '  /* Initialize all configured peripherals */\n  MX_GPIO_Init();\n' + (dma ? '  MX_DMA_Init();\n' : '');
     act.forEach(function (p) { m += '  ' + initName(p) + '();\n'; });
-    m += secIndented(user, '2', '  ') + '\n' +
+    m += secIndented(user, '2', '  ') + '\n' + (rt ? rtosMain(user, rt) : '') +
       '  /* Infinite loop */\n  /* USER CODE BEGIN WHILE */\n' + (user.WHILE != null ? user.WHILE : '  while (1)\n  {\n') +
       '    /* USER CODE END WHILE */\n\n' +
       '    /* USER CODE BEGIN 3 */\n' + (user['3'] != null ? user['3'] : '  }\n') +
@@ -165,6 +181,11 @@
     act.forEach(function (p) { out.push(genInit(p, project, chip)); });
     out.push(genGpio(project, chip));
     out.push(sec(user, '4') + '/* USER CODE END 4 */\n');
+    if (rt) rt.forEach(function (t, i) {
+      var secName = i === 0 ? '5' : t.fn;
+      out.push('/* USER CODE BEGIN Header_' + t.fn + ' */\n/**\n  * @brief  Function implementing the ' + t.name + ' thread.\n  * @param  argument: Not used\n  * @retval None\n  */\n/* USER CODE END Header_' + t.fn + ' */\n' +
+        'void ' + t.fn + '(void *argument)\n{\n' + secIndented(user, secName, '  ', '  /* Infinite loop */\n  for(;;)\n  {\n    osDelay(1);\n  }\n') + '}\n');
+    });
     out.push('/**\n  * @brief  This function is executed in case of error occurrence.\n  * @retval None\n  */\n' +
       'void Error_Handler(void)\n{\n' + secIndented(user, 'Error_Handler_Debug', '  ',
         '  /* User can add his own implementation to report the HAL error return state */\n  __disable_irq();\n  while (1)\n  {\n  }\n') + '}\n');
@@ -257,6 +278,21 @@
     return s;
   }
 
+  /** FreeRTOS(CMSIS_V2) 태스크 목록 또는 null */
+  function rtosTasks(project) {
+    var r = project.periph && project.periph.FREERTOS;
+    if (!r || r.enabled === false) return null;
+    var t = (r.tasks && r.tasks.length) ? r.tasks : [{ name: 'defaultTask', fn: 'StartDefaultTask', prio: 'osPriorityNormal', stack: 128 }];
+    return t.map(function (x, i) { return { name: x.name || ('task' + (i + 1)), fn: x.fn || ('StartTask' + (i + 1)), prio: x.prio || 'osPriorityNormal', stack: x.stack || 128 }; });
+  }
+  function rtosMain(user, rt) {
+    function blk(n) { return secIndented(user, n, '  ') + '\n'; }
+    var s = '  /* Init scheduler */\n  osKernelInitialize();\n\n' + blk('RTOS_MUTEX') + blk('RTOS_SEMAPHORES') + blk('RTOS_TIMERS') + blk('RTOS_QUEUES') +
+      '  /* Create the thread(s) */\n';
+    rt.forEach(function (t) { s += '  /* creation of ' + t.name + ' */\n  ' + t.name + 'Handle = osThreadNew(' + t.fn + ', NULL, &' + t.name + '_attributes);\n\n'; });
+    s += blk('RTOS_THREADS') + blk('RTOS_EVENTS') + '  /* Start scheduler */\n  osKernelStart();\n\n  /* We should never get here as control is now taken by the scheduler */\n';
+    return s;
+  }
   function nvicLines(irq, ind) {
     ind = ind || '  ';
     return ind + 'HAL_NVIC_SetPriority(' + irq + '_IRQn, 0, 0);\n' + ind + 'HAL_NVIC_EnableIRQ(' + irq + '_IRQn);\n';
@@ -303,9 +339,9 @@
       return s + tail(p);
     }
     if (/^TIM/.test(p)) {
-      var chs = c.ch || {}, pwm = Object.keys(chs).filter(function (k) { return chs[k] === 'pwm'; }).sort();
+      var chs = c.ch || {}, pwm = Object.keys(chs).filter(function (k) { return chs[k] === 'pwm'; }).sort(), ics = Object.keys(chs).filter(function (k) { return chs[k] === 'ic'; }).sort();
       s = head(p, '  TIM_ClockConfigTypeDef sClockSourceConfig = {0};\n  TIM_MasterConfigTypeDef sMasterConfig = {0};\n' +
-        (pwm.length ? '  TIM_OC_InitTypeDef sConfigOC = {0};\n' : '') + '\n');
+        (pwm.length ? '  TIM_OC_InitTypeDef sConfigOC = {0};\n' : '') + (ics.length ? '  TIM_IC_InitTypeDef sConfigIC = {0};\n' : '') + '\n');
       s += '  ' + h + '.Instance = ' + p + ';\n  ' + h + '.Init.Prescaler = ' + (c.psc != null ? c.psc : 0) + ';\n' +
         '  ' + h + '.Init.CounterMode = TIM_COUNTERMODE_UP;\n  ' + h + '.Init.Period = ' + (c.arr != null ? c.arr : 65535) + ';\n' +
         '  ' + h + '.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;\n' +
@@ -314,6 +350,7 @@
         errChk('HAL_TIM_Base_Init(&' + h + ')') +
         '  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;\n' + errChk('HAL_TIM_ConfigClockSource(&' + h + ', &sClockSourceConfig)');
       if (pwm.length) s += errChk('HAL_TIM_PWM_Init(&' + h + ')');
+      if (ics.length) s += errChk('HAL_TIM_IC_Init(&' + h + ')');
       s += '  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;\n  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;\n' +
         errChk('HAL_TIMEx_MasterConfigSynchronization(&' + h + ', &sMasterConfig)');
       if (pwm.length) {
@@ -324,7 +361,37 @@
           s += errChk('HAL_TIM_PWM_ConfigChannel(&' + h + ', &sConfigOC, TIM_CHANNEL_' + ch + ')');
         });
       }
+      ics.forEach(function (ch) {
+        var pol = (c.icPol && c.icPol[ch]) || 'rising';
+        s += '  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_' + (pol === 'both' ? 'BOTHEDGE' : pol.toUpperCase()) + ';\n  sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;\n' +
+          '  sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;\n  sConfigIC.ICFilter = 0;\n' + errChk('HAL_TIM_IC_ConfigChannel(&' + h + ', &sConfigIC, TIM_CHANNEL_' + ch + ')');
+      });
       if (N[info.irq] || N[p]) s += '  /* ' + p + ' interrupt Init (MSP) */\n' + nvicLines(info.irq);
+      return s + tail(p);
+    }
+    if (p === 'IWDG') {
+      var win = !/^(F1|F4)$/.test(chip.series);
+      s = head(p) + '  hiwdg.Instance = IWDG;\n  hiwdg.Init.Prescaler = IWDG_PRESCALER_' + (c.prescaler || 32) + ';\n' +
+        (win ? '  hiwdg.Init.Window = 4095;\n' : '') + '  hiwdg.Init.Reload = ' + (c.reload != null ? c.reload : 4095) + ';\n' + errChk('HAL_IWDG_Init(&hiwdg)');
+      return s + tail(p);
+    }
+    if (p === 'RTC') {
+      var bcd = function (v) { return '0x' + ((((v / 10) | 0) << 4) | (v % 10)).toString(16); };
+      var MON = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+      s = head(p, '  RTC_TimeTypeDef sTime = {0};\n  RTC_DateTypeDef sDate = {0};\n\n') +
+        '  /** Initialize RTC Only\n  */\n  hrtc.Instance = RTC;\n' +
+        (chip.series === 'F1' ? '  hrtc.Init.AsynchPrediv = RTC_AUTO_1_SECOND;\n  hrtc.Init.OutPut = RTC_OUTPUTSOURCE_ALARM;\n' :
+          '  hrtc.Init.HourFormat = RTC_HOURFORMAT_24;\n  hrtc.Init.AsynchPrediv = 127;\n  hrtc.Init.SynchPrediv = 255;\n  hrtc.Init.OutPut = RTC_OUTPUT_DISABLE;\n' +
+          '  hrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;\n  hrtc.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;\n') +
+        errChk('HAL_RTC_Init(&hrtc)') + '\n  /* USER CODE BEGIN Check_RTC_BKUP */\n\n  /* USER CODE END Check_RTC_BKUP */\n\n' +
+        '  /** Initialize RTC and set the Time and Date\n  */\n' +
+        '  sTime.Hours = ' + bcd(c.hours || 0) + ';\n  sTime.Minutes = ' + bcd(c.minutes || 0) + ';\n  sTime.Seconds = ' + bcd(c.seconds || 0) + ';\n' +
+        (chip.series === 'F1' ? '' : '  sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;\n  sTime.StoreOperation = RTC_STOREOPERATION_RESET;\n') +
+        errChk('HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD)') +
+        '  sDate.WeekDay = RTC_WEEKDAY_MONDAY;\n  sDate.Month = RTC_MONTH_' + MON[((c.month || 1) - 1) % 12] + ';\n  sDate.Date = ' + bcd(c.date || 1) + ';\n  sDate.Year = ' + bcd(c.year != null ? c.year : 26) + ';\n\n' +
+        errChk('HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD)');
+      if (c.wakeup) s += '\n  /** Enable the WakeUp\n  */\n' + errChk('HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, ' + (c.wakeup - 1) + ', RTC_WAKEUPCLOCK_CK_SPRE_16BITS)');
+      if (N.RTC_WKUP) s += '  /* RTC interrupt Init (MSP) */\n' + nvicLines('RTC_WKUP');
       return s + tail(p);
     }
     if (p === 'ADC1') {
@@ -451,6 +518,7 @@
   }
 
   global.STM32Codegen = {
+    rtosTasks: rtosTasks,
     SECTIONS: SECTIONS, extractUser: extractUser, userFromExample: userFromExample,
     genMainC: genMainC, genMainH: genMainH, genIoc: genIoc, activePeriph: activePeriph,
     handleName: handleName, handleType: handleType, initName: initName, exti: exti, portOf: portOf, numOf: numOf

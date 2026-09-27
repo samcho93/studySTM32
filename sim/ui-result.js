@@ -219,6 +219,155 @@
     this.drawWave(b.firstChild, pins, s.span, 400, 140);
   };
 
+  // ---------------------------------------------------------------- 확장 장치
+  function holdable(el, down, up) {
+    var on = false;
+    function d(e) { e.preventDefault(); if (!on) { on = true; down(); } }
+    function u(e) { if (e) e.preventDefault(); if (on) { on = false; up(); } }
+    el.addEventListener('mousedown', d); el.addEventListener('mouseup', u); el.addEventListener('mouseleave', function () { u(); });
+    el.addEventListener('touchstart', d, { passive: false }); el.addEventListener('touchend', u); el.addEventListener('touchcancel', u);
+    el.addEventListener('keydown', function (e) { if (e.key === ' ' || e.key === 'Enter') d(e); });
+    el.addEventListener('keyup', function (e) { if (e.key === ' ' || e.key === 'Enter') u(e); });
+  }
+  // SSD1306 OLED
+  var OLED_COL = { white: [235, 242, 255], blue: [110, 200, 255], yellow: [255, 214, 70] };
+  Result.prototype.b_oled = function (b) {
+    b.innerHTML = '<div class="oled"><canvas width="128" height="64"></canvas></div><div class="dev-v"></div>';
+    b._ver = -1;
+  };
+  Result.prototype.u_oled = function (b, inst, s) {
+    var cv = b.querySelector('canvas'), key = s.ver + '|' + s.on + '|' + s.color + '|' + s.contrast;
+    if (b._ver !== key) {
+      b._ver = key;
+      var ctx = cv.getContext('2d'), img = ctx.createImageData(128, 64), d = img.data, a = 0.45 + 0.55 * (s.contrast / 255);
+      for (var y = 0; y < 64; y++) {
+        var c = s.color === 'white' ? OLED_COL.white : s.color === 'yb' && y < 16 ? OLED_COL.yellow : OLED_COL.blue;
+        for (var x = 0; x < 128; x++) {
+          var k = (y * 128 + x) * 4, px = s.on && inst.pixel(x, y);
+          d[k] = px ? c[0] * a : 6; d[k + 1] = px ? c[1] * a : 8; d[k + 2] = px ? c[2] * a : 12; d[k + 3] = 255;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+    }
+    b.firstChild.classList.toggle('off', !s.on);
+    var addr = '0x' + inst.i2cAddr().toString(16).toUpperCase();
+    b.lastChild.textContent = !s.cmds && !s.bytes ? addr + ' · 수신 없음 (초기화 명령을 보내세요)'
+      : !s.disp ? addr + ' · 디스플레이 꺼짐 (0xAF 필요)'
+      : !s.pump ? addr + ' · 차지 펌프 꺼짐 (0x8D, 0x14 필요)'
+      : addr + ' · ' + { H: '수평', V: '수직', P: '페이지' }[s.mode] + ' 주소 모드 · 켜진 픽셀 ' + s.lit + (s.invert ? ' · 반전' : '');
+  };
+  // HC-SR04
+  Result.prototype.b_ultrasonic = function (b, inst) {
+    b.innerHTML = '<svg class="us-vis" viewBox="0 0 200 60"><rect x="2" y="10" width="62" height="40" rx="5" fill="#1d5fa8"/>' +
+      '<circle cx="18" cy="30" r="12" fill="#c9ced6" stroke="#6b7587" stroke-width="2"/><circle cx="48" cy="30" r="12" fill="#c9ced6" stroke="#6b7587" stroke-width="2"/>' +
+      '<g class="us-wave" fill="none" stroke="var(--accent)" stroke-width="1.6"><path d="M72 20 q6 10 0 20"/><path d="M80 15 q9 15 0 30"/><path d="M88 10 q12 20 0 40"/></g>' +
+      '<rect class="us-obj" x="180" y="6" width="10" height="48" rx="2" fill="var(--text-dim)"/><line class="us-line" x1="66" y1="56" x2="180" y2="56" stroke="var(--border)" stroke-dasharray="3 3"/></svg>' +
+      '<input type="range" class="dev-range knob" min="2" max="400"><div class="dev-v"></div>';
+    var r = b.querySelector('input'); r.value = inst.prop('distance'); r.oninput = function () { inst.set(+this.value); };
+  };
+  Result.prototype.u_ultrasonic = function (b, inst, s) {
+    var r = b.querySelector('input'); if (document.activeElement !== r) r.value = s.cm;
+    var x = 74 + (s.cm - 2) / 398 * 106; b.querySelector('.us-obj').setAttribute('x', x); b.querySelector('.us-line').setAttribute('x2', x);
+    b.querySelector('.us-wave').style.opacity = s.echo ? 1 : .25;
+    b.lastChild.textContent = s.cm + ' cm · ECHO ' + (s.echoUs ? Math.round(s.echoUs) + ' µs' : '—') + ' · 측정 ' + s.pings + '회';
+  };
+  // 4x4 키패드
+  Result.prototype.b_keypad = function (b, inst) {
+    var html = '<div class="kp">';
+    inst.keys.forEach(function (row) { row.split('').forEach(function (k) { html += '<button type="button" class="kp-k' + (/[A-D]/.test(k) ? ' fn' : '') + '" data-k="' + k + '">' + k + '</button>'; }); });
+    b.innerHTML = html + '</div><div class="dev-v"></div>';
+    b.querySelectorAll('.kp-k').forEach(function (el) { holdable(el, function () { inst.press(el.dataset.k, true); }, function () { inst.press(el.dataset.k, false); }); });
+  };
+  Result.prototype.u_keypad = function (b, inst, s) {
+    b.querySelectorAll('.kp-k').forEach(function (el) { el.classList.toggle('down', s.held.indexOf(el.dataset.k) >= 0); });
+    b.lastChild.textContent = s.held ? '누름: ' + s.held : s.last ? '마지막 키: ' + s.last : '키를 누르고 있으세요';
+  };
+  // 4자리 FND
+  var FND_RGB = { red: '255,59,48', green: '52,199,89', blue: '64,156,255', yellow: '255,204,0' };
+  var SEG_SHAPES = '<polygon data-s="0" points="14,8 56,8 50,14 20,14"/><polygon data-s="1" points="58,10 58,52 52,46 52,16"/><polygon data-s="2" points="58,58 58,100 52,94 52,64"/>' +
+    '<polygon data-s="3" points="14,102 56,102 50,96 20,96"/><polygon data-s="4" points="12,58 12,100 18,94 18,64"/><polygon data-s="5" points="12,10 12,52 18,46 18,16"/>' +
+    '<polygon data-s="6" points="16,55 20,51 50,51 54,55 50,59 20,59"/><circle data-s="7" cx="65" cy="100" r="4"/>';
+  Result.prototype.b_fnd4 = function (b) {
+    var g = ''; for (var d = 0; d < 4; d++) g += '<g data-d="' + d + '" transform="translate(' + (4 + d * 76) + ',4) skewX(-6)">' + SEG_SHAPES + '</g>';
+    b.innerHTML = '<svg class="fnd4" viewBox="0 0 316 116">' + g + '</svg><div class="dev-v"></div>';
+  };
+  Result.prototype.u_fnd4 = function (b, inst, s) {
+    var rgb = FND_RGB[s.color] || FND_RGB.red;
+    b.querySelectorAll('.fnd4 g').forEach(function (g) {
+      var row = s.digits[+g.dataset.d];
+      g.querySelectorAll('[data-s]').forEach(function (p) {
+        var v = row[+p.dataset.s];
+        p.style.fill = v > .03 ? 'rgba(' + rgb + ',' + (0.25 + 0.75 * v).toFixed(2) + ')' : '';
+        p.style.filter = v > .5 ? 'drop-shadow(0 0 3px rgba(' + rgb + ',.8))' : '';
+      });
+    });
+    b.lastChild.textContent = '"' + s.text + '"';
+  };
+  // DHT11
+  Result.prototype.b_dht11 = function (b, inst) {
+    b.innerHTML = '<div class="dht"><div class="dht-body"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>' +
+      '<div class="dht-ctl"><label>온도 <b data-v="temp"></b><input type="range" class="dev-range" min="0" max="50" data-k="temp"></label>' +
+      '<label>습도 <b data-v="hum"></b><input type="range" class="dev-range" min="20" max="90" data-k="hum"></label></div></div><div class="dev-v"></div>';
+    b.querySelectorAll('input').forEach(function (r) { r.value = inst.prop(r.dataset.k); r.oninput = function () { inst.set(r.dataset.k, +r.value); }; });
+  };
+  Result.prototype.u_dht11 = function (b, inst, s) {
+    b.querySelectorAll('input').forEach(function (r) { if (document.activeElement !== r) r.value = s[r.dataset.k]; });
+    b.querySelector('[data-v=temp]').textContent = s.temp + ' °C'; b.querySelector('[data-v=hum]').textContent = s.hum + ' %';
+    b.querySelector('.dht-body').classList.toggle('busy', s.busy);
+    b.lastChild.textContent = s.reads ? '응답 ' + s.reads + '회 · 마지막 ' + s.bytes.map(DEV.hex).join(' ') : '시작 신호 대기 (LOW 18 ms 이상)';
+  };
+  // 릴레이
+  Result.prototype.b_relay = function (b) {
+    b.innerHTML = '<svg class="relay-vis" viewBox="0 0 170 80"><rect x="4" y="14" width="56" height="52" rx="4" fill="#1d4fa0"/><text x="32" y="44" text-anchor="middle" font-size="9" fill="#dce6f5" font-family="var(--mono)">RELAY</text>' +
+      '<circle class="relay-led" cx="12" cy="22" r="3.5" fill="#3a1414"/>' +
+      '<text x="70" y="18" font-size="8" fill="var(--text-faint)" font-family="var(--mono)">NC</text><text x="70" y="66" font-size="8" fill="var(--text-faint)" font-family="var(--mono)">NO</text>' +
+      '<circle cx="90" cy="16" r="3" fill="var(--text-dim)"/><circle cx="90" cy="64" r="3" fill="var(--text-dim)"/><circle cx="70" cy="40" r="3" fill="var(--text-dim)"/>' +
+      '<line class="relay-arm" x1="70" y1="40" x2="90" y2="16" stroke="var(--text)" stroke-width="3" stroke-linecap="round"/>' +
+      '<path d="M93 64 H130 V52" fill="none" stroke="var(--border)" stroke-width="2"/><circle class="relay-lamp" cx="130" cy="40" r="12" fill="var(--bg-elev-2)" stroke="var(--border)" stroke-width="2"/>' +
+      '<path d="M130 28 V10 H40 V14" fill="none" stroke="var(--border)" stroke-width="2"/></svg><div class="dev-v"></div>';
+  };
+  Result.prototype.u_relay = function (b, inst, s) {
+    var arm = b.querySelector('.relay-arm'); arm.setAttribute('y2', s.on ? 64 : 16);
+    b.querySelector('.relay-led').setAttribute('fill', s.on ? '#ff3b30' : '#3a1414');
+    var lamp = b.querySelector('.relay-lamp'); lamp.style.fill = s.on ? '#ffd23f' : ''; lamp.style.filter = s.on ? 'drop-shadow(0 0 8px #ffd23f)' : '';
+    b.lastChild.textContent = (s.on ? '켜짐 · COM–NO 닫힘' : '꺼짐 · COM–NC 닫힘') + ' · IN ' + (s.level ? 'HIGH' : 'LOW') + ' · ' + s.load;
+  };
+  // 로터리 엔코더
+  Result.prototype.b_encoder = function (b, inst) {
+    b.innerHTML = '<div class="enc"><button type="button" class="tb" data-r="-1" title="반시계 한 칸">◀</button>' +
+      '<svg class="enc-knob" viewBox="0 0 60 60"><circle cx="30" cy="30" r="27" fill="var(--bg-elev-2)" stroke="var(--border)" stroke-width="2"/><g class="enc-rot"><circle cx="30" cy="30" r="18" fill="#2b2f36"/><rect x="28" y="12" width="4" height="12" rx="2" fill="#e5e7eb"/></g></svg>' +
+      '<button type="button" class="tb" data-r="1" title="시계 방향 한 칸">▶</button></div>' +
+      '<button type="button" class="tb enc-sw">SW 누르기</button><div class="dev-v"></div>';
+    b.querySelectorAll('[data-r]').forEach(function (el) { el.onclick = function () { inst.rotate(+el.dataset.r); }; });
+    b.querySelector('.enc-knob').addEventListener('wheel', function (e) { e.preventDefault(); inst.rotate(e.deltaY < 0 ? 1 : -1); }, { passive: false });
+    var sw = b.querySelector('.enc-sw'); holdable(sw, function () { inst.press(true); }, function () { inst.press(false); });
+  };
+  Result.prototype.u_encoder = function (b, inst, s) {
+    b.querySelector('.enc-rot').style.transform = 'rotate(' + (s.pos * 18) + 'deg)';
+    b.querySelector('.enc-sw').classList.toggle('down', s.sw);
+    b.lastChild.textContent = '위치 ' + s.pos + ' · CLK ' + s.clk + ' DT ' + s.dt + ' · SW ' + (s.sw ? '누름' : '뗌');
+  };
+  // 조이스틱
+  Result.prototype.b_joystick = function (b, inst) {
+    b.innerHTML = '<div class="joy"><div class="joy-pad"><i class="joy-knob"></i></div><button type="button" class="tb joy-sw">SW</button></div><div class="dev-v"></div>';
+    var pad = b.querySelector('.joy-pad'), drag = false;
+    function mv(e) {
+      var r = pad.getBoundingClientRect(), p = e.touches ? e.touches[0] : e;
+      inst.set((p.clientX - r.left) / r.width * 4095, (p.clientY - r.top) / r.height * 4095);
+    }
+    function up() { drag = false; inst.set(2048, 2048); window.removeEventListener('mousemove', mv); window.removeEventListener('mouseup', up); }   // 손을 떼면 스프링으로 가운데 복귀
+    pad.addEventListener('mousedown', function (e) { drag = true; mv(e); e.preventDefault(); window.addEventListener('mousemove', mv); window.addEventListener('mouseup', up); });
+    pad.addEventListener('touchstart', function (e) { drag = true; mv(e); e.preventDefault(); }, { passive: false });
+    pad.addEventListener('touchmove', function (e) { if (drag) { mv(e); e.preventDefault(); } }, { passive: false });
+    pad.addEventListener('touchend', function () { drag = false; inst.set(2048, 2048); });
+    var sw = b.querySelector('.joy-sw'); holdable(sw, function () { inst.press(true); }, function () { inst.press(false); });
+  };
+  Result.prototype.u_joystick = function (b, inst, s) {
+    var k = b.querySelector('.joy-knob'); k.style.left = (s.x / 4095 * 100) + '%'; k.style.top = (s.y / 4095 * 100) + '%';
+    b.querySelector('.joy-sw').classList.toggle('down', s.sw);
+    b.lastChild.textContent = 'X ' + s.x + ' · Y ' + s.y + ' · SW ' + (s.sw ? '누름' : '뗌');
+  };
+
   // ---------------------------------------------------------------- 파형
   Result.prototype.buildWavePins = function () {
     var app = this.app, self = this, box = document.getElementById('wave-pins'), used = Object.keys(app.project.pins).filter(function (p) { var s = app.project.pins[p].signal; return s && s !== 'Reset_State' && !/^ADC/.test(s); }).sort();

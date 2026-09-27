@@ -8,7 +8,7 @@ const C = global.STM32Chips, G = global.STM32Codegen, R = global.STM32Runtime, D
 let fail = 0;
 function run(label, P, user) {
   PJ.normalize(P); P.mainc = G.genMainC(P, G.userFromExample(user));
-  const chip = C.chipOf(P), files = { 'Core/Src/main.c': P.mainc, 'Core/Inc/main.h': G.genMainH(P) }; files[chip.halPrefix + '_hal.h'] = '';
+  const chip = C.chipOf(P), files = { 'Core/Src/main.c': P.mainc, 'Core/Inc/main.h': G.genMainH(P) }; files[chip.halPrefix + '_hal.h'] = ''; Object.assign(files, R.VIRTUAL_HEADERS);
   const r = global.STM32C.compile({ files, entry: 'Core/Src/main.c', env: R.compilerEnv() });
   const out = { logs: [], toggles: {}, term: '' };
   if (!r.ok) { fail++; console.log('FAIL ' + label + ' compile: ' + r.errors.map(e => e.line + ':' + e.msg).join(' | ')); return; }

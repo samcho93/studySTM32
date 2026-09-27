@@ -18,9 +18,30 @@ function project(id, ex) {
   return P;
 }
 
+// 예제별 추가 조작 (선택): HOOKS[id] = (t, devs, m) => {...}  — 16 ms 마다 t(ms) 와 함께 불림
+const HOOKS = {};
+const at = (t, t0) => t >= t0 && t < t0 + 16;
+const dev = (devs, type) => devs.find(d => d.def.type === type);
+HOOKS['l17-keypad'] = (t, devs) => {
+  const kp = dev(devs, 'keypad'), seq = [['1', 1500], ['2', 1700], ['3', 1900], ['#', 2100], ['*', 2300], ['D', 2500]];
+  seq.forEach(([k, t0]) => { if (at(t, t0)) kp.press(k, true); if (at(t, t0 + 80)) kp.press(k, false); });
+};
+HOOKS['l17-encoder'] = (t, devs) => {
+  const e = dev(devs, 'encoder');
+  if (at(t, 1500)) { e.rotate(1); e.rotate(1); e.rotate(1); }
+  if (at(t, 2500)) { e.rotate(-1); }
+  if (at(t, 3500)) e.press(true); if (at(t, 3600)) e.press(false);
+};
+HOOKS['l17-joystick'] = (t, devs) => {
+  const j = dev(devs, 'joystick');
+  if (at(t, 1500)) j.set(4095, 2048); if (at(t, 2500)) j.set(2048, 0);
+  if (at(t, 3500)) { j.set(2048, 2048); j.press(true); } if (at(t, 4000)) j.press(false);
+};
+HOOKS['l17-ultrasonic'] = (t, devs) => { if (at(t, 2500)) dev(devs, 'ultrasonic').set(137); };
+
 function runOne(id, verbose) {
   const ex = EX[id], P = project(id, ex), chip = C.chipOf(P);
-  const files = { 'Core/Src/main.c': P.mainc, 'Core/Inc/main.h': G.genMainH(P) }; files[chip.halPrefix + '_hal.h'] = '';
+  const files = { 'Core/Src/main.c': P.mainc, 'Core/Inc/main.h': G.genMainH(P) }; files[chip.halPrefix + '_hal.h'] = ''; Object.assign(files, R.VIRTUAL_HEADERS);
   const r = global.STM32C.compile({ files, entry: 'Core/Src/main.c', env: R.compilerEnv() });
   const out = { id, ok: r.ok, errors: r.errors || [], warnings: r.warnings || [], logs: [], term: '', toggles: {}, isr: 0 };
   if (!r.ok) return out;
@@ -40,6 +61,7 @@ function runOne(id, verbose) {
     if (btn && t >= 1300 && pressed === true) { pressed = 2; btn.press(false); }
     if (term && t >= 2000 && !sent) { sent = true; term.send('hello'); }
     if (pot && t >= 2500 && t < 2520) pot.set(3000);
+    if (HOOKS[id]) HOOKS[id](t, devs, m);
     m.step(16, 50);
     devs.forEach(d => d.tick && d.tick(16));
     m.frameMark();

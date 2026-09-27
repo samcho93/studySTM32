@@ -78,17 +78,29 @@
     I2C_MEMADD_SIZE_8BIT: 1, I2C_MEMADD_SIZE_16BIT: 0x10,
     UART_WORDLENGTH_8B: 0, UART_STOPBITS_1: 0, UART_PARITY_NONE: 0,
     SysTick_IRQn: -1,
-    EOF: -1, RAND_MAX: 2147483647
+    EOF: -1, RAND_MAX: 2147483647,
+    RTC_FORMAT_BIN: 0, RTC_FORMAT_BCD: 1, RTC_WAKEUPCLOCK_RTCCLK_DIV16: 0, RTC_WAKEUPCLOCK_RTCCLK_DIV8: 1, RTC_WAKEUPCLOCK_RTCCLK_DIV4: 2,
+    RTC_WAKEUPCLOCK_RTCCLK_DIV2: 3, RTC_WAKEUPCLOCK_CK_SPRE_16BITS: 4, RTC_WAKEUPCLOCK_CK_SPRE_17BITS: 6,
+    TIM_INPUTCHANNELPOLARITY_RISING: 0, TIM_INPUTCHANNELPOLARITY_FALLING: 2, TIM_INPUTCHANNELPOLARITY_BOTHEDGE: 10,
+    TIM_ICSELECTION_DIRECTTI: 1, TIM_ICSELECTION_INDIRECTTI: 2, TIM_ICPSC_DIV1: 0,
+    HAL_TIM_ACTIVE_CHANNEL_1: 1, HAL_TIM_ACTIVE_CHANNEL_2: 2, HAL_TIM_ACTIVE_CHANNEL_3: 4, HAL_TIM_ACTIVE_CHANNEL_4: 8,
+    osOK: 0, osError: -1, osErrorTimeout: -2, osErrorResource: -3, osErrorParameter: -4, osErrorNoMemory: -5, osErrorISR: -6,
+    osWaitForever: 0xFFFFFFFF, osPriorityNone: 0, osPriorityIdle: 1, osPriorityLow: 8, osPriorityBelowNormal: 16, osPriorityNormal: 24,
+    osPriorityAboveNormal: 32, osPriorityHigh: 40, osPriorityRealtime: 48, osFlagsWaitAny: 0, osFlagsWaitAll: 1, osFlagsNoClear: 2,
+    osTimerOnce: 0, osTimerPeriodic: 1, osKernelRunning: 2, osKernelReady: 1
   };
   for (var i = 0; i < 16; i++) K['GPIO_PIN_' + i] = 1 << i;
   for (i = 0; i <= 18; i++) K['ADC_CHANNEL_' + i] = i;
   for (i = 1; i <= 16; i++) K['ADC_REGULAR_RANK_' + i] = i;
   K.ADC_CHANNEL_TEMPSENSOR = 16; K.ADC_CHANNEL_VREFINT = 17;
+  ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'].forEach(function (m, i) { K['RTC_MONTH_' + m] = i < 9 ? i + 1 : 0x10 + (i - 9); });
+  ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'].forEach(function (d, i) { K['RTC_WEEKDAY_' + d] = i + 1; });
+  [4, 8, 16, 32, 64, 128, 256].forEach(function (v, i) { K['IWDG_PRESCALER_' + v] = i; });
   // IRQn 값은 제품군마다 다르지만 사용자 코드는 이름만 쓰므로, 이름마다 고유한 번호를 준다
   var IRQ_LIST = ['EXTI0', 'EXTI1', 'EXTI2', 'EXTI3', 'EXTI4', 'EXTI9_5', 'EXTI15_10', 'EXTI0_1', 'EXTI2_3', 'EXTI4_15',
     'ADC', 'ADC1', 'ADC1_2', 'ADC1_COMP', 'TIM1_UP_TIM10', 'TIM1_UP', 'TIM1_UP_TIM16', 'TIM1_BRK_UP_TRG_COM', 'TIM1_CC', 'TIM2', 'TIM3', 'TIM4', 'TIM5',
     'TIM6', 'TIM6_DAC', 'TIM7', 'TIM14', 'TIM15', 'TIM16', 'TIM17', 'I2C1_EV', 'I2C1_ER', 'I2C2_EV', 'I2C2_ER', 'I2C1', 'I2C2', 'SPI1', 'SPI2',
-    'USART1', 'USART2', 'USART3', 'USART3_4', 'USART6', 'LPUART1', 'TIM21', 'TIM22', 'EXTI2_TSC', 'EXTI5', 'EXTI6', 'EXTI7', 'EXTI8', 'EXTI9', 'EXTI10', 'EXTI11', 'EXTI12', 'EXTI13', 'EXTI14', 'EXTI15', 'TIM1_UP_TIM16_', 'DMA1_Stream5', 'DMA1_Stream6', 'DMA2_Stream0', 'DMA1_Channel1', 'DMA1_Channel2_3', 'RTC_WKUP', 'PendSV', 'SVCall', 'NonMaskableInt', 'HardFault'];
+    'USART1', 'USART2', 'USART3', 'USART3_4', 'USART6', 'LPUART1', 'RTC_TAMP', 'RTC', 'RTC_Alarm', 'WWDG', 'DMA', 'TIM21', 'TIM22', 'EXTI2_TSC', 'EXTI5', 'EXTI6', 'EXTI7', 'EXTI8', 'EXTI9', 'EXTI10', 'EXTI11', 'EXTI12', 'EXTI13', 'EXTI14', 'EXTI15', 'TIM1_UP_TIM16_', 'DMA1_Stream5', 'DMA1_Stream6', 'DMA2_Stream0', 'DMA1_Channel1', 'DMA1_Channel2_3', 'RTC_WKUP', 'PendSV', 'SVCall', 'NonMaskableInt', 'HardFault'];
   IRQ_LIST.forEach(function (n, i) { K[n + '_IRQn'] = 100 + i; });
   var IRQ_NAME = {};
   Object.keys(K).forEach(function (k) { if (/_IRQn$/.test(k) && !(K[k] in IRQ_NAME)) IRQ_NAME[K[k]] = k.replace(/_IRQn$/, ''); });
@@ -124,6 +136,23 @@
     abs: 'int', labs: 'int', fabs: 'double', fabsf: 'float', sqrt: 'double', sqrtf: 'float', pow: 'double', powf: 'float',
     sin: 'double', cos: 'double', tan: 'double', atan: 'double', atan2: 'double', exp: 'double', log: 'double', log10: 'double',
     floor: 'double', ceil: 'double', round: 'double', roundf: 'float', fmod: 'double', rand: 'int', srand: 'void',
+    HAL_TIM_IC_Init: 'int', HAL_TIM_IC_ConfigChannel: 'int', HAL_TIM_IC_Start: 'int', HAL_TIM_IC_Start_IT: 'int', HAL_TIM_IC_Stop: 'int',
+    HAL_TIM_IC_Stop_IT: 'int', HAL_TIM_ReadCapturedValue: 'uint32_t', __HAL_TIM_SET_CAPTUREPOLARITY: 'void',
+    HAL_IWDG_Init: 'int', HAL_IWDG_Refresh: 'int', __HAL_RCC_GET_FLAG: 'int', __HAL_RCC_CLEAR_RESET_FLAGS: 'void', __HAL_PWR_CLEAR_FLAG: 'void',
+    HAL_RTC_Init: 'int', HAL_RTC_SetTime: 'int', HAL_RTC_GetTime: 'int', HAL_RTC_SetDate: 'int', HAL_RTC_GetDate: 'int',
+    HAL_RTCEx_SetWakeUpTimer_IT: 'int', HAL_RTCEx_DeactivateWakeUpTimer: 'int', __HAL_RCC_RTC_ENABLE: 'void', HAL_PWR_EnableBkUpAccess: 'void',
+    HAL_PWR_EnterSLEEPMode: 'g:void', HAL_PWR_EnterSTOPMode: 'g:void', HAL_PWREx_EnterSTOP2Mode: 'g:void', HAL_PWREx_EnterSTOP1Mode: 'g:void',
+    HAL_PWR_EnterSTANDBYMode: 'g:void', HAL_PWR_EnableWakeUpPin: 'void', HAL_PWR_DisableWakeUpPin: 'void', HAL_SuspendTick: 'void', HAL_ResumeTick: 'void',
+    HAL_UARTEx_ReceiveToIdle_IT: 'int', HAL_UARTEx_ReceiveToIdle_DMA: 'int', HAL_UART_DMAStop: 'int',
+    osKernelInitialize: 'int', osKernelStart: 'g:int', osKernelGetState: 'int', osKernelGetTickCount: 'uint32_t', osKernelGetTickFreq: 'uint32_t',
+    osThreadNew: 'osThreadId_t', osThreadGetId: 'osThreadId_t', osThreadGetName: 'ptr', osThreadYield: 'g:int', osThreadSuspend: 'int',
+    osThreadResume: 'int', osThreadTerminate: 'int', osThreadExit: 'g:void', osDelay: 'g:int', osDelayUntil: 'g:int', vTaskDelay: 'g:void',
+    osMutexNew: 'osMutexId_t', osMutexAcquire: 'g:int', osMutexRelease: 'int',
+    osSemaphoreNew: 'osSemaphoreId_t', osSemaphoreAcquire: 'g:int', osSemaphoreRelease: 'int', osSemaphoreGetCount: 'uint32_t',
+    osMessageQueueNew: 'osMessageQueueId_t', osMessageQueuePut: 'g:int', osMessageQueueGet: 'g:int', osMessageQueueGetCount: 'uint32_t',
+    osThreadFlagsSet: 'uint32_t', osThreadFlagsClear: 'uint32_t', osThreadFlagsWait: 'g:uint32_t',
+    osEventFlagsNew: 'osEventFlagsId_t', osEventFlagsSet: 'uint32_t', osEventFlagsClear: 'uint32_t', osEventFlagsWait: 'g:uint32_t',
+    osTimerNew: 'osTimerId_t', osTimerStart: 'int', osTimerStop: 'int',
     isdigit: 'int', isalpha: 'int', isalnum: 'int', isspace: 'int', isupper: 'int', islower: 'int', toupper: 'int', tolower: 'int'
   };
   function envFunctions() {
@@ -139,9 +168,11 @@
   var STRUCT_TYPES = ['GPIO_InitTypeDef', 'UART_HandleTypeDef', 'TIM_HandleTypeDef', 'ADC_HandleTypeDef', 'I2C_HandleTypeDef',
     'SPI_HandleTypeDef', 'RCC_OscInitTypeDef', 'RCC_ClkInitTypeDef', 'TIM_ClockConfigTypeDef', 'TIM_MasterConfigTypeDef',
     'TIM_OC_InitTypeDef', 'ADC_ChannelConfTypeDef', 'GPIO_TypeDef', 'TIM_TypeDef', 'USART_TypeDef', 'ADC_TypeDef',
-    'I2C_TypeDef', 'SPI_TypeDef', 'RCC_TypeDef', 'DMA_HandleTypeDef', 'FILE'];
-  var HANDLE_TYPES = ['UART_HandleTypeDef', 'TIM_HandleTypeDef', 'ADC_HandleTypeDef', 'I2C_HandleTypeDef', 'SPI_HandleTypeDef'];
-  var OBJECTS = ['GPIOA', 'GPIOB', 'GPIOC', 'GPIOD', 'GPIOE', 'GPIOF', 'GPIOG', 'GPIOH', 'LPUART1', 'TIM21', 'TIM22', 'TIM1', 'TIM2', 'TIM3', 'TIM4', 'TIM5', 'USART1', 'USART2', 'USART3',
+    'I2C_TypeDef', 'SPI_TypeDef', 'RCC_TypeDef', 'DMA_HandleTypeDef', 'FILE', 'TIM_IC_InitTypeDef', 'RTC_TimeTypeDef', 'RTC_DateTypeDef',
+    'IWDG_HandleTypeDef', 'RTC_HandleTypeDef', 'WWDG_HandleTypeDef', 'osThreadAttr_t', 'osThreadId_t', 'osMutexId_t', 'osMutexAttr_t',
+    'osSemaphoreId_t', 'osSemaphoreAttr_t', 'osMessageQueueId_t', 'osMessageQueueAttr_t', 'osEventFlagsId_t', 'osEventFlagsAttr_t', 'osTimerId_t', 'osTimerAttr_t'];
+  var HANDLE_TYPES = ['UART_HandleTypeDef', 'TIM_HandleTypeDef', 'ADC_HandleTypeDef', 'I2C_HandleTypeDef', 'SPI_HandleTypeDef', 'IWDG_HandleTypeDef', 'RTC_HandleTypeDef', 'WWDG_HandleTypeDef'];
+  var OBJECTS = ['IWDG', 'RTC', 'WWDG', 'PWR', 'GPIOA', 'GPIOB', 'GPIOC', 'GPIOD', 'GPIOE', 'GPIOF', 'GPIOG', 'GPIOH', 'LPUART1', 'TIM21', 'TIM22', 'TIM1', 'TIM2', 'TIM3', 'TIM4', 'TIM5', 'USART1', 'USART2', 'USART3',
     'USART6', 'I2C1', 'I2C2', 'SPI1', 'SPI2', 'ADC1', 'RCC', 'stdout', 'stdin', 'stderr'];
 
   function compilerEnv(extraConst) {
@@ -149,7 +180,7 @@
     Object.keys(extraConst || {}).forEach(function (k) { c[k] = extraConst[k]; });
     return {
       functions: envFunctions(), constants: c, objects: OBJECTS.slice(), structTypes: STRUCT_TYPES.slice(), handleTypes: HANDLE_TYPES.slice(),
-      constantPattern: /^(RCC|FLASH|UART|USART|TIM|ADC|I2C|SPI|GPIO|PWR|SYSTICK|NVIC|DMA|EXTI|HAL)_[A-Z0-9_]+$|^[A-Za-z0-9_]+_IRQn$/
+      constantPattern: /^(RCC|FLASH|UART|USART|LPUART|TIM|ADC|I2C|SPI|GPIO|PWR|SYSTICK|NVIC|DMA|EXTI|HAL|IWDG|WWDG|RTC)_[A-Z0-9_]+$|^[A-Za-z0-9_]+_IRQn$/
     };
   }
 
@@ -227,7 +258,10 @@
     this.sysclk = mhz * 1e6;
     this.timclk = this.clk.tim1 * 1e6;   // APB1 타이머 기준값(호환용)
     this.t = 0; this.wake = 0; this.events = []; this.pendingIsr = [];
-    this.$ = { n: 0, q: QUANTUM, l: 0 };
+    this.$ = this.$ || {}; this.$.n = 0; this.$.q = QUANTUM; this.$.l = 0;
+    this.tickLost = 0; this.tickSuspended = null; this.sleepMode = null; this.pwr = { run: 0, sleep: 0, stop: 0, standby: 0 };
+    this.rtos = null; this.rtc = null; this.iwdg = null; this.rtcWake = null; this.wkupPin = false;
+    if (!this.resetFlags) this.resetFlags = { por: true, pin: true };
     this.nvic = {}; this.irqOff = false;
     this._warned = {};
     this.stdoutBuf = [];
@@ -299,7 +333,7 @@
   Machine.prototype.level = function (name) {
     var p = this.pins[name]; if (!p) return 0;
     if (p.mode === 'output') { if (p.od && p.odr) return p.drive != null ? p.drive : (p.pull === 'up' ? 1 : 0); return p.odr; }
-    if (p.mode === 'af' && p.pwm) return this.pwmLevel(p);
+    if (p.mode === 'af' && p.pwm && this.pwmOf(p.name)) return this.pwmLevel(p);
     if (p.mode === 'af' && /USART\d_TX/.test(p.af || '')) return 1;
     if (p.drive != null) return p.drive;
     if (p.pull === 'up') return 1;
@@ -444,6 +478,7 @@
     tm.ev = this.at(this.now() + (per - elapsed), function tick() {
       if (!tm.running || !tm.it) return;
       tm.ev = self.at(self.t + per, tick);
+      if (self.sleepMode === 'stop' || self.sleepMode === 'standby') return;   // STOP/STANDBY 에서는 타이머 클럭이 멈춘다
       var irq = tm.info.irq;
       if (self.nvic[irq]) self.raise('HAL_TIM_PeriodElapsedCallback', [self.handleOf(tm.name)], irq);
       else self.warnOnce('timnvic' + tm.name, tm.name + ' 인터럽트가 NVIC 에서 꺼져 있습니다 (CubeMX → ' + tm.name + ' → NVIC Settings).');
@@ -487,7 +522,7 @@
 
   /** ISR 실행 (끝까지) */
   Machine.prototype._runIsr = function (req) {
-    var fn = this.mod && this.mod.fns[req.name];
+    var fn = req.fn || (this.mod && this.mod.fns[req.name]);
     if (!fn) {
       var hint = /EXTI_(Rising|Falling)_Callback/.test(req.name) && this.mod && this.mod.fns.HAL_GPIO_EXTI_Callback
         ? ' ' + this.chip.family + ' HAL 은 HAL_GPIO_EXTI_Callback 대신 HAL_GPIO_EXTI_Rising_Callback / HAL_GPIO_EXTI_Falling_Callback 을 부릅니다.'
@@ -512,6 +547,7 @@
 
   // ---- 실행 ----------------------------------------------------------------
   Machine.prototype.load = function (js) {
+    this._js = js;
     var H = this.makeH();
     this.handleByName = {};
     this.mod = (new Function('H', js))(H);
@@ -526,37 +562,126 @@
    */
   Machine.prototype.step = function (dt, budgetMs) {
     if (this.state !== 'running') return;
-    var target = this.t + dt, t0 = performance.now(), budget = budgetMs || 12, $ = this.$;
+    var target = this.t + dt, t0 = performance.now(), budget = budgetMs || 12;
     try {
       while (this.state === 'running') {
         // 1) 때가 된 이벤트
         while (this.events.length && this.events[0].t <= this.t) {
           var ev = this.events.shift(); if (!ev.dead) ev.fn();
         }
-        // 2) 대기 중인 ISR
-        while (this.pendingIsr.length && !this.irqOff) {
-          var req = this.pendingIsr.shift();
-          this._runIsr(req);
-        }
+        // 2) 대기 중인 ISR (STANDBY 에서는 코어가 꺼져 있다)
+        if (this.sleepMode === 'standby') this.pendingIsr = [];
+        var ran = false;
+        while (this.pendingIsr.length && !this.irqOff) { this._runIsr(this.pendingIsr.shift()); ran = true; }
+        if (ran && this.sleepMode && this.sleepMode !== 'standby') this._wakeUp();
         if (this.t >= target) break;
         if (performance.now() - t0 > budget) break;
-        // 3) main 이 자는 중이면 다음 사건까지 시간 이동
-        if (this.wake > this.t) {
-          var next = Math.min(this.wake, target, this.events.length ? this.events[0].t : Infinity);
-          this.t = Math.max(this.t, next);
+        // 3) RTOS 가 돌고 있으면 태스크 스케줄
+        if (this.rtos && this.rtos.running && !this.sleepMode) { this._rtosStep(target); continue; }
+        // 4) main 이 자거나(HAL_Delay) 저전력이면 다음 사건까지 시간 이동
+        if (this.wake > this.t || this.sleepMode) {
+          var next = Math.min(this.sleepMode ? Infinity : this.wake, target, this.events.length ? this.events[0].t : Infinity);
+          this._adv(Math.max(this.t, next));
           continue;
         }
-        // 4) main 실행
+        // 5) main 실행 (다음 예약 이벤트 직전에 양보하도록 quantum 을 줄인다 → µs 단위 장치 타이밍)
+        this._quantum();
         var r = this.main.next();
-        this.t += $.n * CYCLE_MS; $.n = 0;
+        this._adv(this.t + this.$.n * CYCLE_MS); this.$.n = 0;
         if (r.done) { this.state = 'done'; this.log('warn', 'main() 이 반환했습니다. 실물 MCU 에서는 보통 while(1) 로 끝나지 않게 만듭니다.'); break; }
-        if (r.value && r.value.delay != null) this.wake = this.t + r.value.delay;
-        else if (r.value && r.value.halt) { this.state = 'halted'; this.log('error', r.value.halt); break; }
+        this._yielded(r.value, null);
       }
     } catch (e) {
+      if (e && e.__reset) return;
       this.fault(e);
     }
-    this.flushPending();
+  };
+  /** main 또는 태스크가 양보한 값 처리 */
+  Machine.prototype._yielded = function (v, th) {
+    if (!v) return;
+    if (v.delay != null) { if (th) th.wake = this.t + v.delay; else this.wake = this.t + v.delay; }
+    else if (v.sleep) this._enterSleep(v.sleep);
+    else if (v.kernelStart) { this.rtos = this.rtos || { threads: [], seq: 0 }; this.rtos.running = true; this.wake = Infinity; }
+    else if (v.block && th) th.block = { check: v.block, until: v.until };
+    else if (v.halt) { this.state = 'halted'; this.log('error', v.halt); }
+  };
+  Machine.prototype._rtosStep = function (target) {
+    var R = this.rtos, now = this.t, best = null;
+    R.threads.forEach(function (th) {
+      if (th.state !== 'ready' || th.wake > now) return;
+      if (th.block && !(th.block.until <= now || th.block.check())) return;
+      if (!best || th.prio > best.prio || (th.prio === best.prio && th.last < best.last)) best = th;
+    });
+    if (!best) {
+      // 모두 대기 중 → 다음으로 깨어날 시각까지 (IDLE 태스크)
+      var nx = Math.min(target, this.events.length ? this.events[0].t : Infinity);
+      R.threads.forEach(function (th) {
+        if (th.state !== 'ready') return;
+        if (th.wake > now) nx = Math.min(nx, th.wake);
+        if (th.block && th.block.until > now) nx = Math.min(nx, th.block.until);
+      });
+      R.idle = (R.idle || 0) + Math.max(0, nx - now);
+      this._adv(Math.max(now, nx));
+      return;
+    }
+    R.cur = best; best.block = null;
+    this._quantum();
+    var tStart = this.t, r = best.gen.next();
+    this._adv(this.t + this.$.n * CYCLE_MS); this.$.n = 0;
+    best.runMs += this.t - tStart; best.last = ++R.seq; R.cur = null;
+    if (r.done) { best.state = 'done'; this.log('warn', '태스크 "' + best.name + '" 함수가 끝났습니다. RTOS 태스크는 for(;;) 로 끝나지 않게 하거나 osThreadExit() 를 부릅니다.'); return; }
+    this._yielded(r.value, best);
+  };
+  Machine.prototype._quantum = function () {
+    var q = QUANTUM;
+    if (this.events.length) { var dq = Math.ceil((this.events[0].t - this.t) / CYCLE_MS); if (dq < q) q = Math.max(1, dq); }
+    this.$.q = q;
+  };
+  Machine.prototype._adv = function (nt) {
+    var d = nt - this.t;
+    if (d > 0) { var m = this.sleepMode || 'run'; this.pwr[m] = (this.pwr[m] || 0) + d; }
+    this.t = nt;
+  };
+  Machine.prototype._enterSleep = function (mode) {
+    this.sleepMode = mode; this.sleepStart = this.t;
+    var name = { sleep: 'SLEEP', stop: 'STOP', standby: 'STANDBY' }[mode];
+    this.emit('power', mode);
+    if (mode === 'stop' && !Object.keys(this.nvic).some(function (k) { return this.nvic[k] && /^EXTI|RTC/.test(k); }, this))
+      this.warnOnce('stopnowake', 'STOP 모드에 들어갔지만 깨울 인터럽트(EXTI 또는 RTC 웨이크업)가 켜져 있지 않습니다. 영원히 잠듭니다.');
+    if (mode === 'standby' && !this.wkupPin && !this.rtcWake) this.warnOnce('sbnowake', 'STANDBY 모드에 들어갔지만 WKUP 핀이나 RTC 웨이크업이 없습니다.');
+    this.log('info', name + ' 모드 진입 (' + (this.t / 1000).toFixed(3) + ' s)');
+  };
+  Machine.prototype._wakeUp = function () {
+    var mode = this.sleepMode; if (!mode) return;
+    if (mode === 'stop') {
+      this.tickLost += this.t - this.sleepStart;   // STOP 동안 SysTick 도 멈춘다
+      this.warnOnce('stopclk', 'STOP 에서 깨어나면 시스템 클럭이 HSI(' + this.chip.hsi + ' MHz)로 돌아갑니다. 실물에서는 깨어난 뒤 SystemClock_Config() 를 다시 불러야 합니다.');
+    }
+    this.sleepMode = null; this.wake = this.t;
+    this.emit('power', 'run');
+  };
+  /** 워치독·소프트웨어·STANDBY 복귀 리셋: 장치 연결은 유지하고 프로그램만 처음부터 */
+  Machine.prototype.softReset = function (flag, msg) {
+    var keep = {}, P = this.pins, self = this;
+    Object.keys(P).forEach(function (k) { keep[k] = { drive: P[k].drive, analog: P[k].analog }; });
+    var saved = { watchers: this.watchers, devices: this.devices, t: this.t, pwr: this.pwr, js: this._js, count: (this.resetCount || 0) + 1, listeners: this.listeners };
+    this.log('warn', msg + ' → 리셋 후 main() 부터 다시 실행합니다.');
+    this.reset(this.project);
+    this.listeners = saved.listeners; this.t = saved.t; this.pwr = saved.pwr; this.watchers = saved.watchers; this.devices = saved.devices; this.resetCount = saved.count;
+    Object.keys(keep).forEach(function (k) { if (self.pins[k]) { self.pins[k].drive = keep[k].drive; self.pins[k].analog = keep[k].analog; } });
+    var f = {}; f[flag] = true; if (flag === 'sb') f.wu = true; this.resetFlags = f;
+    this.load(saved.js);
+    this.emit('softreset', flag);
+  };
+  /** 저전력 실습용 평균 전류 추정 (제품군 대표값, mA) */
+  Machine.prototype.powerStats = function () {
+    var fam = this.chip.series, mhz = this.sysclk / 1e6, p = this.pwr, tot = (p.run || 0) + (p.sleep || 0) + (p.stop || 0) + (p.standby || 0);
+    var perMHz = { F0: 0.25, F1: 0.36, F3: 0.3, F4: 0.2, F7: 0.45, H7: 0.3, G0: 0.1, G4: 0.17, L0: 0.09, L4: 0.11, U5: 0.02, C0: 0.12, WB: 0.11 }[fam] || 0.2;
+    var stopUA = { F0: 5, F1: 24, F3: 20, F4: 45, F7: 150, H7: 200, G0: 5, G4: 20, L0: 0.4, L4: 1.2, U5: 2, C0: 80, WB: 2 }[fam] || 20;
+    var sbUA = /^(L0|L4|U5|WB)$/.test(fam) ? 0.3 : 2.5;
+    var run = perMHz * mhz + 0.5, sleep = run * 0.35;
+    var avg = tot ? ((p.run || 0) * run + (p.sleep || 0) * sleep + (p.stop || 0) * stopUA / 1000 + (p.standby || 0) * sbUA / 1000) / tot : run;
+    return { run: p.run || 0, sleep: p.sleep || 0, stop: p.stop || 0, standby: p.standby || 0, runMA: run, sleepMA: sleep, stopUA: stopUA, sbUA: sbUA, avgMA: avg, mode: this.sleepMode || 'run' };
   };
   Machine.prototype.flushPending = function () { };
 
@@ -579,7 +704,7 @@
       idiv: function (a, b) { if (!b) throw new Error('0으로 나누기 (Division by zero)'); return Math.trunc(a / b); },
       imod: function (a, b) { if (!b) throw new Error('0으로 나머지 연산 (Division by zero)'); return a % b; },
       peq: function (a, b) { if (a && b && a.a) return a.a === b.a && a.o === b.o; return a === b; },
-      struct: function (type) { return autoStruct(type); },
+      struct: function (type, init) { var s = autoStruct(type); if (init) Object.keys(init).forEach(function (k) { s[k] = init[k]; }); return s; },
       handle: function (name, type) { var h = autoStruct(type); h.__hname = name; self.handleByName[name] = h; return h; },
       k: function (name) { if (!(name in self.kmap)) self.kmap[name] = self.knext++; return self.kmap[name]; },
       f: this.halFunctions()
@@ -695,7 +820,7 @@
       // ---- UART
       HAL_UART_Init: function (h) {
         var n = bindHandle(h), baud = num(h.Init.BaudRate, 115200);
-        M.uarts[n] = { name: n, baud: baud, rx: [], it: null, h: h, tx: pinsFor(n, 'TX'), rxPins: pinsFor(n, 'RX') };
+        M.uarts[n] = { name: n, baud: baud, rx: [], it: null, idle: null, idleMark: 0, h: h, tx: pinsFor(n, 'TX'), rxPins: pinsFor(n, 'RX') };
         setAf(n);
         return 0;
       },
@@ -829,6 +954,11 @@
           if (!a.dma) return;
           for (var i = 0; i < a.dma.n; i++) buf.a[buf.o + i] = M.adcSample(a.seq[i % a.seq.length] || 0);
           M.at(M.t + 1, fill);
+          var dmaOn = Object.keys(M.nvic).some(function (k) { return M.nvic[k] && /^DMA/.test(k); });
+          if (dmaOn && M.mod) {
+            if (M.mod.fns.HAL_ADC_ConvHalfCpltCallback) M.raise('HAL_ADC_ConvHalfCpltCallback', [h], 'DMA');
+            if (M.mod.fns.HAL_ADC_ConvCpltCallback) M.raise('HAL_ADC_ConvCpltCallback', [h], 'DMA');
+          }
         })();
         return 0;
       },
@@ -938,8 +1068,235 @@
       isupper: function (c) { return c >= 65 && c <= 90 ? 1 : 0; }, islower: function (c) { return c >= 97 && c <= 122 ? 1 : 0; },
       toupper: function (c) { return c >= 97 && c <= 122 ? c - 32 : c; }, tolower: function (c) { return c >= 65 && c <= 90 ? c + 32 : c; }
     };
+
+    // ================================================================ 확장: 입력 캡처 · 워치독 · RTC · 저전력 · UART idle · RTOS
+    function flagName(v) { for (var k in M.kmap) if (M.kmap[k] === v) return k; for (var c in K) if (K[c] === v && /FLAG/.test(c)) return c; return ''; }
+    var ACTIVE = { 1: 1, 2: 2, 3: 4, 4: 8 };
+    // ---- TIM 입력 캡처
+    F.HAL_TIM_IC_Init = function (h) { return F.HAL_TIM_Base_Init(h); };
+    F.HAL_TIM_IC_ConfigChannel = function (h, cfg, ch) {
+      var tm = M.tims[bindHandle(h)]; if (!tm) return 1;
+      var c = tm.ch[chIdx(ch)]; c.pwm = false; c.ic = { pol: num(cfg.ICPolarity, 0) }; setAf(tm.name); return 0;
+    };
+    function icStart(h, ch, it) {
+      var tm = M.tims[bindHandle(h)]; if (!tm) return 1;
+      var i = chIdx(ch), c = tm.ch[i]; c.ic = c.ic || { pol: 0 }; c.icIt = it; c.icOn = true;
+      if (!tm.running) { tm.running = true; tm.t0 = M.now(); }
+      var sig = tm.name + '_CH' + i, pin = Object.keys(M.project.pins || {}).filter(function (p) { return M.project.pins[p].signal === sig; })[0];
+      if (!pin) { M.warnOnce('icpin' + sig, sig + ' 입력 핀이 없습니다 (핀아웃에서 ' + sig + ' 지정).'); return 0; }
+      if (!c.icWatch) {
+        c.icWatch = true;
+        M.watch(pin, function (lv, t, isPwm) {
+          if (isPwm || !c.icOn) return;
+          var pol = c.ic.pol, ok = pol === 10 || (pol === 0 && lv === 1) || (pol === 2 && lv === 0);
+          if (!ok) return;
+          c.ccr = M.timCount(tm); c.captured = true;
+          if (c.icIt) {
+            h.Channel = ACTIVE[i];
+            if (M.nvic[tm.info.irq]) M.raise('HAL_TIM_IC_CaptureCallback', [h], tm.info.irq);
+            else M.warnOnce('icnvic' + tm.name, tm.name + ' 캡처 인터럽트가 NVIC 에서 꺼져 있습니다.');
+          }
+        });
+      }
+      return 0;
+    }
+    F.HAL_TIM_IC_Start = function (h, ch) { return icStart(h, ch, false); };
+    F.HAL_TIM_IC_Start_IT = function (h, ch) { return icStart(h, ch, true); };
+    F.HAL_TIM_IC_Stop = F.HAL_TIM_IC_Stop_IT = function (h, ch) { var tm = M.tims[inst(h)]; if (tm) tm.ch[chIdx(ch)].icOn = false; return 0; };
+    F.HAL_TIM_ReadCapturedValue = function (h, ch) { var tm = M.tims[inst(h)]; return tm ? tm.ch[chIdx(ch)].ccr : 0; };
+    F.__HAL_TIM_SET_CAPTUREPOLARITY = function (h, ch, pol) { var tm = M.tims[inst(h)]; if (tm) { var c = tm.ch[chIdx(ch)]; c.ic = c.ic || {}; c.ic.pol = pol; } };
+
+    // ---- 리셋 원인 · 플래그
+    F.__HAL_RCC_GET_FLAG = function (f) {
+      var n = flagName(f), r = M.resetFlags || {};
+      if (/IWDG/.test(n)) return r.iwdg ? 1 : 0; if (/WWDG/.test(n)) return r.wwdg ? 1 : 0; if (/SFT/.test(n)) return r.sft ? 1 : 0;
+      if (/POR|BOR/.test(n)) return r.por ? 1 : 0; if (/PIN/.test(n)) return r.pin ? 1 : 0; if (/LPWR/.test(n)) return 0;
+      return 0;
+    };
+    F.__HAL_RCC_CLEAR_RESET_FLAGS = function () { M.resetFlags = {}; };
+    F.__HAL_PWR_GET_FLAG = function (f) { var n = flagName(f), r = M.resetFlags || {}; if (/_SB$/.test(n)) return r.sb ? 1 : 0; if (/_WU/.test(n)) return r.wu ? 1 : 0; return 1; };
+    F.__HAL_PWR_CLEAR_FLAG = function (f) { var n = flagName(f); if (M.resetFlags) { if (/_SB$/.test(n)) M.resetFlags.sb = false; if (/_WU/.test(n)) M.resetFlags.wu = false; } };
+    F.NVIC_SystemReset = function () { M.softReset('sft', '소프트웨어 리셋 (NVIC_SystemReset)'); throw { __reset: true }; };
+
+    // ---- 독립 워치독 IWDG
+    F.HAL_IWDG_Init = function (h) {
+      var pr = num(h.Init.Prescaler, 0), rl = num(h.Init.Reload, 4095) & 0xFFF, lsi = M.chip.series === 'F1' ? 40 : 32;
+      if (pr > 6) { var map = {}; for (var k = 0; k <= 6; k++) map[M.kmap['IWDG_PRESCALER_' + (4 << k)]] = k; pr = map[pr] != null ? map[pr] : 0; }
+      M.iwdg = { h: h, ms: (4 << pr) * (rl + 1) / lsi, gen: 0 };
+      F.HAL_IWDG_Refresh(h);
+      M.log('info', 'IWDG 시작 — 제한 시간 ' + M.iwdg.ms.toFixed(1) + ' ms 안에 HAL_IWDG_Refresh() 를 불러야 합니다.');
+      return 0;
+    };
+    F.HAL_IWDG_Refresh = function () {
+      var w = M.iwdg; if (!w) return 1;
+      var g = ++w.gen;
+      M.at(M.now() + w.ms, function () { if (M.iwdg === w && w.gen === g) M.softReset('iwdg', 'IWDG 워치독 리셋 — ' + w.ms.toFixed(0) + ' ms 동안 Refresh 가 없었습니다.'); });
+      return 0;
+    };
+
+    // ---- RTC
+    function bcd2bin(v) { return (v >> 4) * 10 + (v & 15); }
+    function bin2bcd(v) { return ((v / 10) | 0) << 4 | (v % 10); }
+    function rtcNowSec() { var r = M.rtc; return r.base + (M.now() - r.t0) / 1000; }
+    F.HAL_RTC_Init = function (h) { bindHandleName(h, 'RTC'); if (!M.rtc) M.rtc = { base: 0, t0: M.now(), date: { y: 26, m: 1, d: 1, wd: 4 } }; return 0; };
+    F.HAL_RTC_SetTime = function (h, t, fmt) {
+      if (!M.rtc) F.HAL_RTC_Init(h);
+      var hh = num(t.Hours, 0), mm = num(t.Minutes, 0), ss = num(t.Seconds, 0);
+      if (fmt === 1) { hh = bcd2bin(hh); mm = bcd2bin(mm); ss = bcd2bin(ss); }
+      var days = Math.floor(rtcNowSec() / 86400);
+      M.rtc.base = days * 86400 + hh * 3600 + mm * 60 + ss; M.rtc.t0 = M.now(); return 0;
+    };
+    F.HAL_RTC_GetTime = function (h, t, fmt) {
+      if (!M.rtc) return 1;
+      var s = rtcNowSec(), sod = Math.floor(s) % 86400, hh = Math.floor(sod / 3600), mm = Math.floor(sod / 60) % 60, ss = sod % 60;
+      t.Hours = fmt === 1 ? bin2bcd(hh) : hh; t.Minutes = fmt === 1 ? bin2bcd(mm) : mm; t.Seconds = fmt === 1 ? bin2bcd(ss) : ss;
+      t.SubSeconds = 255 - Math.floor((s % 1) * 256); t.SecondFraction = 255; return 0;
+    };
+    F.HAL_RTC_SetDate = function (h, d, fmt) {
+      if (!M.rtc) F.HAL_RTC_Init(h);
+      var y = num(d.Year, 0), m = num(d.Month, 1), dd = num(d.Date, 1);
+      if (fmt === 1) { y = bcd2bin(y); m = bcd2bin(m); dd = bcd2bin(dd); }
+      M.rtc.date = { y: y, m: m, d: dd, wd: num(d.WeekDay, 1) }; M.rtc.dayBase = Math.floor(rtcNowSec() / 86400); return 0;
+    };
+    F.HAL_RTC_GetDate = function (h, d, fmt) {
+      if (!M.rtc) return 1;
+      var r = M.rtc, extra = Math.floor(rtcNowSec() / 86400) - (r.dayBase || 0);
+      var dt = new Date(Date.UTC(2000 + r.date.y, r.date.m - 1, r.date.d + extra));
+      var y = dt.getUTCFullYear() - 2000, m = dt.getUTCMonth() + 1, dd = dt.getUTCDate(), wd = dt.getUTCDay() || 7;
+      d.Year = fmt === 1 ? bin2bcd(y) : y; d.Month = fmt === 1 ? bin2bcd(m) : m; d.Date = fmt === 1 ? bin2bcd(dd) : dd; d.WeekDay = wd; return 0;
+    };
+    F.HAL_RTCEx_SetWakeUpTimer_IT = function (h, counter, clock) {
+      if (!M.rtc) F.HAL_RTC_Init(h);
+      var per = clock >= 4 ? (counter + 1) * 1000 : (counter + 1) * (16 >> clock) / 32.768;
+      var w = M.rtcWake = { per: Math.max(0.1, per), h: h };
+      (function tick() { M.at(M.now() + w.per, function () { if (M.rtcWake !== w) return; tick(); var irq = 'RTC_WKUP'; if (M.nvic[irq] || M.nvic.RTC || M.nvic.RTC_TAMP) M.raise('HAL_RTCEx_WakeUpTimerEventCallback', [h], irq); else M.warnOnce('rtcnvic', 'RTC 웨이크업 인터럽트가 NVIC 에서 꺼져 있습니다 (RTC_WKUP).'); }); })();
+      return 0;
+    };
+    F.HAL_RTCEx_DeactivateWakeUpTimer = function () { M.rtcWake = null; return 0; };
+    function bindHandleName(h, name) { M.handles[name] = h; }
+
+    // ---- 저전력 모드
+    F.HAL_PWR_EnterSLEEPMode = function* () { yield { sleep: 'sleep' }; };
+    F.HAL_PWR_EnterSTOPMode = function* () { yield { sleep: 'stop' }; };
+    F.HAL_PWREx_EnterSTOP2Mode = F.HAL_PWREx_EnterSTOP1Mode = F.HAL_PWR_EnterSTOPMode;
+    F.HAL_PWR_EnterSTANDBYMode = function* () { yield { sleep: 'standby' }; };
+    F.HAL_PWR_EnableWakeUpPin = function () { M.wkupPin = true; };
+    F.HAL_PWR_DisableWakeUpPin = function () { M.wkupPin = false; };
+    F.HAL_SuspendTick = function () { M.tickSuspended = M.now(); };
+    F.HAL_ResumeTick = function () { if (M.tickSuspended != null) { M.tickLost += M.now() - M.tickSuspended; M.tickSuspended = null; } };
+    F.HAL_GetTick = function () { var n = M.tickSuspended != null ? M.tickSuspended : M.now(); return Math.floor(n - M.tickLost) >>> 0; };
+
+    // ---- UART: 유휴(IDLE) 감지 수신
+    function rxToIdle(h, buf, size) {
+      var u = M.uarts[inst(h)]; if (!u) return 1;
+      u.idle = { buf: buf, size: size >>> 0, n: 0, h: h };
+      if (!M.nvic[M.chip.periph[u.name].irq]) M.warnOnce('unvic' + u.name, u.name + ' global interrupt 가 NVIC 에서 꺼져 있어 수신 이벤트 콜백이 불리지 않습니다.');
+      M.uartDrain(u); return 0;
+    }
+    F.HAL_UARTEx_ReceiveToIdle_IT = rxToIdle;
+    F.HAL_UARTEx_ReceiveToIdle_DMA = rxToIdle;
+    F.HAL_UART_DMAStop = function (h) { var u = M.uarts[inst(h)]; if (u) { u.idle = null; u.it = null; } return 0; };
+
+    // ---- CMSIS-RTOS2 (FreeRTOS 위)
+    function rtos() { return M.rtos || (M.rtos = { threads: [], running: false, cur: null, seq: 0, timers: [] }); }
+    function* waitUntil(check, timeout) {
+      timeout = timeout >>> 0;
+      if (check()) return true;
+      if (timeout === 0) return false;
+      var until = timeout === 0xFFFFFFFF ? Infinity : M.now() + timeout;
+      if (M.rtos && M.rtos.cur) { yield { block: check, until: until }; return !!check(); }
+      while (!check()) { if (M.now() >= until) return false; yield { delay: 0.05 }; }
+      return true;
+    }
+    F.osKernelInitialize = function () { rtos(); return 0; };
+    F.osKernelGetState = function () { return M.rtos && M.rtos.running ? 2 : 1; };
+    F.osKernelStart = function* () {
+      var R = rtos();
+      if (!R.threads.length) M.warnOnce('rtosnothread', 'osKernelStart() 전에 만든 태스크가 없습니다.');
+      M.log('info', 'RTOS 커널 시작 — 태스크 ' + R.threads.length + '개: ' + R.threads.map(function (t) { return t.name + '(prio ' + t.prio + ')'; }).join(', '));
+      yield { kernelStart: true };
+      return 0;
+    };
+    F.osKernelGetTickCount = function () { return Math.floor(M.now()) >>> 0; };
+    F.osKernelGetTickFreq = function () { return 1000; };
+    F.osThreadNew = function (fn, arg, attr) {
+      if (typeof fn !== 'function') { M.warnOnce('rtosfn', 'osThreadNew 첫 인자는 태스크 함수 이름이어야 합니다.'); return 0; }
+      var R = rtos(), a = attr && typeof attr === 'object' ? attr : {};
+      var th = { id: R.threads.length + 1, name: (a.name && a.name.a ? cstr(a.name) : typeof a.name === 'string' ? a.name : 'task' + (R.threads.length + 1)),
+        prio: num(a.priority, 24) || 24, stack: num(a.stack_size, 512), gen: fn(arg == null ? 0 : arg), wake: 0, block: null, state: 'ready', flags: 0, last: 0, runMs: 0 };
+      th.handle = autoStruct('osThreadId_t'); th.handle.__thread = th;
+      R.threads.push(th); return th.handle;
+    };
+    function thOf(h) { return h && h.__thread; }
+    F.osThreadGetId = function () { return M.rtos && M.rtos.cur ? M.rtos.cur.handle : 0; };
+    F.osThreadGetName = function (h) { var t = thOf(h); return t ? strPtr(t.name) : 0; };
+    F.osThreadYield = function* () { yield { yieldThread: true }; return 0; };
+    F.osThreadSuspend = function (h) { var t = thOf(h); if (t) t.state = 'suspended'; return 0; };
+    F.osThreadResume = function (h) { var t = thOf(h); if (t && t.state === 'suspended') t.state = 'ready'; return 0; };
+    F.osThreadTerminate = function (h) { var t = thOf(h); if (t) t.state = 'done'; return 0; };
+    F.osThreadExit = function* () { if (M.rtos && M.rtos.cur) M.rtos.cur.state = 'done'; yield { yieldThread: true }; };
+    F.osDelay = function* (ticks) { yield { delay: ticks >>> 0 }; return 0; };
+    F.osDelayUntil = function* (tick) { var d = (tick >>> 0) - M.now(); if (d > 0) yield { delay: d }; return 0; };
+    F.vTaskDelay = F.osDelay;
+    F.osMutexNew = function () { var m = autoStruct('osMutexId_t'); m.__mx = { owner: null, count: 0 }; return m; };
+    F.osMutexAcquire = function* (m, timeout) {
+      var x = m && m.__mx; if (!x) return -4;
+      var me = M.rtos && M.rtos.cur || 'main';
+      if (x.owner === me) { x.count++; return 0; }
+      var ok = yield* waitUntil(function () { return !x.owner; }, timeout);
+      if (!ok) return -2;
+      x.owner = me; x.count = 1; return 0;
+    };
+    F.osMutexRelease = function (m) { var x = m && m.__mx; if (!x) return -4; if (--x.count <= 0) { x.owner = null; x.count = 0; } return 0; };
+    F.osSemaphoreNew = function (max, init) { var s = autoStruct('osSemaphoreId_t'); s.__sem = { count: init >>> 0, max: max >>> 0 }; return s; };
+    F.osSemaphoreAcquire = function* (s, timeout) {
+      var x = s && s.__sem; if (!x) return -4;
+      var ok = yield* waitUntil(function () { return x.count > 0; }, timeout);
+      if (!ok) return timeout ? -2 : -3;
+      x.count--; return 0;
+    };
+    F.osSemaphoreRelease = function (s) { var x = s && s.__sem; if (!x) return -4; if (x.count >= x.max) return -3; x.count++; return 0; };
+    F.osSemaphoreGetCount = function (s) { return s && s.__sem ? s.__sem.count : 0; };
+    F.osMessageQueueNew = function (count, size) { var q = autoStruct('osMessageQueueId_t'); q.__q = { items: [], cap: count >>> 0, size: size >>> 0 }; return q; };
+    F.osMessageQueuePut = function* (q, ptr, prio, timeout) {
+      var x = q && q.__q; if (!x) return -4;
+      var ok = yield* waitUntil(function () { return x.items.length < x.cap; }, timeout);
+      if (!ok) return timeout ? -2 : -3;
+      x.items.push(bytesOf(ptr, x.size)); return 0;
+    };
+    F.osMessageQueueGet = function* (q, ptr, prio, timeout) {
+      var x = q && q.__q; if (!x) return -4;
+      var ok = yield* waitUntil(function () { return x.items.length > 0; }, timeout);
+      if (!ok) return timeout ? -2 : -3;
+      writeBytes(ptr, x.items.shift()); return 0;
+    };
+    F.osMessageQueueGetCount = function (q) { return q && q.__q ? q.__q.items.length : 0; };
+    F.osThreadFlagsSet = function (h, f) { var t = thOf(h); if (!t) return 0x80000004; t.flags |= f >>> 0; return t.flags; };
+    F.osThreadFlagsClear = function (f) { var t = M.rtos && M.rtos.cur; if (t) t.flags &= ~f; return 0; };
+    F.osThreadFlagsWait = function* (f, opt, timeout) {
+      var t = M.rtos && M.rtos.cur; if (!t) return 0x80000001;
+      var all = (opt & 1) !== 0, check = function () { return all ? (t.flags & f) === f : (t.flags & f) !== 0; };
+      var ok = yield* waitUntil(check, timeout);
+      if (!ok) return 0xFFFFFFFE;
+      var got = t.flags & f; if (!(opt & 2)) t.flags &= ~f; return got;
+    };
+    F.osEventFlagsNew = function () { var e = autoStruct('osEventFlagsId_t'); e.__ef = { flags: 0 }; return e; };
+    F.osEventFlagsSet = function (e, f) { var x = e && e.__ef; if (!x) return 0x80000004; x.flags |= f >>> 0; return x.flags; };
+    F.osEventFlagsClear = function (e, f) { var x = e && e.__ef; if (x) x.flags &= ~f; return 0; };
+    F.osEventFlagsWait = function* (e, f, opt, timeout) {
+      var x = e && e.__ef; if (!x) return 0x80000004;
+      var all = (opt & 1) !== 0, check = function () { return all ? (x.flags & f) === f : (x.flags & f) !== 0; };
+      var ok = yield* waitUntil(check, timeout); if (!ok) return 0xFFFFFFFE;
+      var got = x.flags & f; if (!(opt & 2)) x.flags &= ~f; return got;
+    };
+    F.osTimerNew = function (fn, type, arg) { var t = autoStruct('osTimerId_t'); t.__tm = { fn: fn, periodic: type === 1, arg: arg, gen: 0 }; return t; };
+    F.osTimerStart = function (t, ticks) {
+      var x = t && t.__tm; if (!x) return -4; var g = ++x.gen, per = Math.max(1, ticks >>> 0);
+      (function arm() { M.at(M.now() + per, function () { if (x.gen !== g) return; if (x.periodic) arm(); M.pendingIsr.push({ name: '__timer', fn: x.fn, args: [x.arg == null ? 0 : x.arg] }); }); })();
+      return 0;
+    };
+    F.osTimerStop = function (t) { var x = t && t.__tm; if (x) x.gen++; return 0; };
     // 클럭 매크로들은 아무것도 하지 않는다
-    F.__HAL_PWR_GET_FLAG = function () { return 1; };   // 전압 준비(VOSRDY) 등 상태 플래그는 항상 준비됨
     Object.keys(FUNCS).forEach(function (k) { if (!F[k]) F[k] = function () { return 0; }; });
     return F;
   };
@@ -1008,6 +1365,18 @@
     this.emit('bus', { kind: 'uart', bus: u.name, dir: 'RX', bytes: bytes, t: this.now() });
   };
   Machine.prototype.uartDrain = function (u) {
+    var self = this, idl = u.idle;
+    if (idl && u.rx.length) {
+      while (idl && u.rx.length) {
+        idl.buf.a[idl.buf.o + idl.n++] = u.rx.shift();
+        if (idl.n >= idl.size) { u.idle = null; this._rxEvent(u, idl); idl = null; }
+      }
+      if (u.idle) {
+        var mark = ++u.idleMark;
+        this.at(this.now() + 10 / u.baud * 1000 * 1.5, function () { if (u.idle === idl && u.idleMark === mark && idl.n) { u.idle = null; self._rxEvent(u, idl); } });
+      }
+      return;
+    }
     var it = u.it;
     while (it && u.rx.length) {
       it.buf.a[it.buf.o + it.n++] = u.rx.shift();
@@ -1017,6 +1386,9 @@
         it = null;
       }
     }
+  };
+  Machine.prototype._rxEvent = function (u, idl) {
+    if (this.nvic[this.chip.periph[u.name].irq]) this.raise('HAL_UARTEx_RxEventCallback', [idl.h, idl.n], u.name);
   };
   Machine.prototype.adcSample = function (ch) {
     var v = this.adcSample12(ch), bits = this.chip.adcBits || 12;
@@ -1033,7 +1405,12 @@
     return 1200 + (Math.random() * 1600 | 0);
   };
 
+  // 사용자 코드가 #include 하는 CMSIS-RTOS2 헤더 (타입 이름만; 함수·상수는 런타임이 제공)
+  var CMSIS_OS = '#ifndef CMSIS_OS2_H\n#define CMSIS_OS2_H\ntypedef int osStatus_t;\ntypedef int osPriority_t;\ntypedef int osKernelState_t;\ntypedef int osThreadState_t;\ntypedef int osTimerType_t;\n#endif\n';
+  var VIRTUAL_HEADERS = { 'cmsis_os.h': CMSIS_OS, 'cmsis_os2.h': CMSIS_OS, 'FreeRTOS.h': '', 'task.h': '', 'queue.h': '', 'semphr.h': '' };
+
   global.STM32Runtime = {
+    VIRTUAL_HEADERS: VIRTUAL_HEADERS,
     Machine: Machine, Ptr: Ptr, compilerEnv: compilerEnv, format: format, cstr: cstr, CONSTANTS: K, FUNCS: FUNCS,
     STRUCT_TYPES: STRUCT_TYPES, HANDLE_TYPES: HANDLE_TYPES, OBJECTS: OBJECTS, IRQ_NAME: IRQ_NAME, CYCLE_MS: CYCLE_MS
   };

@@ -1645,5 +1645,622 @@ int __io_putchar(int ch)
     }
   };
 
+  // ======================================================================= L17 (확장 주변장치)
+  // µs 타이머: TIM2 PSC = 83 → 84 MHz / 84 = 1 MHz (1 카운트 = 1 µs), ARR = 65535
+  var US_TIMER = C`
+/* TIM2 는 1 MHz 로 셉니다 (PSC = 83). 카운터 한 칸 = 1 µs */
+void delay_us(uint16_t us)
+{
+  __HAL_TIM_SET_COUNTER(&htim2, 0);
+  while (__HAL_TIM_GET_COUNTER(&htim2) < us) { }
+}
+`;
+
+  STM32_EXAMPLES['l17-oled'] = {
+    title: 'SSD1306 OLED — 직접 만든 드라이버',
+    desc: 'I2C1(PB8/PB9)에 연결한 128x64 OLED 에 초기화 명령을 보내고, 5x7 글꼴로 "Hello OLED" 와 카운터를 그립니다. 화면 버퍼 1024바이트를 페이지 단위로 전송합니다.',
+    lesson: 'l17',
+    board: 'NUCLEO-F411RE',
+    pins: {
+      PB8: { signal: 'I2C1_SCL' },
+      PB9: { signal: 'I2C1_SDA' }
+    },
+    periph: { I2C1: { mode: 'i2c', speed: 400000 } },
+    nvic: {},
+    nodes: [
+      { id: 'oled1', type: 'oled', x: 720, y: 100, props: { addr: '0x3C', color: 'blue' } }
+    ],
+    wires: [['PB8', 'oled1.scl'], ['PB9', 'oled1.sda']],
+    user: {
+      includes: C`
+#include <stdio.h>
+#include <string.h>
+`,
+      pv: C`
+#define OLED_ADDR   (0x3C << 1)      // 7비트 주소 0x3C → HAL 은 왼쪽으로 1비트 민 값
+uint8_t oled_buf[1024];              // 128 열 x 8 페이지 (페이지 = 세로 8픽셀)
+uint32_t count = 0;
+char line[22];
+
+/* 5x7 글꼴: 글자마다 세로 5열, 비트0 = 맨 위 픽셀. 이 예제에 쓰는 글자만 담았습니다. */
+const char FONT_CH[] = " 0123456789:CDEHLOelnotu";
+const uint8_t FONT5x7[24][5] = {
+  {0x00,0x00,0x00,0x00,0x00}, {0x3E,0x51,0x49,0x45,0x3E}, {0x00,0x42,0x7F,0x40,0x00}, {0x42,0x61,0x51,0x49,0x46},
+  {0x21,0x41,0x45,0x4B,0x31}, {0x18,0x14,0x12,0x7F,0x10}, {0x27,0x45,0x45,0x45,0x39}, {0x3C,0x4A,0x49,0x49,0x30},
+  {0x01,0x71,0x09,0x05,0x03}, {0x36,0x49,0x49,0x49,0x36}, {0x06,0x49,0x49,0x29,0x1E}, {0x00,0x36,0x36,0x00,0x00},
+  {0x3E,0x41,0x41,0x41,0x22}, {0x7F,0x41,0x41,0x22,0x1C}, {0x7F,0x49,0x49,0x49,0x41}, {0x7F,0x08,0x08,0x08,0x7F},
+  {0x7F,0x40,0x40,0x40,0x40}, {0x3E,0x41,0x41,0x41,0x3E}, {0x38,0x54,0x54,0x54,0x18}, {0x00,0x41,0x7F,0x40,0x00},
+  {0x7C,0x08,0x04,0x04,0x78}, {0x38,0x44,0x44,0x44,0x38}, {0x04,0x3F,0x44,0x40,0x20}, {0x3C,0x40,0x40,0x20,0x7C}
+};
+`,
+      pfp: '',
+      u0: C`
+/* 제어 바이트 0x00 = 뒤따르는 바이트는 명령, 0x40 = 화면 데이터 */
+void oled_cmd(uint8_t c)
+{
+  HAL_I2C_Mem_Write(&hi2c1, OLED_ADDR, 0x00, I2C_MEMADD_SIZE_8BIT, &c, 1, 100);
+}
+
+void oled_init(void)
+{
+  HAL_Delay(100);                        // 전원 안정화
+  oled_cmd(0xAE);                        // 디스플레이 OFF
+  oled_cmd(0x20); oled_cmd(0x00);        // 메모리 주소 모드: 수평
+  oled_cmd(0xB0);                        // 페이지 0
+  oled_cmd(0xC8);                        // COM 스캔 방향: 역방향 (위아래 뒤집힘 보정)
+  oled_cmd(0x00); oled_cmd(0x10);        // 열 주소 0
+  oled_cmd(0x40);                        // 시작 줄 0
+  oled_cmd(0x81); oled_cmd(0xFF);        // 명암(contrast)
+  oled_cmd(0xA1);                        // 세그먼트 재매핑 (좌우 뒤집힘 보정)
+  oled_cmd(0xA6);                        // 정상 표시 (0xA7 = 반전)
+  oled_cmd(0xA8); oled_cmd(0x3F);        // 멀티플렉스 64
+  oled_cmd(0xA4);                        // RAM 내용 표시
+  oled_cmd(0xD3); oled_cmd(0x00);        // 표시 오프셋 0
+  oled_cmd(0xD5); oled_cmd(0xF0);        // 클럭 분주
+  oled_cmd(0xD9); oled_cmd(0x22);        // 프리차지
+  oled_cmd(0xDA); oled_cmd(0x12);        // COM 핀 구성
+  oled_cmd(0xDB); oled_cmd(0x20);        // VCOMH
+  oled_cmd(0x8D); oled_cmd(0x14);        // 차지 펌프 ON (없으면 화면이 켜지지 않음)
+  oled_cmd(0xAF);                        // 디스플레이 ON
+}
+
+void oled_clear(void)
+{
+  memset(oled_buf, 0, sizeof(oled_buf));
+}
+
+/* 화면 버퍼 → OLED: 페이지마다 위치를 정하고 128바이트를 한 번에 보냅니다. */
+void oled_update(void)
+{
+  for (uint8_t p = 0; p < 8; p++) {
+    oled_cmd(0xB0 + p);
+    oled_cmd(0x00);
+    oled_cmd(0x10);
+    HAL_I2C_Mem_Write(&hi2c1, OLED_ADDR, 0x40, I2C_MEMADD_SIZE_8BIT, &oled_buf[128 * p], 128, 100);
+  }
+}
+
+int font_index(char ch)
+{
+  for (int i = 0; FONT_CH[i] != 0; i++) {
+    if (FONT_CH[i] == ch) return i;
+  }
+  return 0;                               // 없는 글자는 공백
+}
+
+/* x: 0~127 열, page: 0~7 줄 (글자 한 칸 = 6열) */
+void oled_puts(uint8_t x, uint8_t page, const char *s)
+{
+  while (*s && x <= 122) {
+    int idx = font_index(*s++);
+    for (int c = 0; c < 5; c++) oled_buf[page * 128 + x + c] = FONT5x7[idx][c];
+    oled_buf[page * 128 + x + 5] = 0;
+    x += 6;
+  }
+}
+`,
+      u2: C`
+  oled_init();
+  oled_clear();
+  oled_puts(34, 0, "Hello OLED");
+  for (int x = 0; x < 128; x++) oled_buf[128 + x] = 0x01;   // 1페이지 맨 윗줄에 가로선
+  oled_update();
+`,
+      loop: C`
+    sprintf(line, "Count: %lu", count++);
+    oled_puts(10, 4, "          ");
+    oled_puts(10, 4, line);
+    oled_update();
+    HAL_Delay(500);
+`,
+      u4: ''
+    }
+  };
+
+  STM32_EXAMPLES['l17-ultrasonic'] = {
+    title: 'HC-SR04 초음파 거리 측정',
+    desc: 'TRIG(PA8)에 10 µs 펄스를 주고 ECHO(PA9)가 HIGH 인 시간을 1 MHz 로 도는 TIM2 로 잽니다. 거리(cm) = 펄스 폭(µs) / 58 을 UART 로 출력합니다.',
+    lesson: 'l17',
+    board: 'NUCLEO-F411RE',
+    pins: {
+      PA2: { signal: 'USART2_TX' },
+      PA3: { signal: 'USART2_RX' },
+      PA8: { signal: 'GPIO_Output', label: 'TRIG', level: 0 },
+      PA9: { signal: 'GPIO_Input', label: 'ECHO', pull: 'down' }
+    },
+    periph: {
+      USART2: { mode: 'async', baud: 115200 },
+      TIM2: { psc: 83, arr: 65535 }
+    },
+    nvic: {},
+    nodes: [
+      { id: 'us1', type: 'ultrasonic', x: 720, y: 120, props: { distance: 25 } }
+    ],
+    wires: [['PA8', 'us1.trig'], ['PA9', 'us1.echo']],
+    user: {
+      includes: C`
+#include <stdio.h>
+`,
+      pv: C`
+int32_t distance = 0;
+`,
+      pfp: C`
+int __io_putchar(int ch);
+`,
+      u0: US_TIMER + C`
+/* 거리(cm)를 돌려줍니다. 음수 = 응답 없음 */
+int32_t hcsr04_read_cm(void)
+{
+  uint32_t t_start, t_end;
+
+  HAL_GPIO_WritePin(TRIG_GPIO_Port, TRIG_Pin, GPIO_PIN_SET);    // 1) 10 µs 트리거 펄스
+  delay_us(10);
+  HAL_GPIO_WritePin(TRIG_GPIO_Port, TRIG_Pin, GPIO_PIN_RESET);
+
+  __HAL_TIM_SET_COUNTER(&htim2, 0);                             // 2) ECHO 가 HIGH 가 될 때까지
+  while (HAL_GPIO_ReadPin(ECHO_GPIO_Port, ECHO_Pin) == GPIO_PIN_RESET) {
+    if (__HAL_TIM_GET_COUNTER(&htim2) > 30000) return -1;
+  }
+  t_start = __HAL_TIM_GET_COUNTER(&htim2);
+
+  while (HAL_GPIO_ReadPin(ECHO_GPIO_Port, ECHO_Pin) == GPIO_PIN_SET) {   // 3) HIGH 가 끝날 때까지
+    if (__HAL_TIM_GET_COUNTER(&htim2) - t_start > 30000) return -2;
+  }
+  t_end = __HAL_TIM_GET_COUNTER(&htim2);
+
+  return (t_end - t_start + 29) / 58;                           // 4) 왕복 시간 → cm (반올림)
+}
+`,
+      u2: C`
+  HAL_TIM_Base_Start(&htim2);
+  printf("HC-SR04 ready\r\n");
+`,
+      loop: C`
+    distance = hcsr04_read_cm();
+    if (distance < 0) printf("No echo (%ld)\r\n", distance);
+    else printf("Distance: %ld cm\r\n", distance);
+    HAL_Delay(200);                       // 측정 간격 60 ms 이상 권장
+`,
+      u4: PUTCHAR
+    }
+  };
+
+  STM32_EXAMPLES['l17-keypad'] = {
+    title: '4x4 키패드 스캔',
+    desc: '행(PC0~PC3)을 하나씩 LOW 로 만들고 열(PC4~PC7, 풀업 입력)을 읽어 눌린 키를 찾습니다. 숫자를 모아 # 로 입력, * 로 지웁니다.',
+    lesson: 'l17',
+    board: 'NUCLEO-F411RE',
+    pins: {
+      PA2: { signal: 'USART2_TX' },
+      PA3: { signal: 'USART2_RX' },
+      PC0: { signal: 'GPIO_Output', label: 'ROW1', level: 1 },
+      PC1: { signal: 'GPIO_Output', label: 'ROW2', level: 1 },
+      PC2: { signal: 'GPIO_Output', label: 'ROW3', level: 1 },
+      PC3: { signal: 'GPIO_Output', label: 'ROW4', level: 1 },
+      PC4: { signal: 'GPIO_Input', label: 'COL1', pull: 'up' },
+      PC5: { signal: 'GPIO_Input', label: 'COL2', pull: 'up' },
+      PC6: { signal: 'GPIO_Input', label: 'COL3', pull: 'up' },
+      PC7: { signal: 'GPIO_Input', label: 'COL4', pull: 'up' }
+    },
+    periph: { USART2: { mode: 'async', baud: 115200 } },
+    nvic: {},
+    nodes: [
+      { id: 'kp1', type: 'keypad', x: 720, y: 60, props: { label: 'KEYPAD' } }
+    ],
+    wires: [['PC0', 'kp1.r1'], ['PC1', 'kp1.r2'], ['PC2', 'kp1.r3'], ['PC3', 'kp1.r4'],
+            ['PC4', 'kp1.c1'], ['PC5', 'kp1.c2'], ['PC6', 'kp1.c3'], ['PC7', 'kp1.c4']],
+    user: {
+      includes: C`
+#include <stdio.h>
+`,
+      pv: C`
+const char KEYMAP[4][4] = {
+  {'1', '2', '3', 'A'},
+  {'4', '5', '6', 'B'},
+  {'7', '8', '9', 'C'},
+  {'*', '0', '#', 'D'}
+};
+const uint16_t ROW_PIN[4] = {ROW1_Pin, ROW2_Pin, ROW3_Pin, ROW4_Pin};
+const uint16_t COL_PIN[4] = {COL1_Pin, COL2_Pin, COL3_Pin, COL4_Pin};
+char last_key = 0;
+char input[17];
+uint8_t input_len = 0;
+`,
+      pfp: C`
+int __io_putchar(int ch);
+`,
+      u0: C`
+/* 눌린 키 문자를 돌려줍니다. 없으면 0 */
+char keypad_scan(void)
+{
+  char key = 0;
+  for (int r = 0; r < 4; r++) {
+    for (int k = 0; k < 4; k++)                       // r 번째 행만 LOW
+      HAL_GPIO_WritePin(ROW1_GPIO_Port, ROW_PIN[k], (k == r) ? GPIO_PIN_RESET : GPIO_PIN_SET);
+    for (int c = 0; c < 4; c++) {
+      if (HAL_GPIO_ReadPin(COL1_GPIO_Port, COL_PIN[c]) == GPIO_PIN_RESET) key = KEYMAP[r][c];
+    }
+  }
+  for (int k = 0; k < 4; k++) HAL_GPIO_WritePin(ROW1_GPIO_Port, ROW_PIN[k], GPIO_PIN_SET);
+  return key;
+}
+`,
+      u2: C`
+  printf("Keypad ready: digits, # = enter, * = clear\r\n");
+`,
+      loop: C`
+    char key = keypad_scan();
+    if (key != 0 && key != last_key) {                // 새로 눌린 순간만
+      printf("Key: %c\r\n", key);
+      if (key == '#') {
+        input[input_len] = 0;
+        printf("Input: %s\r\n", input);
+        input_len = 0;
+      } else if (key == '*') {
+        input_len = 0;
+        printf("Clear\r\n");
+      } else if (input_len < 16) {
+        input[input_len++] = key;
+      }
+    }
+    last_key = key;
+    HAL_Delay(20);                                    // 20 ms 마다 스캔 (디바운스 겸용)
+`,
+      u4: PUTCHAR
+    }
+  };
+
+  STM32_EXAMPLES['l17-fnd4'] = {
+    title: '4자리 FND 다이내믹 구동',
+    desc: '세그먼트 a~g,dp(PB0~PB7)는 공유하고 자리 선택(PC0~PC3)을 3 ms 씩 번갈아 켜서 0000~9999 카운터를 표시합니다(공통 캐소드).',
+    lesson: 'l17',
+    board: 'NUCLEO-F411RE',
+    pins: {
+      PB0: { signal: 'GPIO_Output', label: 'SEG_A' },
+      PB1: { signal: 'GPIO_Output', label: 'SEG_B' },
+      PB2: { signal: 'GPIO_Output', label: 'SEG_C' },
+      PB3: { signal: 'GPIO_Output', label: 'SEG_D' },
+      PB4: { signal: 'GPIO_Output', label: 'SEG_E' },
+      PB5: { signal: 'GPIO_Output', label: 'SEG_F' },
+      PB6: { signal: 'GPIO_Output', label: 'SEG_G' },
+      PB7: { signal: 'GPIO_Output', label: 'SEG_DP' },
+      PC0: { signal: 'GPIO_Output', label: 'DIG1', level: 1 },
+      PC1: { signal: 'GPIO_Output', label: 'DIG2', level: 1 },
+      PC2: { signal: 'GPIO_Output', label: 'DIG3', level: 1 },
+      PC3: { signal: 'GPIO_Output', label: 'DIG4', level: 1 }
+    },
+    periph: {},
+    nvic: {},
+    nodes: [
+      { id: 'fnd4_1', type: 'fnd4', x: 720, y: 40, props: { common: 'cathode', color: 'red' } }
+    ],
+    wires: [['PB0', 'fnd4_1.a'], ['PB1', 'fnd4_1.b'], ['PB2', 'fnd4_1.c'], ['PB3', 'fnd4_1.d'],
+            ['PB4', 'fnd4_1.e'], ['PB5', 'fnd4_1.f'], ['PB6', 'fnd4_1.g'], ['PB7', 'fnd4_1.dp'],
+            ['PC0', 'fnd4_1.d1'], ['PC1', 'fnd4_1.d2'], ['PC2', 'fnd4_1.d3'], ['PC3', 'fnd4_1.d4']],
+    user: {
+      includes: '',
+      pv: C`
+/* 비트0 = a ... 비트6 = g (공통 캐소드: 1 = 켜짐) */
+const uint8_t DIGIT_PAT[10] = {0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F};
+const uint16_t SEG_PIN[8] = {SEG_A_Pin, SEG_B_Pin, SEG_C_Pin, SEG_D_Pin, SEG_E_Pin, SEG_F_Pin, SEG_G_Pin, SEG_DP_Pin};
+const uint16_t DIG_PIN[4] = {DIG1_Pin, DIG2_Pin, DIG3_Pin, DIG4_Pin};
+uint16_t counter = 0;
+uint32_t last_count = 0;
+`,
+      pfp: '',
+      u0: C`
+/* pos(0~3) 자리에 숫자 num 하나를 켭니다 */
+void fnd_show(uint8_t pos, uint8_t num)
+{
+  for (int d = 0; d < 4; d++) HAL_GPIO_WritePin(DIG1_GPIO_Port, DIG_PIN[d], GPIO_PIN_SET);   // 1) 모든 자리 끄기 (잔상 방지)
+  uint8_t pat = DIGIT_PAT[num];
+  for (int s = 0; s < 8; s++)                                                                  // 2) 세그먼트 패턴
+    HAL_GPIO_WritePin(SEG_A_GPIO_Port, SEG_PIN[s], ((pat >> s) & 1) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(DIG1_GPIO_Port, DIG_PIN[pos], GPIO_PIN_RESET);                              // 3) 이 자리만 켜기
+}
+`,
+      u2: '',
+      loop: C`
+    uint16_t v = counter;
+    fnd_show(3, v % 10);        HAL_Delay(2);
+    fnd_show(2, v / 10 % 10);   HAL_Delay(2);
+    fnd_show(1, v / 100 % 10);  HAL_Delay(2);
+    fnd_show(0, v / 1000 % 10); HAL_Delay(2);
+
+    if (HAL_GetTick() - last_count >= 100) {    // 0.1 초마다 +1
+      last_count = HAL_GetTick();
+      counter = (counter + 1) % 10000;
+    }
+`,
+      u4: ''
+    }
+  };
+
+  STM32_EXAMPLES['l17-dht11'] = {
+    title: 'DHT11 온습도 — 단일 선 비트뱅잉',
+    desc: 'PA1 을 18 ms LOW 로 당겨 시작 신호를 주고, 입력(풀업)으로 바꿔 센서가 보내는 40비트를 1 MHz TIM2 로 HIGH 폭을 재서 읽습니다(26 µs = 0, 70 µs = 1).',
+    lesson: 'l17',
+    board: 'NUCLEO-F411RE',
+    pins: {
+      PA1: { signal: 'GPIO_Output', label: 'DHT', level: 1 },
+      PA2: { signal: 'USART2_TX' },
+      PA3: { signal: 'USART2_RX' }
+    },
+    periph: {
+      USART2: { mode: 'async', baud: 115200 },
+      TIM2: { psc: 83, arr: 65535 }
+    },
+    nvic: {},
+    nodes: [
+      { id: 'dht1', type: 'dht11', x: 720, y: 120, props: { temp: 24, hum: 55 } }
+    ],
+    wires: [['PA1', 'dht1.data']],
+    user: {
+      includes: C`
+#include <stdio.h>
+`,
+      pv: C`
+uint8_t dht[5];               // 습도 정수, 습도 소수, 온도 정수, 온도 소수, 체크섬
+GPIO_InitTypeDef dht_io = {0};
+`,
+      pfp: C`
+int __io_putchar(int ch);
+`,
+      u0: US_TIMER + C`
+void dht_pin_output(void)
+{
+  dht_io.Pin = DHT_Pin;
+  dht_io.Mode = GPIO_MODE_OUTPUT_PP;
+  dht_io.Pull = GPIO_NOPULL;
+  dht_io.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(DHT_GPIO_Port, &dht_io);
+}
+
+void dht_pin_input(void)
+{
+  dht_io.Pin = DHT_Pin;
+  dht_io.Mode = GPIO_MODE_INPUT;
+  dht_io.Pull = GPIO_PULLUP;               // 선을 놓으면 풀업이 HIGH 로 올림
+  HAL_GPIO_Init(DHT_GPIO_Port, &dht_io);
+}
+
+/* 핀이 level 이 될 때까지 기다린 시간(µs). timeout 을 넘으면 -1 */
+int dht_wait(uint8_t level, uint16_t timeout)
+{
+  __HAL_TIM_SET_COUNTER(&htim2, 0);
+  while (HAL_GPIO_ReadPin(DHT_GPIO_Port, DHT_Pin) != level) {
+    if (__HAL_TIM_GET_COUNTER(&htim2) > timeout) return -1;
+  }
+  return __HAL_TIM_GET_COUNTER(&htim2);
+}
+
+/* 0 = 성공, 그 밖 = 실패 단계 번호 */
+int dht_read(void)
+{
+  dht_pin_output();
+  HAL_GPIO_WritePin(DHT_GPIO_Port, DHT_Pin, GPIO_PIN_RESET);   // 1) 시작 신호: 18 ms 이상 LOW
+  HAL_Delay(18);
+  dht_pin_input();                                            // 2) 선을 놓음
+
+  if (dht_wait(0, 100) < 0) return 1;                         // 3) 응답: 80 µs LOW
+  if (dht_wait(1, 100) < 0) return 2;                         //         80 µs HIGH
+  if (dht_wait(0, 100) < 0) return 3;
+
+  for (int i = 0; i < 5; i++) dht[i] = 0;
+  for (int i = 0; i < 40; i++) {                              // 4) 40비트
+    if (dht_wait(1, 80) < 0) return 4;                        //    50 µs LOW 끝
+    int high = dht_wait(0, 100);                              //    HIGH 길이 재기
+    if (high < 0) return 5;
+    dht[i / 8] <<= 1;
+    if (high > 40) dht[i / 8] |= 1;                           //    26 µs = 0, 70 µs = 1
+  }
+  if ((uint8_t)(dht[0] + dht[1] + dht[2] + dht[3]) != dht[4]) return 6;   // 5) 체크섬
+  return 0;
+}
+`,
+      u2: C`
+  HAL_TIM_Base_Start(&htim2);
+  printf("DHT11 ready\r\n");
+  HAL_Delay(1000);                          // 전원 인가 후 1 초 대기 (데이터시트)
+`,
+      loop: C`
+    int err = dht_read();
+    if (err == 0) printf("Temp: %d.%d C  Humidity: %d %%\r\n", dht[2], dht[3], dht[0]);
+    else printf("DHT11 error %d\r\n", err);
+    HAL_Delay(2000);                         // DHT11 은 1 초에 한 번 이하로 읽기
+`,
+      u4: PUTCHAR
+    }
+  };
+
+  STM32_EXAMPLES['l17-relay'] = {
+    title: '릴레이 켜고 끄기 (B1 토글)',
+    desc: 'B1 을 누를 때마다 PA8 에 연결한 릴레이 모듈(LOW 에서 켜짐)을 토글하고 LD2 로 상태를 함께 보여 줍니다.',
+    lesson: 'l17',
+    board: 'NUCLEO-F411RE',
+    pins: {
+      PA2: { signal: 'USART2_TX' },
+      PA3: { signal: 'USART2_RX' },
+      PA5: { signal: 'GPIO_Output', label: 'LD2', level: 0 },
+      PA8: { signal: 'GPIO_Output', label: 'RELAY', level: 1 },
+      PC13: { signal: 'GPIO_Input', label: 'B1', pull: 'none' }
+    },
+    periph: { USART2: { mode: 'async', baud: 115200 } },
+    nvic: {},
+    nodes: [
+      { id: 'rly1', type: 'relay', x: 720, y: 120, props: { active: 'low', load: '전등 (AC 220V)' } }
+    ],
+    wires: [['PA8', 'rly1.in']],
+    user: {
+      includes: C`
+#include <stdio.h>
+`,
+      pv: C`
+#define RELAY_ON   GPIO_PIN_RESET        // 이 모듈은 LOW 에서 켜짐 (active-low)
+#define RELAY_OFF  GPIO_PIN_SET
+uint8_t relay_on = 0;
+uint8_t last_btn = 1;
+`,
+      pfp: C`
+int __io_putchar(int ch);
+`,
+      u0: '',
+      u2: C`
+  printf("Relay ready (press B1)\r\n");
+`,
+      loop: C`
+    uint8_t btn = HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin);
+    if (last_btn == 1 && btn == 0) {                 // 누르는 순간 (HIGH → LOW)
+      relay_on = !relay_on;
+      HAL_GPIO_WritePin(RELAY_GPIO_Port, RELAY_Pin, relay_on ? RELAY_ON : RELAY_OFF);
+      HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, relay_on ? GPIO_PIN_SET : GPIO_PIN_RESET);
+      printf("Relay %s\r\n", relay_on ? "ON" : "OFF");
+    }
+    last_btn = btn;
+    HAL_Delay(20);                                   // 채터링 무시
+`,
+      u4: PUTCHAR
+    }
+  };
+
+  STM32_EXAMPLES['l17-encoder'] = {
+    title: '로터리 엔코더 — 직교 신호 폴링',
+    desc: 'KY-040 의 CLK(PA8)가 HIGH→LOW 로 떨어지는 순간 DT(PA9)를 읽어 방향을 판단합니다(DT HIGH = 시계 방향). SW(PA10)를 누르면 0 으로.',
+    lesson: 'l17',
+    board: 'NUCLEO-F411RE',
+    pins: {
+      PA2: { signal: 'USART2_TX' },
+      PA3: { signal: 'USART2_RX' },
+      PA8: { signal: 'GPIO_Input', label: 'ENC_CLK', pull: 'up' },
+      PA9: { signal: 'GPIO_Input', label: 'ENC_DT', pull: 'up' },
+      PA10: { signal: 'GPIO_Input', label: 'ENC_SW', pull: 'up' }
+    },
+    periph: { USART2: { mode: 'async', baud: 115200 } },
+    nvic: {},
+    nodes: [
+      { id: 'enc1', type: 'encoder', x: 720, y: 120, props: { stepMs: 3 } }
+    ],
+    wires: [['PA8', 'enc1.clk'], ['PA9', 'enc1.dt'], ['PA10', 'enc1.sw']],
+    user: {
+      includes: C`
+#include <stdio.h>
+`,
+      pv: C`
+int32_t position = 0;
+uint8_t last_clk = 1;
+uint8_t last_sw = 1;
+`,
+      pfp: C`
+int __io_putchar(int ch);
+`,
+      u0: '',
+      u2: C`
+  printf("Encoder ready\r\n");
+`,
+      loop: C`
+    uint8_t clk = HAL_GPIO_ReadPin(ENC_CLK_GPIO_Port, ENC_CLK_Pin);
+    if (last_clk == 1 && clk == 0) {                              // CLK 하강 에지
+      if (HAL_GPIO_ReadPin(ENC_DT_GPIO_Port, ENC_DT_Pin) == 1) position++;   // DT 아직 HIGH → 시계 방향
+      else position--;                                                        // DT 먼저 LOW → 반시계
+      printf("Position: %ld\r\n", position);
+    }
+    last_clk = clk;
+
+    uint8_t sw = HAL_GPIO_ReadPin(ENC_SW_GPIO_Port, ENC_SW_Pin);
+    if (last_sw == 1 && sw == 0) {
+      position = 0;
+      printf("Reset\r\n");
+    }
+    last_sw = sw;
+    HAL_Delay(1);
+`,
+      u4: PUTCHAR
+    }
+  };
+
+  STM32_EXAMPLES['l17-joystick'] = {
+    title: '조이스틱 — ADC 2채널 스캔',
+    desc: 'VRx(PA0 = ADC1_IN0), VRy(PA1 = ADC1_IN1)를 rank 순서대로 폴링 변환하고 SW(PB5, 누르면 LOW)와 함께 방향을 출력합니다.',
+    lesson: 'l17',
+    board: 'NUCLEO-F411RE',
+    pins: {
+      PA0: { signal: 'ADC1_IN0' },
+      PA1: { signal: 'ADC1_IN1' },
+      PA2: { signal: 'USART2_TX' },
+      PA3: { signal: 'USART2_RX' },
+      PB5: { signal: 'GPIO_Input', label: 'JOY_SW', pull: 'up' }
+    },
+    periph: {
+      USART2: { mode: 'async', baud: 115200 },
+      ADC1: { channels: [0, 1] }
+    },
+    nvic: {},
+    nodes: [
+      { id: 'joy1', type: 'joystick', x: 720, y: 120, props: { x: 2048, y: 2048 } }
+    ],
+    wires: [['PA0', 'joy1.vrx'], ['PA1', 'joy1.vry'], ['PB5', 'joy1.sw']],
+    user: {
+      includes: C`
+#include <stdio.h>
+`,
+      pv: C`
+uint32_t joy_x = 0, joy_y = 0;
+uint32_t last_print = 0;
+`,
+      pfp: C`
+int __io_putchar(int ch);
+`,
+      u0: C`
+const char *joy_dir(uint32_t x, uint32_t y)
+{
+  if (x < 1000) return "LEFT";
+  if (x > 3000) return "RIGHT";
+  if (y < 1000) return "UP";
+  if (y > 3000) return "DOWN";
+  return "CENTER";
+}
+`,
+      u2: C`
+  printf("Joystick ready\r\n");
+`,
+      loop: C`
+    HAL_ADC_Start(&hadc1);                       // rank 1 (IN0) → rank 2 (IN1) 순서로 변환
+    HAL_ADC_PollForConversion(&hadc1, 10);
+    joy_x = HAL_ADC_GetValue(&hadc1);
+    HAL_ADC_PollForConversion(&hadc1, 10);
+    joy_y = HAL_ADC_GetValue(&hadc1);
+    HAL_ADC_Stop(&hadc1);
+
+    if (HAL_GetTick() - last_print >= 250) {
+      last_print = HAL_GetTick();
+      int sw = HAL_GPIO_ReadPin(JOY_SW_GPIO_Port, JOY_SW_Pin) == GPIO_PIN_RESET;
+      printf("X=%4lu Y=%4lu SW=%d %s\r\n", joy_x, joy_y, sw, joy_dir(joy_x, joy_y));
+    }
+    HAL_Delay(10);
+`,
+      u4: PUTCHAR
+    }
+  };
+
   if (typeof module !== 'undefined' && module.exports) module.exports = STM32_EXAMPLES;
 })(typeof window !== 'undefined' ? window : globalThis);

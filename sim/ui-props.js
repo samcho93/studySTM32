@@ -103,7 +103,7 @@
         '<div class="chk"><input type="checkbox" data-k="nvic.' + line + '"' + (app.project.nvic[line] ? ' checked' : '') + '><span>NVIC: ' + line + ' 인터럽트 켜기</span><span class="irq">' + line + '_IRQn</span></div>' +
         '<div class="pdesc">콜백: <code>void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)</code> 에서 <code>GPIO_Pin == GPIO_PIN_' + (+pin.slice(2)) + '</code> 로 구분합니다.</div>';
     }
-    var m = /^((?:LP)?USART\d|I2C\d|SPI\d|TIM\d+|ADC1)_/.exec(s);
+    var m = /^((?:LPUART|USART)\d|I2C\d|SPI\d|TIM\d+|ADC1)_/.exec(s);
     if (m) {
       var on = global.STM32Codegen.activePeriph(app.project).indexOf(m[1]) >= 0;
       html += (on ? '<div class="pok">' + m[1] + ' 이(가) 켜져 있습니다.</div>' : '<div class="pwarn">' + m[1] + ' 이(가) 아직 꺼져 있습니다. 아래 버튼으로 켜세요.</div>') +
@@ -137,12 +137,47 @@
         html += '<div class="prow"><label>Prescaler (PSC)</label><input type="number" min="0" max="65535" data-k="pp.psc" value="' + psc + '"></div>' +
           '<div class="prow"><label>Counter Period (ARR)</label><input type="number" min="1" max="' + (info.bits === 32 ? 4294967295 : 65535) + '" data-k="pp.arr" value="' + arr + '"></div>' +
           '<div class="pdesc">타이머 클럭 ' + (tclk / 1e6) + ' MHz (' + (info.bus || 'APB1') + ') → 카운트 ' + (tclk / (psc + 1) / 1e3).toFixed(3) + ' kHz → 주기 <b>' + (f >= 1 ? f.toFixed(3) + ' Hz' : (1 / f).toFixed(3) + ' s') + '</b> (' + (1000 / f).toFixed(3) + ' ms)</div>';
-        [1, 2, 3, 4].forEach(function (ch) {
+        [1, 2, 3, 4].filter(function (ch) { return !info.chPins || info.chPins[ch]; }).forEach(function (ch) {
           var pin = info.chPins && info.chPins[ch], v = (cfg.ch || {})[ch] || 'disable';
-          html += '<div class="prow"><label>Channel ' + ch + ' <span class="type">' + esc(app.pinsFor(k, 'CH' + ch).join('/') || pin || '') + '</span></label><select data-k="pp.ch' + ch + '">' + opt([['disable', 'Disable'], ['pwm', 'PWM Generation CH' + ch]], v) + '</select></div>';
+          html += '<div class="prow"><label>Channel ' + ch + ' <span class="type">' + esc(app.pinsFor(k, 'CH' + ch).join('/') || pin || '') + '</span></label><select data-k="pp.ch' + ch + '">' + opt([['disable', 'Disable'], ['pwm', 'PWM Generation CH' + ch], ['ic', 'Input Capture direct mode']], v) + '</select></div>';
+          if (v === 'ic') html += '<div class="prow"><label>캡처 에지</label><select data-k="pp.icpol' + ch + '">' + opt([['rising', 'Rising'], ['falling', 'Falling'], ['both', 'Both edges']], (cfg.icPol || {})[ch] || 'rising') + '</select></div>';
           if (v === 'pwm') html += '<div class="prow"><label>Pulse (CCR' + ch + ')</label><input type="number" min="0" data-k="pp.pulse' + ch + '" value="' + ((cfg.pulse || {})[ch] || 0) + '"></div>';
         });
         html += this.nvicRow(info.irq, k + ' global interrupt') + '<div class="pdesc">핸들 <code>' + global.STM32Codegen.handleName(k) + '</code> · 콜백 <code>HAL_TIM_PeriodElapsedCallback(&amp;htim)</code></div>';
+      }
+    } else if (k === 'IWDG') {
+      var iw = P.periph.IWDG;
+      html += '<div class="prow"><label>활성화</label><input type="checkbox" data-k="sys.IWDG.enabled"' + (iw ? ' checked' : '') + '></div>';
+      if (iw) {
+        var pr = iw.prescaler || 32, rl = iw.reload != null ? iw.reload : 4095, lsi = app.chip.series === 'F1' ? 40 : 32;
+        html += '<div class="prow"><label>Prescaler</label><select data-k="sys.IWDG.prescaler">' + opt([4, 8, 16, 32, 64, 128, 256], pr) + '</select></div>' +
+          '<div class="prow"><label>Reload (0–4095)</label><input type="number" min="0" max="4095" data-k="sys.IWDG.reload" value="' + rl + '"></div>' +
+          '<div class="pdesc">LSI ' + lsi + ' kHz → 제한 시간 <b>' + (pr * (rl + 1) / lsi).toFixed(1) + ' ms</b>. 이 안에 <code>HAL_IWDG_Refresh(&amp;hiwdg)</code> 를 부르지 않으면 리셋됩니다. 한 번 켜면 끌 수 없습니다.</div>';
+      }
+    } else if (k === 'RTC') {
+      var rc = P.periph.RTC;
+      html += '<div class="prow"><label>활성화</label><input type="checkbox" data-k="sys.RTC.enabled"' + (rc ? ' checked' : '') + '></div>';
+      if (rc) {
+        html += '<div class="prow"><label>초기 시각</label><span><input type="number" min="0" max="23" style="width:52px" data-k="sys.RTC.hours" value="' + (rc.hours || 0) + '"> : <input type="number" min="0" max="59" style="width:52px" data-k="sys.RTC.minutes" value="' + (rc.minutes || 0) + '"> : <input type="number" min="0" max="59" style="width:52px" data-k="sys.RTC.seconds" value="' + (rc.seconds || 0) + '"></span></div>' +
+          '<div class="prow"><label>웨이크업 타이머(초)</label><input type="number" min="0" max="65535" data-k="sys.RTC.wakeup" value="' + (rc.wakeup || 0) + '"></div>' +
+          this.nvicRow('RTC_WKUP', 'RTC wake-up interrupt') +
+          '<div class="pdesc">핸들 <code>hrtc</code> · <code>HAL_RTC_GetTime()</code> 다음에 반드시 <code>HAL_RTC_GetDate()</code> 를 부릅니다. 웨이크업 콜백 <code>HAL_RTCEx_WakeUpTimerEventCallback</code> 은 STOP 모드도 깨웁니다.</div>';
+      }
+    } else if (k === 'FREERTOS') {
+      var fr = P.periph.FREERTOS;
+      html += '<div class="prow"><label>활성화</label><input type="checkbox" data-k="sys.FREERTOS.enabled"' + (fr ? ' checked' : '') + '></div>' +
+        '<div class="pdesc">Interface: CMSIS_V2. 켜면 <code>osKernelInitialize()</code> · 태스크 생성 · <code>osKernelStart()</code> 가 main 에 생성되고, 이후로는 <code>while(1)</code> 대신 태스크 함수가 실행됩니다.</div>';
+      if (fr) {
+        var tasks = global.STM32Codegen.rtosTasks(P);
+        tasks.forEach(function (t, i) {
+          html += '<h4>태스크 ' + (i + 1) + ' <span class="type">' + esc(t.fn) + '</span></h4>' +
+            '<div class="prow"><label>이름</label><input type="text" data-k="task.' + i + '.name" value="' + esc(t.name) + '"></div>' +
+            '<div class="prow"><label>함수</label><input type="text" data-k="task.' + i + '.fn" value="' + esc(t.fn) + '"></div>' +
+            '<div class="prow"><label>우선순위</label><select data-k="task.' + i + '.prio">' + opt(['osPriorityLow', 'osPriorityBelowNormal', 'osPriorityNormal', 'osPriorityAboveNormal', 'osPriorityHigh', 'osPriorityRealtime'], t.prio) + '</select></div>' +
+            '<div class="prow"><label>스택(워드)</label><input type="number" min="64" max="4096" data-k="task.' + i + '.stack" value="' + t.stack + '"></div>' +
+            (i > 0 ? '<div class="pbtns"><button class="tb danger" data-act="deltask" data-i="' + i + '">태스크 삭제</button></div>' : '');
+        });
+        html += '<div class="pbtns"><button class="tb" data-act="addtask">태스크 추가</button></div><div class="pdesc">태스크를 바꾼 뒤 [코드 생성]을 누르세요. 첫 태스크 본문은 USER CODE 5, 나머지는 함수 이름 구역에 씁니다.</div>';
       }
     } else if (k === 'ADC1') {
       var chans = cfg.channels || [];
@@ -202,9 +237,21 @@
       else if (k === 'enabled') { if (v) { pc.enabled = true; if (pc.psc == null) pc.psc = 0; if (pc.arr == null) pc.arr = 65535; app.onPeriphOn(c.p); } else delete P.periph[c.p]; }
       else if ((m = /^ch(\d)$/.exec(k))) { pc.ch = pc.ch || {}; if (v === 'disable') delete pc.ch[m[1]]; else { pc.ch[m[1]] = v; app.onPwmOn(c.p, +m[1]); } }
       else if ((m = /^pulse(\d)$/.exec(k))) { pc.pulse = pc.pulse || {}; pc.pulse[m[1]] = +v; }
+      else if ((m = /^icpol(\d)$/.exec(k))) { pc.icPol = pc.icPol || {}; pc.icPol[m[1]] = v; }
       else if (k === 'continuous') pc.continuous = !!v;
       else pc[k] = isNaN(+v) ? v : +v;
       app.dirty(); app.refreshDesign(); this.render(); return;
+    }
+    if (head === 'sys') {
+      var sk = parts[1], field = parts[2];
+      if (field === 'enabled') { if (v) P.periph[sk] = P.periph[sk] || (sk === 'IWDG' ? { prescaler: 32, reload: 4095 } : sk === 'RTC' ? { hours: 12, minutes: 0, seconds: 0 } : { tasks: [{ name: 'defaultTask', fn: 'StartDefaultTask', prio: 'osPriorityNormal', stack: 128 }] }); else delete P.periph[sk]; }
+      else { P.periph[sk][field] = +v; }
+      app.dirty(); app.refreshDesign(); this.render(); return;
+    }
+    if (head === 'task') {
+      var fr = P.periph.FREERTOS; fr.tasks = global.STM32Codegen.rtosTasks(P);
+      var ti = +parts[1], tf = parts[2]; fr.tasks[ti][tf] = tf === 'stack' ? +v : String(v).replace(/[^\w]/g, '_');
+      app.dirty(); app.refreshDesign(); return;
     }
     if (head === 'adc') {
       var ac = P.periph.ADC1 = P.periph.ADC1 || { channels: [] }, ch = +k; ac.channels = ac.channels || [];
@@ -221,6 +268,12 @@
     else if (a === 'periph') app.selectPeriph(d.p);
     else if (a === 'fit') app.canvas.fit();
     else if (a === 'new') app.newProject();
+    else if (a === 'addtask' || a === 'deltask') {
+      var P = app.project, fr = P.periph.FREERTOS; fr.tasks = global.STM32Codegen.rtosTasks(P);
+      if (a === 'addtask') { var n = fr.tasks.length + 1; fr.tasks.push({ name: 'task' + n, fn: 'StartTask' + ('0' + n).slice(-2), prio: 'osPriorityNormal', stack: 128 }); }
+      else fr.tasks.splice(+d.i, 1);
+      app.dirty(); app.refreshDesign(); this.render();
+    }
   };
 
   global.SimProps = Props;

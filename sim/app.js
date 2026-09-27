@@ -102,7 +102,7 @@
   app.nodeById = function (id) { return app.project.nodes.filter(function (n) { return n.id === id; })[0]; };
   app.deviceById = function (id) { return (app.devices || []).filter(function (d) { return d.node.id === id; })[0]; };
   app.addNode = function (type, x, y) {
-    var d = D.DEVICES[type], base = { led: 'led', button: 'sw', pot: 'pot', ldr: 'cds', buzzer: 'bz', fnd: 'fnd', lcd1602: 'lcd', motor: 'motor', servo: 'servo', stepper: 'step', uart: 'ser', i2cdev: 'i2c', spidev: 'spi', logic: 'la', rgb: 'rgb' }[type] || type, k = 1;
+    var d = D.DEVICES[type], base = { led: 'led', button: 'sw', pot: 'pot', ldr: 'cds', buzzer: 'bz', fnd: 'fnd', lcd1602: 'lcd', motor: 'motor', servo: 'servo', stepper: 'step', uart: 'ser', i2cdev: 'i2c', spidev: 'spi', logic: 'la', rgb: 'rgb', oled: 'oled', ultrasonic: 'us', keypad: 'kp', fnd4: 'fnd4_', dht11: 'dht', relay: 'rly', encoder: 'enc', joystick: 'joy' }[type] || type, k = 1;
     while (app.nodeById(base + k)) k++;
     var n = { id: base + k, type: type, x: Math.round(x), y: Math.round(y), props: {} };
     d.props.forEach(function (p) { n.props[p.key] = p.default; });
@@ -131,19 +131,24 @@
   /** 배선에 맞춰 핀 신호 자동 지정 (이미 설정된 핀은 건드리지 않음) */
   app.autoConfig = function (pin, n, port) {
     var P = app.project, cfg = P.pins[pin], d = D.DEVICES[n.type], pdef = d.ports.filter(function (p) { return p.id === port; })[0];
-    if (cfg && cfg.signal && cfg.signal !== 'Reset_State' && !(n.type === 'servo' || n.type === 'lcd1602' || n.type === 'uart' || n.type === 'i2cdev' || n.type === 'spidev' || (n.type === 'motor' && port === 'en'))) return;
+    if (cfg && cfg.signal && cfg.signal !== 'Reset_State' && !(n.type === 'servo' || n.type === 'lcd1602' || n.type === 'oled' || n.type === 'uart' || n.type === 'i2cdev' || n.type === 'spidev' || (n.type === 'motor' && port === 'en'))) return;
     var af = app.chip.af[pin] || [], pick = function (re) { return af.filter(function (s) { return re.test(s); })[0]; }, sig = null, extra = {};
     if (n.type === 'servo' || (n.type === 'motor' && port === 'en') || (n.type === 'buzzer' && n.props.kind === 'passive')) {
       sig = pick(/^TIM\d+_CH\d$/); if (sig) { var m = /^(TIM\d+)_CH(\d)$/.exec(sig); app.onPeriphOn(m[1]); app.onPwmOn(m[1], +m[2]); if (n.type === 'servo') { P.periph[m[1]].psc = Math.round(app.timclkOf(m[1]) / 1e6) - 1; P.periph[m[1]].arr = 19999; } else if (P.periph[m[1]].arr === 65535) { P.periph[m[1]].psc = Math.round(app.timclkOf(m[1]) / 1e6) - 1; P.periph[m[1]].arr = 999; } }
       else { sig = 'GPIO_Output'; app.toast(pin + ' 에는 타이머 채널이 없어 GPIO 출력으로 설정했습니다.'); }
-    } else if (pdef.dir === 'in') { sig = n.type === 'uart' || n.type === 'vcp' ? (pick(/^USART\d_TX$/) || null) : 'GPIO_Output'; if (n.type === 'uart' && sig) app.onPeriphOn(sig.split('_')[0]); }
+    } else if (pdef.dir === 'in') { sig = n.type === 'uart' || n.type === 'vcp' ? (pick(/^(LP)?U(S)?ART\d_TX$/) || null) : 'GPIO_Output'; if (n.type === 'uart' && sig) app.onPeriphOn(sig.split('_')[0]); }
     else if (pdef.dir === 'out') {
-      if (n.type === 'uart' || n.type === 'vcp') { sig = pick(/^USART\d_RX$/); if (sig) app.onPeriphOn(sig.split('_')[0]); }
+      if (n.type === 'uart' || n.type === 'vcp') { sig = pick(/^(LP)?U(S)?ART\d_RX$/); if (sig) app.onPeriphOn(sig.split('_')[0]); }
       else if (n.type === 'spidev') { sig = pick(/^SPI\d_MISO$/); if (sig) app.onPeriphOn(sig.split('_')[0]); }
-      else { sig = 'GPIO_Input'; if (n.type === 'button' || n.type === 'board-button') extra.pull = n.props.wiring === 'gnd' ? 'up' : n.props.wiring === 'vcc' ? 'down' : 'none'; }
+      else {
+        sig = 'GPIO_Input';
+        if (n.type === 'button' || n.type === 'board-button') extra.pull = n.props.wiring === 'gnd' ? 'up' : n.props.wiring === 'vcc' ? 'down' : 'none';
+        if (n.type === 'keypad' || ((n.type === 'encoder' || n.type === 'joystick') && port === 'sw')) extra.pull = 'up';   // 키패드 열·스위치: 내부 풀업
+      }
     } else if (pdef.dir === 'analog') { sig = pick(/^ADC1_IN\d+$/); if (sig) { var ch = +sig.slice(8); P.periph.ADC1 = P.periph.ADC1 || { channels: [] }; if (P.periph.ADC1.channels.indexOf(ch) < 0) P.periph.ADC1.channels.push(ch); } else app.toast(pin + ' 은(는) ADC 채널이 없는 핀입니다 (PA0–PA7, PB0, PB1, PC0–PC5).'); }
     else if (pdef.dir === 'io') {
-      if (n.type === 'lcd1602' || n.type === 'i2cdev') { sig = pick(port === 'scl' ? /^I2C\d_SCL$/ : /^I2C\d_SDA$/); if (sig) app.onPeriphOn(sig.split('_')[0]); else app.toast(pin + ' 은(는) I2C ' + port.toUpperCase() + ' 로 쓸 수 없는 핀입니다 (I2C1: PB6/PB7 또는 PB8/PB9).'); }
+      if (n.type === 'dht11') { sig = 'GPIO_Output'; extra.od = 1; extra.pull = 'up'; extra.level = 1; }   // 단일선: 오픈드레인 + 풀업
+      else if (n.type === 'lcd1602' || n.type === 'oled' || n.type === 'i2cdev') { sig = pick(port === 'scl' ? /^I2C\d_SCL$/ : /^I2C\d_SDA$/); if (sig) app.onPeriphOn(sig.split('_')[0]); else app.toast(pin + ' 은(는) I2C ' + port.toUpperCase() + ' 로 쓸 수 없는 핀입니다 (I2C1: PB6/PB7 또는 PB8/PB9).'); }
     }
     if (n.type === 'spidev' && (port === 'sck' || port === 'mosi')) { sig = pick(port === 'sck' ? /^SPI\d_SCK$/ : /^SPI\d_MOSI$/); if (sig) app.onPeriphOn(sig.split('_')[0]); }
     if (n.type === 'spidev' && port === 'cs') { sig = 'GPIO_Output'; extra.level = 1; extra.label = 'CS'; }
@@ -153,7 +158,7 @@
     app.onSignalSet(pin, sig, true);
   };
   app.onSignalSet = function (pin, sig, quiet) {
-    var P = app.project, m = /^(USART\d|I2C\d|SPI\d|TIM\d+)_/.exec(sig);
+    var P = app.project, m = /^((?:LPUART|USART)\d|I2C\d|SPI\d|TIM\d+)_/.exec(sig);
     if (!pin) return;
     if (m) app.onPeriphOn(m[1]);
     var t = /^(TIM\d+)_CH(\d)$/.exec(sig); if (t) app.onPwmOn(t[1], +t[2]);
@@ -165,7 +170,7 @@
   };
   app.onPeriphOn = function (k) {
     var P = app.project, c = P.periph[k] = P.periph[k] || {};
-    if (/^USART/.test(k)) { c.mode = 'async'; c.baud = c.baud || 115200; }
+    if (/^(LPUART|USART)/.test(k)) { c.mode = 'async'; c.baud = c.baud || 115200; }
     else if (/^I2C/.test(k)) { c.mode = 'i2c'; c.speed = c.speed || 100000; }
     else if (/^SPI/.test(k)) { c.mode = 'master'; c.prescaler = c.prescaler || 16; }
     else if (/^TIM/.test(k)) { c.enabled = true; if (c.psc == null) c.psc = 0; if (c.arr == null) c.arr = 65535; }
@@ -213,6 +218,10 @@
     if (t === 'motor') return Math.abs(s.rpm) < 1 ? '정지' : s.rpm.toFixed(0) + ' rpm'; if (t === 'servo') return s.angle.toFixed(0) + '°';
     if (t === 'stepper') return s.angle.toFixed(0) + '°'; if (t === 'lcd1602') return s.rows ? String.fromCharCode.apply(null, s.rows[0]).trim().slice(0, 16) : '';
     if (t === 'buzzer') return s.on ? '♪' : ''; if (t === 'fnd') return '';
+    if (t === 'oled') return !s.on ? (s.disp ? '펌프 꺼짐' : '꺼짐') : s.lit + ' px'; if (t === 'ultrasonic') return s.cm + ' cm';
+    if (t === 'keypad') return s.held || (s.last ? '마지막 ' + s.last : ''); if (t === 'fnd4') return s.text;
+    if (t === 'dht11') return s.temp + '°C ' + s.hum + '%'; if (t === 'relay') return s.on ? 'ON' : 'OFF';
+    if (t === 'encoder') return '위치 ' + s.pos + (s.sw ? ' · SW' : ''); if (t === 'joystick') return s.x + ', ' + s.y + (s.sw ? ' · SW' : '');
     return '';
   };
 
@@ -268,6 +277,7 @@
     if (!global.STM32C) { app.result.log('error', '컴파일러(ccompiler.js)가 로드되지 않았습니다.'); return null; }
     var files = { 'Core/Src/main.c': src, 'Core/Inc/main.h': G.genMainH(P) };
     files[app.chip.halPrefix + '_hal.h'] = '/* HAL (simulated) */\n';
+    Object.keys(R.VIRTUAL_HEADERS).forEach(function (h) { files[h] = R.VIRTUAL_HEADERS[h]; });
     var env = R.compilerEnv();
     var r;
     try { r = global.STM32C.compile({ files: files, entry: 'Core/Src/main.c', env: env }); }
@@ -290,7 +300,7 @@
     if (/\bprintf\s*\(/.test(src) && !/__io_putchar|_write\s*\(/.test(src)) app.result.log('warn', 'printf 를 쓰지만 __io_putchar() / _write() 리타깃 함수가 없어 출력이 나가지 않습니다.');
     if (/HAL_GPIO_EXTI_Callback/.test(src) && !Object.keys(P.nvic).some(function (k) { return /^EXTI/.test(k) && P.nvic[k]; })) app.result.log('warn', 'EXTI 콜백이 있지만 NVIC 에서 EXTI 인터럽트가 켜져 있지 않습니다.');
     if (/HAL_TIM_PeriodElapsedCallback/.test(src) && !Object.keys(P.nvic).some(function (k) { return /^TIM/.test(k) && P.nvic[k]; })) app.result.log('warn', '타이머 콜백이 있지만 NVIC 에서 TIMx global interrupt 가 켜져 있지 않습니다.');
-    if (/HAL_UART_RxCpltCallback/.test(src) && !Object.keys(P.nvic).some(function (k) { return /^USART/.test(k) && P.nvic[k]; })) app.result.log('warn', 'UART 수신 콜백이 있지만 NVIC 에서 USARTx global interrupt 가 켜져 있지 않습니다.');
+    if (/HAL_UART_RxCpltCallback/.test(src) && !Object.keys(P.nvic).some(function (k) { return /^(LPUART|USART)/.test(k) && P.nvic[k]; })) app.result.log('warn', 'UART 수신 콜백이 있지만 NVIC 에서 USARTx global interrupt 가 켜져 있지 않습니다.');
     if (/%f/.test(src) && P.settings.printfFloat === false) app.result.log('warn', '%f 를 쓰지만 printf float 옵션이 꺼져 있습니다 (클럭 & 프로젝트 탭).');
   };
   app.makeMachine = function () {

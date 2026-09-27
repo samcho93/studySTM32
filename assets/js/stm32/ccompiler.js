@@ -1214,7 +1214,10 @@
     if (name === 'false') return { c: '0', t: TY.i32, k: 0 };
     if (this.objects.has(name)) return { c: 'H.o.' + name, t: TY.obj };
     if (this.cpat && this.cpat.test(name)) return { c: "H.k('" + name + "')", t: TY.i32 };
-    if (this.funcs.has(name) || this.fnEnv[name]) fail(e.tok, "함수 '" + name + "' 을(를) 값으로 쓸 수 없습니다 (함수 포인터 미지원)");
+    // 사용자 함수 이름을 값으로 쓰면(예: osThreadNew(StartTask, …)) generator 함수 자체를 넘긴다.
+    // 런타임(RTOS 등)이 받아서 실행한다. 함수 포인터 변수·간접 호출은 여전히 미지원.
+    if (this.funcs.has(name)) return { c: 'v_' + name, t: TY.obj, fnRef: name };
+    if (this.fnEnv[name]) fail(e.tok, "함수 '" + name + "' 을(를) 값으로 쓸 수 없습니다 (함수 포인터 미지원)");
     fail(e.tok, "'" + name + "' 이(가) 선언되지 않았습니다 ('" + name + "' undeclared" + (ctx.global ? ')' : ' (first use in this function))'));
   };
 
@@ -1697,6 +1700,12 @@
     if (!init) return this.defaultVal(t);
     if (t.k === 'hal') {
       if (init.k !== 'list') { const R = this.genExpr(init, ctx); return R.c; }
+      // 지정 초기화(.name = "x", .priority = …)는 필드별로 채운다 (CMSIS-RTOS 속성 구조체 등)
+      const des = init.items.filter(it => it.desig && it.desig.field !== undefined);
+      if (des.length) {
+        const parts = des.map(it => JSON.stringify(it.desig.field) + ': ' + (it.val.k === 'list' ? "H.struct('')" : this.genExpr(it.val, ctx).c));
+        return "H.struct('" + t.name + "', {" + parts.join(', ') + '})';
+      }
       if (!this.isZeroInit(init)) this.warn(init.tok, "HAL 구조체 '" + t.name + "' 의 초기화 목록은 무시됩니다 (필드를 따로 대입하세요)");
       return "H.struct('" + t.name + "')";
     }

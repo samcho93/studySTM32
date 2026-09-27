@@ -126,6 +126,14 @@ STM32_EXAMPLES['l03-blink'] = {
 | `i2cdev` | 범용 I2C 장치 | `scl` `sda` | `addr`: 0x48, `regs`: 16바이트 hex 문자열 |
 | `spidev` | 범용 SPI 장치 | `sck` `mosi` `miso` `cs` | `reply`: 응답 바이트 hex 문자열 |
 | `logic` | 로직 분석기 | `ch0`–`ch3` | — |
+| `oled` | OLED 128x64 (SSD1306, I2C) | `scl` `sda` | `addr`: '0x3C'/'0x3D', `color`: white/blue/yb. 제어 바이트 0x00(명령)/0x40(데이터)·Co 비트, 수평/수직/페이지 주소 모드, 0x21/0x22/0xB0–B7/0x00–0x1F, 0xA0/A1·0xC0/C8·0xA6/A7·0x81·0x8D(차지 펌프 0x14 필요)·0xAE/AF |
+| `ultrasonic` | 초음파 HC-SR04 | `trig`(in) `echo`(out) | `distance`: 2–400 cm. TRIG ≥10 µs 하강 후 0.25 ms 에 ECHO 를 distance×58 µs 동안 HIGH |
+| `keypad` | 4x4 매트릭스 키패드 | `r1`–`r4`(MCU 출력) `c1`–`c4`(MCU 입력, 풀업 필요) | `label`. 키 "123A/456B/789C/*0#D", 눌린 키의 열 = 그 행의 레벨(행이 LOW 일 때만 LOW, 아니면 놓음) |
+| `fnd4` | 7세그먼트 4자리 (다이내믹) | `a`–`g` `dp` `d1`–`d4` | `common`: cathode(세그 HIGH·자리 LOW 켜짐)/anode(세그 LOW·자리 HIGH 켜짐), `color`. 프레임마다 자리·세그먼트별 켜진 시간 비율로 밝기 |
+| `dht11` | 온습도 DHT11 | `data`(io) | `temp`: 0–50 °C, `hum`: 20–90 %. LOW ≥18 ms 후 선이 HIGH(풀업 입력 또는 HIGH 출력)가 되면 35 µs 뒤 응답 80/80 µs + 40비트(50 µs LOW + 27/70 µs HIGH) + 체크섬, 끝나면 선을 놓음(MCU 풀업 필요) |
+| `relay` | 릴레이 모듈 1채널 | `in` | `active`: low(대부분의 모듈)/high, `load`: 부하 이름 |
+| `encoder` | 로터리 엔코더 KY-040 | `clk` `dt` `sw`(모두 out, 평소 HIGH) | `stepMs`: 에지 간격(기본 2 ms). 시계 방향 한 칸 = CLK 먼저 LOW → DT LOW → CLK HIGH → DT HIGH, SW 누르면 LOW |
+| `joystick` | 2축 조이스틱 | `vrx` `vry`(아날로그) `sw`(out, 누르면 LOW) | `x`, `y`: 0–4095 (가운데 2048, 왼쪽/위 = 0) |
 
 보드 내장 장치 노드: `board-led`(LD2), `board-button`(B1), `vcp`(ST-Link 가상 COM = USART2 터미널).
 

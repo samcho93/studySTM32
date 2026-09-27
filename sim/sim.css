@@ -325,3 +325,35 @@ body.embed .sim-top .tb#btn-save, body.embed .sim-top .tb#btn-load, body.embed .
   .area-tabs { overflow-x: auto; }
   .atab { padding: 0 9px; white-space: nowrap; }
 }
+
+/* ---------------------------------------------------------------- 확장 장치 (OLED · 초음파 · 키패드 · FND4 · DHT11 · 릴레이 · 엔코더 · 조이스틱) */
+.oled { background: #05070b; padding: 8px; border-radius: 6px; border: 3px solid #1b1f27; box-shadow: inset 0 0 0 1px #2a303b; }
+.oled canvas { display: block; width: 256px; height: 128px; image-rendering: pixelated; image-rendering: crisp-edges; }
+.oled.off canvas { opacity: .35; }
+.us-vis { width: 200px; height: 60px; }
+.us-wave { transition: opacity .1s; }
+.kp { display: grid; grid-template-columns: repeat(4, 34px); gap: 5px; padding: 6px; background: #20242c; border-radius: 8px; }
+.kp-k { height: 32px; border: 0; border-radius: 6px; background: #eef1f5; color: #1c2230; font-family: var(--mono); font-weight: 700; font-size: 13px; cursor: pointer; box-shadow: 0 3px 0 #9aa3b2; user-select: none; }
+.kp-k.fn { background: #d94b4b; color: #fff; box-shadow: 0 3px 0 #8f2a2a; }
+.kp-k.down, .kp-k:active { transform: translateY(2px); box-shadow: 0 1px 0 #9aa3b2; }
+.kp-k.fn.down, .kp-k.fn:active { box-shadow: 0 1px 0 #8f2a2a; }
+.fnd4 { width: 236px; height: 88px; background: #141414; border-radius: 6px; padding: 4px; }
+.fnd4 polygon, .fnd4 circle { fill: #2a2a2a; }
+.dht { display: flex; gap: 12px; align-items: center; }
+.dht-body { width: 40px; height: 56px; border-radius: 5px; background: #3b82c4; display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; padding: 6px; box-sizing: border-box; }
+.dht-body i { background: #25598a; border-radius: 2px; }
+.dht-body.busy { box-shadow: 0 0 0 2px var(--accent); }
+.dht-ctl { display: flex; flex-direction: column; gap: 6px; font-size: 11.5px; color: var(--text-dim); }
+.dht-ctl label { display: grid; grid-template-columns: 30px 52px 110px; align-items: center; gap: 4px; }
+.dht-ctl b { font-family: var(--mono); font-weight: 600; color: var(--accent); }
+.dht-ctl input { width: 110px; }
+.relay-vis { width: 170px; height: 80px; }
+.relay-arm { transition: all .06s; }
+.enc { display: flex; align-items: center; gap: 8px; }
+.enc-knob { width: 60px; height: 60px; cursor: ns-resize; }
+.enc-rot { transform-origin: 30px 30px; transition: transform .08s; }
+.enc-sw.down, .joy-sw.down { background: var(--accent); color: var(--bg); }
+.joy { display: flex; align-items: center; gap: 10px; }
+.joy-pad { position: relative; width: 110px; height: 110px; border-radius: 12px; background: var(--bg-elev-2); border: 1px solid var(--border); cursor: crosshair; touch-action: none;
+  background-image: linear-gradient(var(--border-soft) 1px, transparent 1px), linear-gradient(90deg, var(--border-soft) 1px, transparent 1px); background-size: 55px 55px; background-position: -1px -1px; }
+.joy-knob { position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%; background: #2b2f36; box-shadow: 0 2px 6px rgba(0,0,0,.35), inset 0 0 0 4px #444a55; pointer-events: none; }

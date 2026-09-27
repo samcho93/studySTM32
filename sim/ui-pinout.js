@@ -69,7 +69,12 @@
         html += '<div class="periph-item' + (on ? ' on' : '') + (app.selPeriph === k ? ' sel' : '') + '" data-p="' + k + '">' + k + '<span class="st">' + (on ? self.stateOf(k) : '꺼짐') + '</span></div>';
       });
     });
-    html += '<div class="periph-h">시스템</div><div class="periph-item' + (app.selPeriph === 'NVIC' ? ' sel' : '') + '" data-p="NVIC">NVIC 인터럽트<span class="st">' + Object.keys(P.nvic).filter(function (k) { return P.nvic[k]; }).length + '개 켜짐</span></div>' +
+    var on = G_on(P);
+    html += '<div class="periph-h">시스템 · 미들웨어</div>' + ['IWDG', 'RTC', 'FREERTOS'].map(function (k) {
+      return '<div class="periph-item' + (on[k] ? ' on' : '') + (app.selPeriph === k ? ' sel' : '') + '" data-p="' + k + '">' + { IWDG: 'IWDG 워치독', RTC: 'RTC 실시간 시계', FREERTOS: 'FREERTOS (CMSIS_V2)' }[k] +
+        '<span class="st">' + (on[k] ? self.stateOf(k) : '꺼짐') + '</span></div>';
+    }).join('');
+    html += '<div class="periph-item' + (app.selPeriph === 'NVIC' ? ' sel' : '') + '" data-p="NVIC">NVIC 인터럽트<span class="st">' + Object.keys(P.nvic).filter(function (k) { return P.nvic[k]; }).length + '개 켜짐</span></div>' +
       '<div class="periph-item' + (app.selPeriph === 'GPIO' ? ' sel' : '') + '" data-p="GPIO">GPIO 요약<span class="st">' + Object.keys(P.pins).filter(function (k) { return /^GPIO_/.test(P.pins[k].signal || ''); }).length + '핀</span></div>';
     this.list.innerHTML = html;
     this.list.querySelectorAll('.periph-item').forEach(function (it) { it.onclick = function () { app.selectPeriph(it.dataset.p); }; });
@@ -79,9 +84,13 @@
     if (/^(LPUART|USART)/.test(k)) return c.baud + ' bps';
     if (/^I2C/.test(k)) return (c.speed || 100000) / 1000 + ' kHz';
     if (/^SPI/.test(k)) return '/' + (c.prescaler || 16);
-    if (/^TIM/.test(k)) { var pw = Object.keys(c.ch || {}).filter(function (x) { return c.ch[x] === 'pwm'; }); return (pw.length ? 'PWM ch' + pw.join(',') : '기본') ; }
+    if (/^TIM/.test(k)) { var pw = Object.keys(c.ch || {}).filter(function (x) { return c.ch[x] === 'pwm'; }), ic = Object.keys(c.ch || {}).filter(function (x) { return c.ch[x] === 'ic'; }); return (pw.length ? 'PWM ch' + pw.join(',') : '') + (ic.length ? ' IC ch' + ic.join(',') : '') || '기본'; }
+    if (k === 'IWDG') return (c.prescaler || 32) + '/' + (c.reload != null ? c.reload : 4095);
+    if (k === 'RTC') return c.wakeup ? '웨이크업 ' + c.wakeup + 's' : '켜짐';
+    if (k === 'FREERTOS') return ((c.tasks || []).length || 1) + ' 태스크';
     if (/^ADC/.test(k)) return 'IN' + (c.channels || []).join(',');
     return '켜짐';
   };
+  function G_on(P) { var o = {}; ['IWDG', 'RTC', 'FREERTOS'].forEach(function (k) { o[k] = !!(P.periph[k] && P.periph[k].enabled !== false); }); return o; }
   global.SimPinout = Pinout;
 })(window);

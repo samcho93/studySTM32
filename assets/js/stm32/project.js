@@ -37,7 +37,7 @@
     if (P.board) {
       var y = 40;
       C.BOARDS[P.board].builtin.forEach(function (bi) {
-        var node = { id: bi.id, type: bi.type, x: 560, y: y, props: clone(bi.props) }; y += 90;
+        var node = { id: bi.id, type: bi.type, x: 260, y: y, props: clone(bi.props) }; y += 95;
         P.nodes.push(node); builtinIds[bi.id] = 1;
         if (bi.pin) P.wires.push([bi.pin, bi.id + '.' + (bi.type === 'board-led' ? 'in' : 'out')]);
         if (bi.pins) { P.wires.push([bi.pins.rx, bi.id + '.rx']); P.wires.push([bi.pins.tx, bi.id + '.tx']); }
@@ -55,7 +55,7 @@
   function fillDefaultPins(P) {
     var chip = C.CHIPS[P.mcu];
     Object.keys(P.periph).forEach(function (k) {
-      var info = chip.periph[k]; if (!info) { delete P.periph[k]; return; }
+      var info = chip.periph[k]; if (!info) { if (!/^(IWDG|RTC|FREERTOS)$/.test(k)) delete P.periph[k]; return; }
       if (info.pins) Object.keys(info.pins).forEach(function (s) {
         if (!Object.keys(P.pins).some(function (p) { return P.pins[p].signal === k + '_' + s; })) { var pin = info.pins[s]; if (chip.pins.indexOf(pin) >= 0 && (!P.pins[pin] || !P.pins[pin].signal || P.pins[pin].signal === 'Reset_State')) P.pins[pin] = { signal: k + '_' + s }; }
       });
