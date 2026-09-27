@@ -384,7 +384,9 @@
     if (p.trigger === 'both' || (p.trigger === 'rising' && rising) || (p.trigger === 'falling' && !rising)) {
       var line = global.STM32Chips.extiLine(this.chip, p.num);
       if (!this.nvic[line]) { this.warnOnce('nvic' + line, p.name + ' 에지를 감지했지만 NVIC 에서 ' + line + ' 인터럽트가 꺼져 있어 콜백이 불리지 않습니다.'); return; }
-      this.raise('HAL_GPIO_EXTI_Callback', [1 << p.num], line);
+      // G0 계열 HAL 은 에지별 콜백(Rising/Falling)을 부른다
+      var cb = this.chip.series === 'G0' ? (rising ? 'HAL_GPIO_EXTI_Rising_Callback' : 'HAL_GPIO_EXTI_Falling_Callback') : 'HAL_GPIO_EXTI_Callback';
+      this.raise(cb, [1 << p.num], line);
     }
   };
 
@@ -487,7 +489,11 @@
   Machine.prototype._runIsr = function (req) {
     var fn = this.mod && this.mod.fns[req.name];
     if (!fn) {
-      this.warnOnce('nocb' + req.name, req.name + '() 가 정의되어 있지 않아 인터럽트가 무시됩니다 (USER CODE BEGIN 4 에 작성하세요).');
+      var hint = /EXTI_(Rising|Falling)_Callback/.test(req.name) && this.mod && this.mod.fns.HAL_GPIO_EXTI_Callback
+        ? ' ' + this.chip.family + ' HAL 은 HAL_GPIO_EXTI_Callback 대신 HAL_GPIO_EXTI_Rising_Callback / HAL_GPIO_EXTI_Falling_Callback 을 부릅니다.'
+        : !/EXTI_(Rising|Falling)/.test(req.name) && req.name === 'HAL_GPIO_EXTI_Callback' && this.mod && (this.mod.fns.HAL_GPIO_EXTI_Falling_Callback || this.mod.fns.HAL_GPIO_EXTI_Rising_Callback)
+        ? ' ' + this.chip.family + ' HAL 에는 에지별 콜백이 없습니다. HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) 을 쓰세요.' : ' (USER CODE BEGIN 4 에 작성하세요)';
+      this.warnOnce('nocb' + req.name, req.name + '() 가 정의되어 있지 않아 인터럽트가 무시됩니다.' + hint);
       return;
     }
     this.stats.isr++;
@@ -496,7 +502,7 @@
     try {
       while (!(r = g.next()).done) {
         if (r.value && r.value.delay != null) {
-          this.warnOnce('isrdelay', '인터럽트 콜백 안에서 HAL_Delay() 를 호출했습니다. 실물에서는 SysTick 우선순위 때문에 멈출 수 있습니다.');
+          if (r.value.hd) this.warnOnce('isrdelay', '인터럽트 콜백 안에서 HAL_Delay() 를 호출했습니다. 실물에서는 SysTick 우선순위 때문에 멈출 수 있습니다.');
           this.t += r.value.delay;
         } else { this.t += this.$.n * CYCLE_MS; this.$.n = 0; }
         if (++guard > 2e6) throw new Error('ISR_TIMEOUT');
@@ -631,7 +637,7 @@
     var F = {
       // ---- 코어
       HAL_Init: function () { return 0; },
-      HAL_Delay: function* (ms) { yield { delay: (ms >>> 0) === 0xFFFFFFFF ? 1e12 : (ms >>> 0) + 1 }; },
+      HAL_Delay: function* (ms) { yield { delay: (ms >>> 0) === 0xFFFFFFFF ? 1e12 : (ms >>> 0) + 1, hd: true }; },
       HAL_GetTick: function () { return Math.floor(M.now()) >>> 0; },
       HAL_IncTick: function () { }, HAL_GetHalVersion: function () { return 0x01080300; },
       HAL_NVIC_SetPriority: function () { }, HAL_NVIC_SetPriorityGrouping: function () { },

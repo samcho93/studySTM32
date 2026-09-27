@@ -6,12 +6,12 @@
 <title>T01. STM32 제품군 총람 · studySTM32</title>
 <meta name="description" content="ST 와 STM32 의 역사, F0 부터 U5·WB·C0 까지 제품군 표, STM32F411RET6 이름 해독 규칙, 핀 수·패키지, Nucleo·Discovery·Eval 보드 체계와 제품군 고르는 기준을 정리합니다.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
-<link rel="stylesheet" href="../assets/css/main.css">
-<link rel="stylesheet" href="../assets/css/stm32.css">
-<link rel="stylesheet" href="../assets/css/ml-theme.css">
+<link rel="stylesheet" href="../assets/css/main.css?v=20260928b">
+<link rel="stylesheet" href="../assets/css/stm32.css?v=20260928b">
+<link rel="stylesheet" href="../assets/css/ml-theme.css?v=20260928b">
 <link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
 <link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
-<script src="../assets/js/theme.js"></script>
+<script src="../assets/js/theme.js?v=20260928b"></script>
 </head>
 <body class="lesson-page track-page-theory">
 <button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
@@ -82,7 +82,7 @@
     
     <div class="lesson-actions">
       <label class="done-toggle"><input type="checkbox" id="doneCheck"><span>학습 완료로 표시</span></label>
-      <a class="ghost-btn" href="hal-reference.html">HAL 레퍼런스</a>
+      <a class="ghost-btn tool-sim" href="../sim/index.html?ex=mcu-g0-blink" data-sim-src="../sim/index.html?ex=mcu-g0-blink&amp;embed=1">시뮬레이터에서 실습</a><a class="ghost-btn" href="hal-reference.html">HAL 레퍼런스</a>
     </div>
   </div>
   <div class="lesson-grid">
@@ -193,6 +193,21 @@
 <p>여기에 더해 실제 제품 설계에서는 다음을 봅니다.</p>
 <ul><li><strong>주변장치 목록</strong>: USB · CAN · 이더넷 · ADC 채널 수 · 타이머 수 · 필요한 통신 포트 수. F411 은 CAN 이 없고 ADC 가 1개입니다.</li><li><strong>핀 수와 패키지</strong>: 필요한 GPIO 수, 손 납땜 여부.</li><li><strong>메모리</strong>: 플래시(코드 + 상수)와 SRAM(변수 + 스택 + 버퍼). RTOS 나 그래픽 라이브러리를 쓰면 SRAM 이 금방 부족합니다.</li><li><strong>수급과 수명</strong>: ST 의 "longevity commitment" 는 산업용 제품군을 10년 이상 공급합니다. 단종 예정 라인(F2, L1)은 새 설계에 쓰지 않습니다.</li><li><strong>가격</strong>: 1,000개 기준 단가는 ST 웹사이트 제품 페이지에 표시됩니다.</li></ul>
 <div class="callout callout-check"><div class="callout-title">스스로 확인</div><div class="callout-body"><ul><li>BLE 온도 센서를 배터리로 1년 이상 돌리려면 어떤 제품군이 알맞습니까?</li><li>300 W BLDC 모터 드라이버를 설계한다면?</li><li>학습용으로 F103 대신 F411 을 권하는 이유 두 가지는?</li></ul></div></div>
+<h2 id="시뮬레이터로-제품군-비교하기">시뮬레이터로 제품군 비교하기<a class="anchor" href="#시뮬레이터로-제품군-비교하기">#</a></h2>
+<p>이 강좌의 시뮬레이터는 <strong>MCU 를 먼저 고르고, 보드는 선택</strong>하는 구조입니다. 지원하는 MCU 는 다음 9종입니다.</p>
+<div class="table-wrap"><table><thead><tr><th>제품군</th><th>MCU</th><th>코어 · 최대 클럭</th><th>보드 프리셋</th></tr></thead><tbody><tr><td>F0</td><td>STM32F030R8</td><td>Cortex-M0 · 48 MHz</td><td>NUCLEO-F030R8</td></tr><tr><td>F1</td><td>STM32F103C8 / STM32F103RB</td><td>Cortex-M3 · 72 MHz</td><td>Blue Pill / NUCLEO-F103RB</td></tr><tr><td>F4</td><td>STM32F401RE / F411RE / F446RE</td><td>Cortex-M4F · 84 / 100 / 180 MHz</td><td>NUCLEO-F401RE / F411RE / F446RE</td></tr><tr><td>F4</td><td>STM32F407VG (100핀)</td><td>Cortex-M4F · 168 MHz</td><td>STM32F4DISCOVERY</td></tr><tr><td>G0</td><td>STM32G071RB</td><td>Cortex-M0+ · 64 MHz</td><td>NUCLEO-G071RB</td></tr><tr><td>L4</td><td>STM32L476RG</td><td>Cortex-M4F · 80 MHz</td><td>NUCLEO-L476RG</td></tr></tbody></table></div>
+<p>같은 HAL 코드라도 제품군에 따라 달라지는 부분이 있습니다. 아래 예제로 직접 확인해 보세요.</p>
+<ul><li><strong>G0 의 EXTI 콜백</strong> — F1·F4·L4 는 <code>HAL_GPIO_EXTI_Callback()</code> 하나지만, G0 는 <code>HAL_GPIO_EXTI_Rising_Callback()</code> / <code>HAL_GPIO_EXTI_Falling_Callback()</code> 으로 나뉩니다. 인터럽트 이름도 <code>EXTI4_15_IRQn</code> 처럼 묶입니다.</li></ul>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=mcu-g0-blink" data-sim-src="../sim/index.html?ex=mcu-g0-blink&amp;embed=1" data-sim-id="mcu-g0-blink"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">G0 — 에지별 EXTI 콜백</span></a><a class="sim-newtab" href="../sim/index.html?ex=mcu-g0-blink" target="_blank" rel="noopener">새 창</a><code class="sim-id">mcu-g0-blink</code></div>
+<ul><li><strong>L4 의 ADC 채널 번호와 보정</strong> — 같은 PA0 핀이 F4 에서는 <code>ADC_CHANNEL_0</code>, L4 에서는 <code>ADC_CHANNEL_5</code> 입니다. L4 는 변환 전에 <code>HAL_ADCEx_Calibration_Start()</code> 도 부릅니다.</li></ul>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=mcu-l4-adc" data-sim-src="../sim/index.html?ex=mcu-l4-adc&amp;embed=1" data-sim-id="mcu-l4-adc"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">L4 — 가변저항 ADC</span></a><a class="sim-newtab" href="../sim/index.html?ex=mcu-l4-adc" target="_blank" rel="noopener">새 창</a><code class="sim-id">mcu-l4-adc</code></div>
+<ul><li><strong>F0 에는 TIM2 가 없음</strong> — 작은 제품군일수록 타이머·UART 개수가 적습니다. F030 은 TIM3 로 PWM 을 만듭니다. 이 예제는 보드 없이 <strong>MCU 만</strong> 놓고 LED 를 직접 배선합니다.</li></ul>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=mcu-f030-pwm" data-sim-src="../sim/index.html?ex=mcu-f030-pwm&amp;embed=1" data-sim-id="mcu-f030-pwm"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">F030 맨 칩 — PWM 페이드</span></a><a class="sim-newtab" href="../sim/index.html?ex=mcu-f030-pwm" target="_blank" rel="noopener">새 창</a><code class="sim-id">mcu-f030-pwm</code></div>
+<ul><li><strong>100핀 F407 과 Discovery 보드</strong> — 핀이 많아 GPIOD·GPIOE 포트가 생기고, 보드 LED 4개가 PD12–PD15 에 있습니다. 사용자 버튼은 누르면 HIGH 입니다.</li></ul>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=mcu-f407-disco" data-sim-src="../sim/index.html?ex=mcu-f407-disco&amp;embed=1" data-sim-id="mcu-f407-disco"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">F407 Discovery — LED 회전</span></a><a class="sim-newtab" href="../sim/index.html?ex=mcu-f407-disco" target="_blank" rel="noopener">새 창</a><code class="sim-id">mcu-f407-disco</code></div>
+<ul><li><strong>Blue Pill 처럼 VCP 가 없는 보드</strong> — ST-Link 가상 COM 포트가 없으면 USB-UART 모듈을 USART1(PA9/PA10)에 따로 연결합니다.</li></ul>
+<div class="sim-cta"><a class="sim-btn" href="../sim/index.html?ex=mcu-f103-bare" data-sim-src="../sim/index.html?ex=mcu-f103-bare&amp;embed=1" data-sim-id="mcu-f103-bare"><span class="sim-btn-k">시뮬레이터에서 열기</span><span class="sim-btn-l">F103C8 맨 칩 — 버튼·LED·USART1</span></a><a class="sim-newtab" href="../sim/index.html?ex=mcu-f103-bare" target="_blank" rel="noopener">새 창</a><code class="sim-id">mcu-f103-bare</code></div>
+<div class="callout callout-tip"><div class="callout-title">MCU 바꾸기</div><div class="callout-body"><p>시뮬레이터 오른쪽 Properties 의 <strong>MCU</strong> 목록에서 칩을 바꾸면 <code>SystemClock_Config()</code>(PLL·Flash 대기 상태), ADC 초기화, EXTI 인터럽트 이름이 그 제품군에 맞게 다시 생성됩니다. 직접 추가한 장치·배선과 USER CODE 는 남으므로, 같은 프로그램이 여러 칩에서 어떻게 달라지는지 비교할 수 있습니다.</p></div></div>
 <h2 id="자주-나는-오류와-해결">자주 나는 오류와 해결<a class="anchor" href="#자주-나는-오류와-해결">#</a></h2>
 <div class="table-wrap"><table><thead><tr><th>증상</th><th>원인</th><th>해결</th></tr></thead><tbody><tr><td>인터넷 예제가 컴파일되지 않고 <code>RCC_APB2PeriphClockCmd</code> 같은 함수가 없다고 함</td><td>옛 SPL(Standard Peripheral Library) 코드</td><td>HAL 예제로 바꾸거나 함수 대응표를 보고 이식. SPL 과 HAL 은 섞어 쓸 수 없음</td></tr><tr><td>CubeMX 에서 원하는 칩을 찾을 수 없음</td><td>칩 이름 오타(O 와 0, I 와 1), 패키지 코드 차이</td><td>데이터시트 Ordering information 과 대조. CubeMX 는 패키지까지 정확히 골라야 핀 그림이 맞음</td></tr><tr><td>코드는 같은데 보드가 다르니 LED 가 반대로 동작</td><td>보드마다 LED 극성·핀이 다름 (Nucleo LD2 = PA5 active-high, BluePill PC13 active-low)</td><td>보드 회로도(UM1724 등)를 먼저 확인</td></tr><tr><td>SRAM 이 모자라 링크 오류 <code>region RAM overflowed</code></td><td>이름에는 SRAM 크기가 없어서 넉넉하다고 착각</td><td>데이터시트에서 SRAM 확인, 버퍼 줄이기, 더 큰 라인 선택</td></tr><tr><td>BluePill 이 USB 장치로 인식되지 않음</td><td>D+ 풀업 저항 값 오류(10 kΩ)</td><td>1.5 kΩ 으로 교체하거나 Nucleo 사용</td></tr><tr><td>저가 보드의 칩이 STM32 가 아님 (CKS32, GD32 등)</td><td>호환 칩</td><td>디버거가 거부하거나 주변장치가 조금 다를 수 있음. 학습용으로는 ST 정품 Nucleo 권장</td></tr></tbody></table></div>
 <h2 id="과제">과제<a class="anchor" href="#과제">#</a></h2>
@@ -201,11 +216,11 @@
 <ul><li>ST, <em>STM32 32-bit Arm Cortex MCUs</em> 제품군 소개 — https://www.st.com/en/microcontrollers-microprocessors/stm32-32-bit-arm-cortex-mcus.html</li><li>ST, <em>DS10314 — STM32F411xC/E Datasheet</em>, "Ordering information" 및 패키지 절</li><li>ST, <em>DS5319 — STM32F103x8/xB Datasheet</em></li><li>ST, <em>UM1724 — STM32 Nucleo-64 boards (MB1136)</em></li><li>ST, <em>AN4488 — Getting started with STM32F4xxxx MCU hardware development</em></li><li>Arm, <em>Cortex-M processor comparison</em> — https://developer.arm.com/</li><li>이 사이트의 <a href="l01.html">L01 STM32 시리즈와 개발 환경</a>, <a href="hal-reference.html">HAL 레퍼런스</a></li></ul>
       <nav class="pager"><span class="pager-prev disabled"></span><a class="pager-next" href="t02.html"><span>다음 · T02</span>Cortex-M 코어 구조</a></nav>
     </div>
-    <aside class="lesson-toc"><div class="toc-title">이 레슨의 내용</div><div class="toc-links"><a class="toc-l2" href="#학습-목표">학습 목표</a><a class="toc-l2" href="#st-와-stm32-의-역사">ST 와 STM32 의 역사</a><a class="toc-l2" href="#제품군-한눈에-보기">제품군 한눈에 보기</a><a class="toc-l2" href="#이름-해독-규칙">이름 해독 규칙</a><a class="toc-l3" href="#제품-종류와-라인">제품 종류와 라인</a><a class="toc-l3" href="#핀-수">핀 수</a><a class="toc-l3" href="#플래시-크기">플래시 크기</a><a class="toc-l3" href="#패키지와-온도">패키지와 온도</a><a class="toc-l2" href="#핀-수와-패키지가-설계에-미치는-영향">핀 수와 패키지가 설계에 미치는 영향</a><a class="toc-l2" href="#개발-보드-체계">개발 보드 체계</a><a class="toc-l2" href="#어떤-제품군을-고를까">어떤 제품군을 고를까</a><a class="toc-l2" href="#자주-나는-오류와-해결">자주 나는 오류와 해결</a><a class="toc-l2" href="#과제">과제</a><a class="toc-l2" href="#참고자료">참고자료</a></div></aside>
+    <aside class="lesson-toc"><div class="toc-title">이 레슨의 내용</div><div class="toc-links"><a class="toc-l2" href="#학습-목표">학습 목표</a><a class="toc-l2" href="#st-와-stm32-의-역사">ST 와 STM32 의 역사</a><a class="toc-l2" href="#제품군-한눈에-보기">제품군 한눈에 보기</a><a class="toc-l2" href="#이름-해독-규칙">이름 해독 규칙</a><a class="toc-l3" href="#제품-종류와-라인">제품 종류와 라인</a><a class="toc-l3" href="#핀-수">핀 수</a><a class="toc-l3" href="#플래시-크기">플래시 크기</a><a class="toc-l3" href="#패키지와-온도">패키지와 온도</a><a class="toc-l2" href="#핀-수와-패키지가-설계에-미치는-영향">핀 수와 패키지가 설계에 미치는 영향</a><a class="toc-l2" href="#개발-보드-체계">개발 보드 체계</a><a class="toc-l2" href="#어떤-제품군을-고를까">어떤 제품군을 고를까</a><a class="toc-l2" href="#시뮬레이터로-제품군-비교하기">시뮬레이터로 제품군 비교하기</a><a class="toc-l2" href="#자주-나는-오류와-해결">자주 나는 오류와 해결</a><a class="toc-l2" href="#과제">과제</a><a class="toc-l2" href="#참고자료">참고자료</a></div></aside>
   </div>
 </article>
 
 </main>
-<script src="../assets/js/site.js"></script>
+<script src="../assets/js/site.js?v=20260928b"></script>
 </body>
 </html>

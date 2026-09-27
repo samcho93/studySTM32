@@ -3,7 +3,8 @@
 CubeMX 핀 설정 → HAL 코드 → 브라우저 시뮬레이터 → 실물 보드까지, STM32 를 한국어로 배우는 **정적 강의 사이트**입니다.
 
 - 배포: https://samcho93.github.io/studySTM32/ (GitHub Pages, 서버·npm 빌드 체인 없음)
-- 대상 보드: **NUCLEO-F411RE**(기본, 84 MHz), NUCLEO-F103RB, BluePill(STM32F103C8)
+- 대상 MCU(9종, 5개 제품군): STM32F030R8 · F103C8 · F103RB · F401RE · **F411RE**(기본) · F446RE · F407VG · G071RB · L476RG
+- 보드는 선택 프리셋: Nucleo-64 7종, Blue Pill, STM32F4DISCOVERY — 또는 MCU만 놓고 직접 배선
 - 레슨 24개 (PART 0 STM32 이해하기 · PART 1 시작하기 · PART 2 통신·타이머·아날로그 · PART 3 주변기기 · PART 4 프로젝트) + HAL API 레퍼런스
 - 레슨 속 **[시뮬레이터에서 열기]** 버튼을 누르면 해당 예제 프로젝트가 페이지 오른쪽 실습 패널에 열립니다.
 

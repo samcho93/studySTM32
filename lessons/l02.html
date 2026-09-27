@@ -6,12 +6,12 @@
 <title>L02. 시뮬레이터 둘러보기와 첫 프로젝트 · studySTM32</title>
 <meta name="description" content="CubeMX 핀아웃 → Generate Code → USER CODE 구역 → Build → Run 흐름을 시뮬레이터에서 처음부터 끝까지 따라 합니다.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
-<link rel="stylesheet" href="../assets/css/main.css">
-<link rel="stylesheet" href="../assets/css/stm32.css">
-<link rel="stylesheet" href="../assets/css/ml-theme.css">
+<link rel="stylesheet" href="../assets/css/main.css?v=20260928b">
+<link rel="stylesheet" href="../assets/css/stm32.css?v=20260928b">
+<link rel="stylesheet" href="../assets/css/ml-theme.css?v=20260928b">
 <link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
 <link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
-<script src="../assets/js/theme.js"></script>
+<script src="../assets/js/theme.js?v=20260928b"></script>
 </head>
 <body class="lesson-page track-page-basics">
 <button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
@@ -95,13 +95,13 @@
 <div class="table-wrap"><table><thead><tr><th>영역</th><th>하는 일</th><th>CubeIDE에서는</th></tr></thead><tbody><tr><td><strong>프로젝트 탐색기</strong> (왼쪽)</td><td><code>Core/Inc/main.h</code>, <code>Core/Src/main.c</code>, <code>.ioc</code> 설정, 읽기 전용 HAL 헤더(<code>Drivers/STM32F4xx_HAL_Driver/Inc/*.h</code>) 파일 트리</td><td>Project Explorer</td></tr><tr><td><strong>디자인 영역</strong> (가운데)</td><td>세 개의 탭: <strong>회로 노드</strong> · <strong>핀아웃·설정</strong> · <strong>코드</strong></td><td><code>.ioc</code> 편집기 + C 편집기</td></tr><tr><td><strong>실습 결과 영역</strong></td><td>보드 그림(LD2·B1), 연결한 장치의 상태(LED 밝기, LCD 글자, 모터 회전), UART 터미널, 로직 분석기 파형</td><td>실물 보드 + 터미널 프로그램</td></tr><tr><td><strong>Properties</strong></td><td>선택한 핀·노드·주변장치의 속성(LED 색, 가변저항 값, 보레이트 …)을 보고 바꾸기</td><td>Properties 뷰</td></tr></tbody></table></div>
 <h3 id="디자인-영역의-세-탭">디자인 영역의 세 탭<a class="anchor" href="#디자인-영역의-세-탭">#</a></h3>
 <ul><li><strong>회로 노드</strong> — LED, 버튼, 가변저항, LCD, 모터 같은 장치 노드를 놓고, 노드의 포트를 MCU 핀에 선으로 연결합니다.</li></ul>
-<p>보드 내장 장치(LD2, B1, ST-Link 가상 COM)는 처음부터 들어 있습니다.</p>
+<p>보드 프리셋을 고르면 그 보드의 내장 장치(Nucleo: LD2, B1, ST-Link 가상 COM)가 처음부터 들어 있습니다.</p>
 <ul><li><strong>핀아웃·설정</strong> — CubeMX처럼 칩 그림에서 핀을 눌러 기능(<code>GPIO_Output</code>, <code>USART2_TX</code>, <code>TIM3_CH1</code> …)을 고르고,</li></ul>
 <p>주변장치 모드와 파라미터(보레이트, 타이머 PSC/ARR, ADC 채널), NVIC 인터럽트를 켭니다. 핀에 <strong>User Label</strong>(예: <code>LD2</code>)을 붙일 수 있습니다.</p>
 <ul><li><strong>코드</strong> — 설정으로 생성된 <code>main.c</code> 를 편집합니다. 여러분이 코드를 쓸 수 있는 곳은 <code>/* USER CODE BEGIN ... */</code> 와 <code>/* USER CODE END ... */</code> 사이뿐입니다.</li></ul>
 <h2 id="첫-프로젝트-따라-하기">첫 프로젝트: 따라 하기<a class="anchor" href="#첫-프로젝트-따라-하기">#</a></h2>
 <p>목표는 보드 LED <strong>LD2를 0.1초 켜고 0.9초 끄는</strong> 심장 박동 표시등입니다. 위의 예제 버튼으로 완성본을 열 수 있지만, 처음 한 번은 아래 순서대로 직접 해 보세요.</p>
-<ol><li><strong>보드 고르기</strong> — 새 프로젝트에서 보드 <code>NUCLEO-F411RE</code> 를 고릅니다. SYSCLK는 84 MHz로 설정되어 있습니다.</li><li><strong>핀아웃</strong> — 핀아웃·설정 탭에서 <code>PA5</code> 를 눌러 <code>GPIO_Output</code> 을 고르고, User Label을 <code>LD2</code> 로 적습니다. (Nucleo 보드 기본 설정에는 이미 들어 있습니다.)</li><li><strong>Generate Code</strong> — 코드를 생성하면 <code>main.h</code> 에 라벨 매크로가, <code>main.c</code> 에 <code>MX_GPIO_Init()</code> 이 만들어집니다.</li><li><strong>USER CODE 작성</strong> — <code>main.c</code> 의 <code>while (1)</code> 안, <code>USER CODE BEGIN 3</code> 구역에 아래 코드를 씁니다.</li><li><strong>Build</strong> — 빌드 버튼을 누르고 콘솔에 오류가 0개인지 확인합니다. 플래시·RAM 사용량(text/data/bss)도 표시됩니다.</li><li><strong>Run</strong> — 실행하면 실습 결과 영역의 보드 그림에서 LD2가 1초에 한 번 짧게 깜빡입니다.</li></ol>
+<ol><li><strong>MCU 고르기</strong> — Properties(또는 클럭 &amp; 프로젝트 탭)의 <strong>MCU</strong> 에서 <code>STM32F411RE</code> 를, <strong>보드 프리셋</strong>에서 <code>NUCLEO-F411RE</code> 를 고릅니다. SYSCLK는 84 MHz로 설정됩니다. 보드 프리셋을 "없음"으로 두면 MCU 만 놓고 LED·버튼을 직접 배선하는 연습을 할 수 있습니다.</li><li><strong>핀아웃</strong> — 핀아웃·설정 탭에서 <code>PA5</code> 를 눌러 <code>GPIO_Output</code> 을 고르고, User Label을 <code>LD2</code> 로 적습니다. (Nucleo 보드 기본 설정에는 이미 들어 있습니다.)</li><li><strong>Generate Code</strong> — 코드를 생성하면 <code>main.h</code> 에 라벨 매크로가, <code>main.c</code> 에 <code>MX_GPIO_Init()</code> 이 만들어집니다.</li><li><strong>USER CODE 작성</strong> — <code>main.c</code> 의 <code>while (1)</code> 안, <code>USER CODE BEGIN 3</code> 구역에 아래 코드를 씁니다.</li><li><strong>Build</strong> — 빌드 버튼을 누르고 콘솔에 오류가 0개인지 확인합니다. 플래시·RAM 사용량(text/data/bss)도 표시됩니다.</li><li><strong>Run</strong> — 실행하면 실습 결과 영역의 보드 그림에서 LD2가 1초에 한 번 짧게 깜빡입니다.</li></ol>
 <div class="code-block code-example" data-example="l02-first"><div class="code-head"><span class="code-lang">c</span><span class="code-file">Core/Src/main.c</span><span class="code-actions"><button class="copy-btn" type="button">복사</button></span></div><pre><code class="lang-c">  <span class="tk-c">/* USER CODE BEGIN WHILE */</span>
   <span class="tk-k">while</span> (<span class="tk-n">1</span>)
   {
@@ -165,6 +165,7 @@
 <div class="callout callout-task"><div class="callout-title">실습 A — 속도 바꾸기</div><div class="callout-body"><ol><li>예제를 열고 <code>HAL_Delay(100)</code> 과 <code>HAL_Delay(900)</code> 의 값을 바꿔 <strong>빠르게 두 번 깜빡이고 쉬는</strong> 패턴을 만드세요.</li><li>Build → Run 으로 확인합니다. 빌드 오류가 나면 콘솔의 줄 번호를 눌러 해당 줄로 이동합니다.</li></ol></div></div>
 <div class="callout callout-task"><div class="callout-title">실습 B — 코드 재생성 실험</div><div class="callout-body"><ol><li><code>USER CODE</code> 구역 <strong>밖</strong>(예: <code>MX_GPIO_Init();</code> 바로 아래)에 <code>HAL_Delay(1000);</code> 을 한 줄 넣습니다.</li><li>핀아웃·설정 탭에서 아무 설정이나 바꾼 뒤 코드를 다시 생성하고, 그 줄이 사라지는지 확인합니다.</li><li>같은 줄을 <code>USER CODE BEGIN 2</code> 구역에 넣고 다시 생성해 보존되는지 확인합니다.</li></ol></div></div>
 <div class="callout callout-check"><div class="callout-title">스스로 확인</div><div class="callout-body"><ul><li><code>HAL_Init()</code> 이 없으면 <code>HAL_Delay()</code> 가 동작하지 않는 이유는? (힌트: SysTick)</li><li>핀 라벨을 <code>LD2</code> 에서 <code>LED_STATUS</code> 로 바꾸면 코드에서 무엇을 고쳐야 하나요?</li></ul></div></div>
+<div class="callout callout-info"><div class="callout-title">다른 MCU 로 바꿔 보기</div><div class="callout-body"><p>시뮬레이터는 F0 · F1 · F4 · G0 · L4 제품군의 MCU 9종을 지원합니다. 같은 프로젝트에서 MCU 만 바꾸면 <code>SystemClock_Config()</code> 의 PLL 설정, Flash 대기 상태, ADC 초기화, EXTI 인터럽트 이름이 그 제품군에 맞게 다시 생성되고, USER CODE 구역과 직접 추가한 장치·배선은 그대로 남습니다. 예를 들어 <code>STM32G071RB</code> 로 바꾸고 다시 빌드한 뒤 <code>main.c</code> 의 <code>SystemClock_Config()</code> 가 어떻게 달라졌는지 비교해 보세요. 제품군별 차이는 <a href="t01.html">T01 STM32 제품군 총람</a>에서 다룹니다.</p></div></div>
 <h2 id="자주-나는-오류와-해결">자주 나는 오류와 해결<a class="anchor" href="#자주-나는-오류와-해결">#</a></h2>
 <div class="table-wrap"><table><thead><tr><th>증상·메시지</th><th>원인</th><th>해결</th></tr></thead><tbody><tr><td><code>&#x27;LD2_Pin&#x27; undeclared</code></td><td>핀에 User Label을 붙이지 않았거나 다른 이름으로 붙임</td><td>핀아웃에서 라벨 확인 후 다시 생성, 또는 <code>GPIO_PIN_5</code> / <code>GPIOA</code> 직접 사용</td></tr><tr><td>코드를 다시 생성했더니 내가 쓴 코드가 없어짐</td><td><code>USER CODE</code> 구역 밖에 작성</td><td>구역 안으로 옮기기 (위 실습 B)</td></tr><tr><td>빌드는 되는데 LED가 켜진 채 그대로</td><td><code>while (1)</code> 밖(<code>USER CODE 2</code>)에 깜빡임 코드를 씀</td><td>반복할 코드는 <code>USER CODE BEGIN 3</code> 에</td></tr><tr><td><code>expected &#x27;;&#x27; before ...</code></td><td>앞 줄 끝의 세미콜론 누락</td><td>오류가 난 줄의 <strong>바로 윗줄</strong>을 확인</td></tr><tr><td>실행해도 아무 변화 없음</td><td>핀을 <code>GPIO_Output</code> 으로 설정하지 않음(Reset 상태)</td><td>핀아웃에서 PA5 기능 확인 후 다시 생성</td></tr></tbody></table></div>
 <h2 id="과제">과제<a class="anchor" href="#과제">#</a></h2>
@@ -178,6 +179,6 @@
 </article>
 
 </main>
-<script src="../assets/js/site.js"></script>
+<script src="../assets/js/site.js?v=20260928b"></script>
 </body>
 </html>

@@ -44,7 +44,7 @@
     }
   ],
   "chapters": {
-    "t01": { "title": "STM32 제품군 총람", "summary": "ST 와 STM32 의 역사, F0 부터 U5·WB·C0 까지 제품군 표, STM32F411RET6 이름 해독 규칙, 핀 수·패키지, Nucleo·Discovery·Eval 보드 체계와 제품군 고르는 기준을 정리합니다.", "duration": 45, "level": "입문", "tools": ["ref"] },
+    "t01": { "title": "STM32 제품군 총람", "summary": "ST 와 STM32 의 역사, F0 부터 U5·WB·C0 까지 제품군 표, STM32F411RET6 이름 해독 규칙, 핀 수·패키지, Nucleo·Discovery·Eval 보드 체계와 제품군 고르는 기준을 정리합니다.", "duration": 50, "level": "입문", "tools": ["sim", "ref"] },
     "t02": { "title": "Cortex-M 코어 구조", "summary": "RISC·하버드·Thumb-2, 코어 레지스터(R0~R15, xPSR), 스레드·핸들러 모드와 특권 레벨, 함수 호출 규약, 예외 진입 스태킹, M0·M3·M4·M7·M33 의 차이와 CMSIS-Core 함수를 익힙니다.", "duration": 55, "level": "기초", "tools": ["ref"] },
     "t03": { "title": "메모리 맵과 버스", "summary": "4 GB 주소 공간 구획, F411 의 실제 주소, 부트 매핑, AHB·APB 버스 매트릭스와 클럭 게이팅, GPIO_TypeDef 구조체와 GPIOA 매크로, 비트밴딩, DMA, 링커 스크립트와 빌드 로그의 text·data·bss 를 해설합니다.", "duration": 55, "level": "기초", "tools": ["sim"] },
     "t04": { "title": "클럭과 리셋 시스템", "summary": "HSI·HSE·LSI·LSE 와 PLL(M·N·P·Q) 계산, AHB·APB 프리스케일러와 타이머 ×2 규칙, 플래시 대기 상태, SysTick 과 HAL_Delay, MCO·CSS, 리셋 종류와 RCC->CSR, 저전력 모드를 정리합니다.", "duration": 50, "level": "기초", "tools": ["sim"] },

@@ -1438,5 +1438,212 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     }
   };
 
+
+  // ======================================================================= T01 — 제품군별 MCU 예제
+  // 같은 HAL 코드가 제품군마다 어떻게 달라지는지(클럭·ADC 채널 번호·EXTI 콜백·보드 LED) 비교합니다.
+
+  STM32_EXAMPLES['mcu-g0-blink'] = {
+    title: 'G0 — LD4 깜빡이기 + 에지 콜백',
+    desc: 'STM32G071RB(Cortex-M0+ 64 MHz). G0 HAL 은 HAL_GPIO_EXTI_Falling_Callback 처럼 에지별 콜백을 씁니다. B1 을 누르면 깜빡임 속도가 바뀝니다.',
+    lesson: 't01',
+    mcu: 'STM32G071RB',
+    board: 'NUCLEO-G071RB',
+    pins: {},
+    periph: {},
+    nvic: { EXTI4_15: true },
+    nodes: [],
+    wires: [],
+    user: {
+      includes: C`
+#include <stdio.h>
+`,
+      pv: C`
+volatile uint32_t period = 500;
+`,
+      pfp: '', u0: '',
+      u2: C`
+  printf("STM32G071RB @ %lu MHz\r\n", HAL_RCC_GetSysClockFreq() / 1000000);
+`,
+      loop: C`
+    HAL_GPIO_TogglePin(LD4_GPIO_Port, LD4_Pin);
+    HAL_Delay(period);
+`,
+      u4: C`
+int __io_putchar(int ch)
+{
+  HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
+  return ch;
+}
+
+/* G0 는 HAL_GPIO_EXTI_Callback 대신 에지별 콜백을 부릅니다 */
+void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
+{
+  if (GPIO_Pin == B1_Pin)
+  {
+    period = (period == 500) ? 100 : 500;
+    printf("period = %lu ms\r\n", period);
+  }
+}
+`
+    }
+  };
+
+  STM32_EXAMPLES['mcu-l4-adc'] = {
+    title: 'L4 — 가변저항 ADC (채널 번호 차이)',
+    desc: 'STM32L476RG(Cortex-M4F 80 MHz). PA0 은 F4 에서 ADC1_IN0 이지만 L4 에서는 ADC1_IN5 입니다. 사용 전 보정(Calibration)도 필요합니다.',
+    lesson: 't01',
+    mcu: 'STM32L476RG',
+    board: 'NUCLEO-L476RG',
+    pins: { PA0: { signal: 'ADC1_IN5' } },
+    periph: { ADC1: { channels: [5] } },
+    nvic: {},
+    nodes: [{ id: 'pot1', type: 'pot', x: 520, y: 320, props: { value: 1500 } }],
+    wires: [['PA0', 'pot1.out']],
+    user: {
+      includes: C`
+#include <stdio.h>
+`,
+      pv: '', pfp: '', u0: '',
+      u2: C`
+  HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);   /* L4: 변환 전에 한 번 보정 */
+`,
+      loop: C`
+    HAL_ADC_Start(&hadc1);
+    HAL_ADC_PollForConversion(&hadc1, 10);
+    uint32_t raw = HAL_ADC_GetValue(&hadc1);
+    HAL_ADC_Stop(&hadc1);
+    printf("ADC1_IN5 = %4lu  (%lu mV)\r\n", raw, raw * 3300 / 4095);
+    HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, raw > 2048 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_Delay(500);
+`,
+      u4: C`
+int __io_putchar(int ch)
+{
+  HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
+  return ch;
+}
+`
+    }
+  };
+
+  STM32_EXAMPLES['mcu-f407-disco'] = {
+    title: 'F407 Discovery — LED 4개 회전',
+    desc: 'STM32F407VG(168 MHz, 100핀). 보드 LED 4개(PD12–PD15)를 차례로 켜고, 사용자 버튼 B1(PA0, 누르면 HIGH)으로 방향을 바꿉니다.',
+    lesson: 't01',
+    mcu: 'STM32F407VG',
+    board: 'DISCO-F407VG',
+    pins: {},
+    periph: {},
+    nvic: { EXTI0: true },
+    nodes: [],
+    wires: [],
+    user: {
+      includes: '',
+      pv: C`
+volatile int8_t dir = 1;
+const uint16_t leds[4] = { LD4_Pin, LD3_Pin, LD5_Pin, LD6_Pin };
+int8_t idx = 0;
+`,
+      pfp: '', u0: '', u2: '',
+      loop: C`
+    HAL_GPIO_WritePin(GPIOD, LD4_Pin | LD3_Pin | LD5_Pin | LD6_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOD, leds[idx], GPIO_PIN_SET);
+    idx = (idx + dir + 4) % 4;
+    HAL_Delay(200);
+`,
+      u4: C`
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  if (GPIO_Pin == B1_Pin)
+  {
+    dir = -dir;
+  }
+}
+`
+    }
+  };
+
+  STM32_EXAMPLES['mcu-f030-pwm'] = {
+    title: 'F030 맨 칩 — PWM LED 페이드',
+    desc: 'STM32F030R8(Cortex-M0 48 MHz)만 놓고 직접 배선합니다. F0 에는 TIM2 가 없어 TIM3_CH1(PA6)을 씁니다. 48 MHz / (47+1) = 1 MHz 카운트.',
+    lesson: 't01',
+    mcu: 'STM32F030R8',
+    pins: { PA6: { signal: 'TIM3_CH1' } },
+    periph: { TIM3: { psc: 47, arr: 999, ch: { 1: 'pwm' }, pulse: { 1: 0 } } },
+    nvic: {},
+    nodes: [{ id: 'led1', type: 'led', x: 520, y: 80, props: { color: 'blue', active: 'high' } }],
+    wires: [['PA6', 'led1.in']],
+    user: {
+      includes: '', pv: '', pfp: '', u0: '',
+      u2: C`
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+`,
+      loop: C`
+    for (int d = 0; d <= 1000; d += 20)
+    {
+      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, d);
+      HAL_Delay(10);
+    }
+    for (int d = 1000; d >= 0; d -= 20)
+    {
+      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, d);
+      HAL_Delay(10);
+    }
+`,
+      u4: ''
+    }
+  };
+
+  STM32_EXAMPLES['mcu-f103-bare'] = {
+    title: 'F103C8 맨 칩 — 버튼·LED·USART1',
+    desc: 'STM32F103C8(Cortex-M3 72 MHz)만 놓고 버튼(PB12, 풀업)·LED(PB13)·UART 터미널(USART1 PA9/PA10)을 직접 배선합니다. printf 는 USART1 로 보냅니다.',
+    lesson: 't01',
+    mcu: 'STM32F103C8',
+    pins: {
+      PB12: { signal: 'GPIO_Input', label: 'SW1', pull: 'up' },
+      PB13: { signal: 'GPIO_Output', label: 'LED1' },
+      PA9: { signal: 'USART1_TX' }, PA10: { signal: 'USART1_RX' }
+    },
+    periph: { USART1: { mode: 'async', baud: 115200 } },
+    nvic: {},
+    nodes: [
+      { id: 'sw1', type: 'button', x: 520, y: 40, props: { wiring: 'gnd', label: 'SW1' } },
+      { id: 'led1', type: 'led', x: 520, y: 150, props: { color: 'red', active: 'high' } },
+      { id: 'ser1', type: 'uart', x: 520, y: 250, props: { name: 'USB-UART (CH340)' } }
+    ],
+    wires: [['PB12', 'sw1.out'], ['PB13', 'led1.in'], ['PA9', 'ser1.rx'], ['PA10', 'ser1.tx']],
+    user: {
+      includes: C`
+#include <stdio.h>
+`,
+      pv: C`
+uint8_t last = 1;
+uint32_t presses = 0;
+`,
+      pfp: '', u0: '',
+      u2: C`
+  printf("F103C8 bare chip ready\r\n");
+`,
+      loop: C`
+    uint8_t now = HAL_GPIO_ReadPin(SW1_GPIO_Port, SW1_Pin);
+    if (last == 1 && now == 0)          /* 풀업: 누르면 LOW */
+    {
+      presses++;
+      HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+      printf("press %lu\r\n", presses);
+    }
+    last = now;
+    HAL_Delay(20);                      /* 간단한 디바운스 */
+`,
+      u4: C`
+int __io_putchar(int ch)
+{
+  HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
+  return ch;
+}
+`
+    }
+  };
+
   if (typeof module !== 'undefined' && module.exports) module.exports = STM32_EXAMPLES;
 })(typeof window !== 'undefined' ? window : globalThis);

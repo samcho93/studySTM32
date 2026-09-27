@@ -37,13 +37,27 @@ studySTM32/
 - `sim/index.html?ex=<exampleId>` — `STM32_EXAMPLES[exampleId]` 를 불러옴
 - `sim/index.html?ex=<id>&embed=1` — 레슨 페이지 오른쪽 도크(iframe)용: 상단 사이트 헤더 숨김
 
-## 2. 지원 보드
+## 2. 지원 MCU 와 보드 프리셋
 
-| board id | MCU | 패키지 | SYSCLK 기본 | 보드 내장 장치 |
-|---|---|---|---|---|
-| `NUCLEO-F411RE` | STM32F411RET6 | LQFP64 | 84 MHz | LD2=PA5, B1=PC13(누르면 LOW, 외부 풀업), ST-Link VCP=USART2(PA2 TX / PA3 RX) |
-| `NUCLEO-F103RB` | STM32F103RBT6 | LQFP64 | 72 MHz | 위와 동일 |
-| `BLUEPILL-F103C8` | STM32F103C8T6 | LQFP48 | 72 MHz | LED=PC13 (Active LOW) |
+프로젝트의 중심은 **MCU**(`project.mcu`)이고, 보드(`project.board`)는 내장 장치와 기본 핀을 채워 주는 **선택** 프리셋이다(없으면 맨 칩).
+단일 출처는 `assets/js/stm32/chips.js`(`CHIPS`, `BOARDS`, `FAMILIES`), 프로젝트 생성·정규화는 `assets/js/stm32/project.js`.
+
+| 제품군 | MCU | 코어 | 패키지 | 기본 SYSCLK | 보드 프리셋 |
+|---|---|---|---|---|---|
+| F0 | STM32F030R8 | Cortex-M0 | LQFP64* | 48 MHz | NUCLEO-F030R8 |
+| F1 | STM32F103C8 | Cortex-M3 | LQFP48 | 72 MHz | BLUEPILL-F103C8 |
+| F1 | STM32F103RB | Cortex-M3 | LQFP64 | 72 MHz | NUCLEO-F103RB |
+| F4 | STM32F401RE | Cortex-M4F | LQFP64 | 84 MHz | NUCLEO-F401RE |
+| F4 | STM32F411RE | Cortex-M4F | LQFP64 | 84 MHz | NUCLEO-F411RE |
+| F4 | STM32F446RE | Cortex-M4F | LQFP64 | 180 MHz | NUCLEO-F446RE |
+| F4 | STM32F407VG | Cortex-M4F | LQFP100* | 168 MHz | DISCO-F407VG |
+| G0 | STM32G071RB | Cortex-M0+ | LQFP64* | 64 MHz | NUCLEO-G071RB |
+| L4 | STM32L476RG | Cortex-M4F | LQFP64 | 80 MHz | NUCLEO-L476RG |
+
+** 핀아웃 그림의 핀 번호는 개략(`pinsApprox`). 신호·AF 매핑은 데이터시트 기준.
+Nucleo-64 프리셋: LD2(G0 는 LD4)=PA5, B1=PC13(누르면 LOW), VCP=USART2(PA2/PA3). Blue Pill: LED=PC13(Active LOW). F4DISCOVERY: LD3–LD6=PD12–PD15, B1=PA0(누르면 HIGH).
+제품군마다 클럭 트리(`SystemClock_Config`), ADC 초기화, EXTI 인터럽트 이름(M0 계열은 `EXTI0_1`/`EXTI2_3`/`EXTI4_15`)이 다르게 생성된다.
+예제는 `mcu`(선택)와 `board`(선택)를 줄 수 있다. 둘 다 없으면 NUCLEO-F411RE.
 
 ## 3. 예제 프로젝트 스키마 (`assets/js/stm32/examples.js`)
 

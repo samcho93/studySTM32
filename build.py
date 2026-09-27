@@ -48,7 +48,11 @@ TOOL_LINKS = {
 REQUIRED_SECTIONS = ["학습 목표", "자주 나는 오류와 해결", "참고자료"]
 
 # 홈 facts 바에 쓰는 값 (docs/SPEC.md 2장·3.1장·5장과 맞춥니다)
-BOARDS = ["NUCLEO-F411RE", "NUCLEO-F103RB", "BLUEPILL-F103C8"]
+# assets/js/stm32/chips.js 의 CHIPS 와 맞춥니다 (MCU 중심, 보드는 선택 프리셋)
+MCUS = ["STM32F030R8", "STM32F103C8", "STM32F103RB", "STM32F401RE", "STM32F411RE", "STM32F446RE",
+        "STM32F407VG", "STM32G071RB", "STM32L476RG"]
+FAMILIES = ["F0", "F1", "F4", "G0", "L4"]
+ASSET_VER = "20260928b"   # CSS/JS 캐시 무효화 — 자산을 바꾸면 올립니다
 DEVICE_TYPES = ["led", "rgb", "button", "pot", "ldr", "buzzer", "fnd", "lcd1602", "motor",
                 "servo", "stepper", "uart", "i2cdev", "spidev", "logic"]
 SUPPORTED_HAL_API = [
@@ -647,12 +651,12 @@ PAGE = """<!DOCTYPE html>
 <title>{title}</title>
 <meta name="description" content="{desc}">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2210%22 y=%2210%22 width=%2280%22 height=%2280%22 rx=%2218%22 fill=%22%234f46e5%22/><text x=%2250%22 y=%2264%22 font-size=%2238%22 font-family=%22monospace%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22white%22>32</text></svg>">
-<link rel="stylesheet" href="{rel}assets/css/main.css">
-<link rel="stylesheet" href="{rel}assets/css/stm32.css">
-<link rel="stylesheet" href="{rel}assets/css/ml-theme.css">
+<link rel="stylesheet" href="{rel}assets/css/main.css?v=20260928b">
+<link rel="stylesheet" href="{rel}assets/css/stm32.css?v=20260928b">
+<link rel="stylesheet" href="{rel}assets/css/ml-theme.css?v=20260928b">
 <link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
 <link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap">
-<script src="{rel}assets/js/theme.js"></script>
+<script src="{rel}assets/js/theme.js?v=20260928b"></script>
 </head>
 <body class="{bodyclass}">
 <button class="nav-toggle" id="navToggle" aria-label="목차 열기">&#9776;</button>
@@ -664,7 +668,7 @@ PAGE = """<!DOCTYPE html>
 {topbar}
 {content}
 </main>
-<script src="{rel}assets/js/site.js"></script>
+<script src="{rel}assets/js/site.js?v=20260928b"></script>
 </body>
 </html>
 """
@@ -855,7 +859,7 @@ def index_page(cur: dict) -> str:
 
 <section class="facts">
   <div class="fact"><div class="fact-n">{total}</div><div class="fact-l">레슨 (PART 0~4)</div></div>
-  <div class="fact"><div class="fact-n">{nboards}</div><div class="fact-l">지원 보드 (Nucleo F411RE · F103RB · BluePill)</div></div>
+  <div class="fact"><div class="fact-n">{nboards}</div><div class="fact-l">종 MCU 지원 (F0 · F1 · F4 · G0 · L4)</div></div>
   <div class="fact"><div class="fact-n">{ndev}</div><div class="fact-l">종 주변기기 노드 (LED · LCD · 모터 …)</div></div>
   <div class="fact"><div class="fact-n">{napi}</div><div class="fact-l">개 HAL API 에뮬레이션</div></div>
 </section>
@@ -891,7 +895,7 @@ def index_page(cur: dict) -> str:
     <a href="https://www.st.com/en/evaluation-tools/nucleo-f411re.html" target="_blank" rel="noopener">NUCLEO-F411RE</a>
   </p>
 </footer>
-""".format(total=total, first=first, first_no=first.upper(), nboards=len(BOARDS),
+""".format(total=total, first=first, first_no=first.upper(), nboards=len(MCUS),
            ndev=len(DEVICE_TYPES), napi=len(SUPPORTED_HAL_API), sections="".join(sections))
 
     return PAGE.format(
